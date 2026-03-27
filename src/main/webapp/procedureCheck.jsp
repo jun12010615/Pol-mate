@@ -55,6 +55,79 @@
   .progress-bar { height: 100%; background: #4ade80; border-radius: 4px; transition: width 0.5s; }
   .progress-counts { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 4px; }
 
+  /* ── 음성 인식 바 ── */
+  .voice-bar {
+    background: var(--navy); padding: 0 20px 16px;
+  }
+  .voice-card {
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px; padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .voice-btn {
+    width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    transition: all 0.2s; background: rgba(255,255,255,0.15);
+  }
+  .voice-btn svg { width: 18px; height: 18px; }
+  .voice-btn.idle    { background: rgba(255,255,255,0.15); }
+  .voice-btn.idle svg { stroke: rgba(255,255,255,0.8); }
+  .voice-btn.listening { background: #ef4444; animation: voicePulse 1.2s infinite; }
+  .voice-btn.listening svg { stroke: #fff; }
+  .voice-info { flex: 1; min-width: 0; }
+  .voice-status { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.9); margin-bottom: 3px; }
+  .voice-transcript {
+    font-size: 11px; color: rgba(255,255,255,0.5); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; line-height: 1.5;
+    min-height: 16px;
+  }
+  .voice-transcript.detected { color: #4ade80; font-weight: 500; }
+
+  /* 웨이브 애니메이션 */
+  .voice-wave {
+    display: flex; align-items: center; gap: 2px; flex-shrink: 0;
+  }
+  .wave-bar {
+    width: 3px; border-radius: 2px; background: rgba(255,255,255,0.4);
+    transition: height 0.1s;
+  }
+  .voice-btn.listening ~ .voice-info ~ .voice-wave .wave-bar { background: #4ade80; }
+  .wave-bar:nth-child(1) { animation: wave 1.0s ease-in-out infinite 0.0s; }
+  .wave-bar:nth-child(2) { animation: wave 1.0s ease-in-out infinite 0.1s; }
+  .wave-bar:nth-child(3) { animation: wave 1.0s ease-in-out infinite 0.2s; }
+  .wave-bar:nth-child(4) { animation: wave 1.0s ease-in-out infinite 0.3s; }
+  .wave-bar:nth-child(5) { animation: wave 1.0s ease-in-out infinite 0.4s; }
+
+  /* 자동 체크 토스트 */
+  .auto-check-toast {
+    position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+    background: #0d1a33; color: #4ade80; font-size: 12px; font-weight: 500;
+    padding: 10px 18px; border-radius: 20px; z-index: 400;
+    display: flex; align-items: center; gap: 7px;
+    font-family: 'Noto Sans KR', sans-serif;
+    opacity: 0; transition: opacity 0.3s; white-space: nowrap;
+    border: 1px solid rgba(74,222,128,0.3);
+    pointer-events: none;
+  }
+  .auto-check-toast.show { opacity: 1; }
+  .auto-check-toast svg { width: 14px; height: 14px; stroke: #4ade80; flex-shrink: 0; }
+
+  /* 키워드 하이라이트 */
+  .chk-item.voice-highlight {
+    border-color: #4ade80 !important;
+    animation: highlightFlash 0.6s ease;
+  }
+  @keyframes highlightFlash {
+    0%   { box-shadow: 0 0 0 0 rgba(74,222,128,0.5); }
+    50%  { box-shadow: 0 0 0 8px rgba(74,222,128,0); }
+    100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
+  }
+  @keyframes voicePulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.5)} 50%{box-shadow:0 0 0 8px rgba(239,68,68,0)} }
+  @keyframes wave {
+    0%,100% { height: 6px; }
+    50%      { height: 18px; }
+  }
+
   /* ── 콘텐츠 ── */
   .content { flex: 1; overflow-y: auto; padding: 16px 16px calc(var(--bottom-nav-h) + 16px); }
 
@@ -257,6 +330,37 @@
         <div class="progress-counts" id="progressCounts">0 / 0 항목 완료</div>
       </div>
     </div>
+  </div>
+
+  <!-- ══ 음성 인식 바 ══ -->
+  <div class="voice-bar">
+    <div class="voice-card">
+      <button class="voice-btn idle" id="voiceBtn" onclick="toggleVoice()">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </button>
+      <div class="voice-info">
+        <div class="voice-status" id="voiceStatus">음성 인식 대기 중</div>
+        <div class="voice-transcript" id="voiceTranscriptEl">마이크 버튼을 눌러 음성 인식을 시작하세요</div>
+      </div>
+      <div class="voice-wave" id="voiceWave">
+        <div class="wave-bar" style="height:6px"></div>
+        <div class="wave-bar" style="height:10px"></div>
+        <div class="wave-bar" style="height:6px"></div>
+        <div class="wave-bar" style="height:14px"></div>
+        <div class="wave-bar" style="height:6px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 자동 체크 토스트 -->
+  <div class="auto-check-toast" id="autoToast">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+    <span id="autoToastMsg">자동 체크 완료</span>
   </div>
 
   <!-- 콘텐츠 -->
@@ -778,6 +882,241 @@ function resetAll() {
 
 // 초기화
 updateProgress();
+
+// ════════════════════════════════════════════════════════════════
+//  실시간 음성 인식 → 자동 체크 (Web Speech API)
+//  - 브라우저 내장 API 사용 (Chrome/Edge 권장)
+//  - STT 외부 API 연동 전 임시 구현
+//  - 키워드 감지 시 해당 체크리스트 항목 자동 체크
+// ════════════════════════════════════════════════════════════════
+
+// ── 키워드 → 체크리스트 매핑 ─────────────────────────────────────
+// 각 항목 ID에 감지할 키워드 배열 정의
+// 실제 STT API 연동 시 이 매핑을 그대로 활용 가능
+var VOICE_KEYWORDS = {
+  '0-0': ['체포영장', '영장', '긴급체포', '현행범', '영장 제시', '영장을 제시'],
+  '0-1': ['신원 확인', '신원확인', '신분증', '피의자 신원', '본인 확인'],
+  '0-2': ['체포 시각', '체포 일시', '장소 기록', '시각 기재', '체포 장소'],
+  '0-3': ['압수', '임의 제출', '동의서', '압수수색', '임의제출'],
+  '1-0': ['묵비권', '진술 거부권', '진술거부권', '진술을 거부', '묵비', '진술 거부'],
+  '1-1': ['변호인', '변호사', '국선', '변호인 조력', '변호인 선임', '변호인을 선임'],
+  '1-2': ['체포 이유', '피의사실', '체포 이유를', '이유 고지', '사유 고지'],
+  '1-3': ['가족 통지', '가족에게', '연락', '통지'],
+  '1-4': ['확인서', '서명', '고지 확인', '동의 서명'],
+  '2-0': ['임의 진술', '자유로운 의사', '강압 없이', '임의진술', '자발적'],
+  '2-1': ['조서 열람', '낭독', '서명날인', '서명 확인', '조서 서명'],
+  '2-2': ['정정', '추가 기재', '이의', '수정'],
+  '2-3': ['변호인 참여', '변호인 성명', '변호인 불참'],
+  '2-4': ['조사 시각', '조사 시작', '종료 시각', '조사 장소', '휴식 시간'],
+  '3-0': ['48시간', '사십팔 시간', '구속영장 청구', '48 시간', '석방'],
+  '3-1': ['심야 조사', '심야조사', '자정', '새벽', '조사 금지', '피의자 동의'],
+  '3-2': ['영장실질심사', '판사 심문', '구속 전', '심문 절차'],
+  '3-3': ['석방확인서', '석방 확인', '석방 일시', '귀가'],
+};
+
+// ── 음성 인식 상태 ────────────────────────────────────────────────
+var recognition = null;
+var isListening  = false;
+var toastTimer   = null;
+
+// ── 토글 ─────────────────────────────────────────────────────────
+function toggleVoice() {
+  if (isListening) {
+    stopVoice();
+  } else {
+    startVoice();
+  }
+}
+
+// ── 시작 ─────────────────────────────────────────────────────────
+function startVoice() {
+  var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    setVoiceStatus('이 브라우저는 음성 인식을 지원하지 않습니다. Chrome을 사용해 주세요.', false);
+    return;
+  }
+
+  recognition = new SpeechRecognition();
+  recognition.lang = 'ko-KR';
+  recognition.continuous = true;       // 연속 인식
+  recognition.interimResults = true;   // 중간 결과도 표시
+
+  recognition.onstart = function() {
+    isListening = true;
+    document.getElementById('voiceBtn').className = 'voice-btn listening';
+    setVoiceStatus('음성 인식 중... 말씀하세요', true);
+    startWaveAnimation();
+  };
+
+  recognition.onresult = function(event) {
+    var interim = '';
+    var final   = '';
+
+    for (var i = event.resultIndex; i < event.results.length; i++) {
+      var transcript = event.results[i][0].transcript;
+      if (event.results[i].isFinal) {
+        final += transcript;
+      } else {
+        interim += transcript;
+      }
+    }
+
+    // 중간 결과 표시
+    var display = final || interim;
+    document.getElementById('voiceTranscriptEl').textContent = display;
+    document.getElementById('voiceTranscriptEl').classList.remove('detected');
+
+    // 최종 결과가 나오면 키워드 검사
+    if (final) {
+      checkKeywords(final);
+    }
+  };
+
+  recognition.onerror = function(event) {
+    if (event.error === 'not-allowed') {
+      setVoiceStatus('마이크 권한이 필요합니다. 브라우저 설정에서 허용해 주세요.', false);
+    } else if (event.error === 'no-speech') {
+      setVoiceStatus('음성이 감지되지 않았습니다. 다시 시도해 주세요.', false);
+    } else {
+      setVoiceStatus('음성 인식 오류: ' + event.error, false);
+    }
+    stopVoice();
+  };
+
+  recognition.onend = function() {
+    // continuous 모드에서 끊기면 자동 재시작
+    if (isListening) {
+      try { recognition.start(); } catch(e) {}
+    }
+  };
+
+  try {
+    recognition.start();
+  } catch(e) {
+    setVoiceStatus('음성 인식을 시작할 수 없습니다.', false);
+  }
+}
+
+// ── 정지 ─────────────────────────────────────────────────────────
+function stopVoice() {
+  isListening = false;
+  if (recognition) {
+    recognition.onend = null;
+    recognition.stop();
+    recognition = null;
+  }
+  document.getElementById('voiceBtn').className = 'voice-btn idle';
+  setVoiceStatus('음성 인식 대기 중', false);
+  document.getElementById('voiceTranscriptEl').textContent = '마이크 버튼을 눌러 음성 인식을 시작하세요';
+  document.getElementById('voiceTranscriptEl').classList.remove('detected');
+  stopWaveAnimation();
+}
+
+// ── 키워드 감지 및 자동 체크 ──────────────────────────────────────
+function checkKeywords(text) {
+  var matched = [];
+
+  Object.keys(VOICE_KEYWORDS).forEach(function(itemId) {
+    if (checked[itemId]) return; // 이미 체크된 항목 스킵
+
+    var keywords = VOICE_KEYWORDS[itemId];
+    var hit = keywords.some(function(kw) {
+      return text.indexOf(kw) >= 0;
+    });
+
+    if (hit) {
+      matched.push(itemId);
+    }
+  });
+
+  if (matched.length > 0) {
+    matched.forEach(function(itemId) {
+      autoCheckItem(itemId);
+    });
+
+    // 감지된 텍스트 하이라이트
+    document.getElementById('voiceTranscriptEl').classList.add('detected');
+    document.getElementById('voiceTranscriptEl').textContent = '감지: "' + text.trim() + '"';
+  }
+}
+
+// ── 자동 체크 처리 ────────────────────────────────────────────────
+function autoCheckItem(itemId) {
+  var el = document.querySelector('[data-id="' + itemId + '"]');
+  if (!el || el.classList.contains('checked')) return;
+
+  // 체크 처리
+  checked[itemId] = true;
+  el.classList.add('checked');
+
+  // 하이라이트 효과
+  el.classList.add('voice-highlight');
+  setTimeout(function() { el.classList.remove('voice-highlight'); }, 800);
+
+  // 해당 단계 배지 업데이트
+  var stageIdx = parseInt(itemId.split('-')[0]);
+  updateStageBadge(stageIdx);
+  updateProgress();
+
+  // 해당 단계가 현재 단계가 아니면 자동으로 해당 단계 탭으로 이동해서 보여줌
+  // (선택적 — 현재는 현재 탭 유지)
+
+  // 토스트 메시지
+  showAutoToast(getItemName(itemId));
+
+  // 항목이 있는 위치로 스크롤
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ── 항목명 가져오기 ───────────────────────────────────────────────
+function getItemName(itemId) {
+  var el = document.querySelector('[data-id="' + itemId + '"] .chk-title');
+  if (!el) return itemId;
+  // 태그 안 텍스트만 추출 (span 제외)
+  var text = '';
+  el.childNodes.forEach(function(node) {
+    if (node.nodeType === 3) text += node.textContent;
+  });
+  return text.trim() || itemId;
+}
+
+// ── 토스트 표시 ───────────────────────────────────────────────────
+function showAutoToast(itemName) {
+  var toast = document.getElementById('autoToast');
+  var msg   = document.getElementById('autoToastMsg');
+
+  // 긴 이름 자르기
+  var short = itemName.length > 15 ? itemName.substring(0, 15) + '...' : itemName;
+  msg.textContent = '"' + short + '" 자동 체크됨';
+  toast.classList.add('show');
+
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() {
+    toast.classList.remove('show');
+  }, 2500);
+}
+
+// ── 상태 텍스트 ───────────────────────────────────────────────────
+function setVoiceStatus(text, active) {
+  var el = document.getElementById('voiceStatus');
+  el.textContent = text;
+  el.style.color = active ? '#4ade80' : 'rgba(255,255,255,0.9)';
+}
+
+// ── 웨이브 애니메이션 ─────────────────────────────────────────────
+var waveInterval = null;
+function startWaveAnimation() {
+  var bars = document.querySelectorAll('.wave-bar');
+  bars.forEach(function(b) { b.style.background = '#4ade80'; });
+}
+function stopWaveAnimation() {
+  var bars = document.querySelectorAll('.wave-bar');
+  bars.forEach(function(b) {
+    b.style.background = 'rgba(255,255,255,0.4)';
+    b.style.height = '6px';
+  });
+}
 </script>
 </body>
 </html>

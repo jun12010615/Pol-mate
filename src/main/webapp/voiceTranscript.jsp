@@ -336,7 +336,7 @@
         <div class="card-title">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
           음성 파일 업로드
-          <span style="font-size:9px; background:#fffbeb; color:#92400e; border-radius:4px; padding:2px 6px; margin-left:auto; font-weight:400;">STT 연동 준비중</span>
+          <span style="font-size:9px; background:#eff6ff; color:#1e40af; border-radius:4px; padding:2px 6px; margin-left:auto; font-weight:400;">CLOVA Speech API</span>
         </div>
 
         <div class="upload-zone" id="uploadZone"
@@ -363,6 +363,22 @@
           <button class="file-remove" onclick="removeFile()">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
+        </div>
+
+        <!-- STT 변환 버튼 (파일 선택 후 표시) -->
+        <div id="sttBtnWrap" style="display:none; margin-top:10px;">
+          <button onclick="convertStt()" id="sttBtn"
+            style="width:100%; background:#1e40af; color:#fff; border:none; border-radius:12px;
+                   padding:12px; font-size:13px; font-weight:500; font-family:'Noto Sans KR',sans-serif;
+                   cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+                   transition:transform 0.1s;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="width:16px;height:16px;"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+            CLOVA Speech로 텍스트 변환
+          </button>
+          <!-- STT 처리 중 상태 -->
+          <div id="sttLoading" style="display:none; text-align:center; padding:12px; font-size:12px; color:#1e40af;">
+            <span id="sttLoadingMsg">음성 파일을 CLOVA에 전송 중...</span>
+          </div>
         </div>
       </div>
 
@@ -510,10 +526,70 @@ function showFile(f) {
   document.getElementById('fileName').textContent = f.name;
   document.getElementById('fileSize').textContent = formatSize(f.size);
   document.getElementById('fileSelected').style.display = 'flex';
+  document.getElementById('sttBtnWrap').style.display = 'block';
 }
 function removeFile() {
   document.getElementById('audioFile').value = '';
   document.getElementById('fileSelected').style.display = 'none';
+  document.getElementById('sttBtnWrap').style.display = 'none';
+  document.getElementById('sttLoading').style.display = 'none';
+}
+
+// ── CLOVA Speech API 호출 (SttServlet → CLOVA CSR) ───────────────
+function convertStt() {
+  var fileInput = document.getElementById('audioFile');
+  if (!fileInput.files || !fileInput.files[0]) {
+    alert('음성 파일을 선택해 주세요.');
+    return;
+  }
+
+  var sttBtn     = document.getElementById('sttBtn');
+  var sttLoading = document.getElementById('sttLoading');
+  var sttMsg     = document.getElementById('sttLoadingMsg');
+
+  sttBtn.style.display     = 'none';
+  sttLoading.style.display = 'block';
+  sttMsg.textContent       = '음성 파일을 CLOVA Speech에 전송 중...';
+
+  var formData = new FormData();
+  formData.append('audioFile', fileInput.files[0]);
+  formData.append('language', 'Kor');
+
+  fetch('stt', {
+    method: 'POST',
+    body: formData
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    sttLoading.style.display = 'none';
+    sttBtn.style.display     = 'flex';
+
+    if (data.success) {
+      // 변환된 텍스트를 textarea에 자동 채움
+      var textarea = document.getElementById('stmtText');
+      textarea.value = data.text;
+      document.getElementById('charCount').textContent = data.text.length + '자';
+
+      // 성공 안내
+      sttMsg.textContent = '변환 완료! 아래 텍스트를 확인하세요.';
+      sttLoading.style.display = 'block';
+      sttLoading.style.color   = '#16a34a';
+      setTimeout(function() { sttLoading.style.display = 'none'; }, 3000);
+
+    } else {
+      // API 키 미설정 또는 오류
+      var msg = data.error || 'STT 변환에 실패했습니다.';
+      if (data.error && data.error.indexOf('API 키') >= 0) {
+        msg = 'CLOVA API 키가 설정되지 않았습니다.\nWEB-INF/config.properties에 키를 입력해 주세요.';
+      }
+      alert(msg);
+    }
+  })
+  .catch(function(err) {
+    sttLoading.style.display = 'none';
+    sttBtn.style.display     = 'flex';
+    alert('네트워크 오류: ' + err.message + '\nSttServlet이 등록되어 있는지 확인해 주세요.');
+  });
 }
 function formatSize(b) {
   if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
