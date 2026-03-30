@@ -38,3 +38,6 @@ Desktop.ini
 # ── 환경 설정 (보안) ──────────────────────────────────
 *.env
 application-local.properties
+
+# API 키 보안
+WEB-INF/config.properties
