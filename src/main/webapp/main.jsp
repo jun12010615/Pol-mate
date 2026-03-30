@@ -316,18 +316,15 @@
             <div class="menu-desc">STT + 모순 탐지</div>
           </a>
 
-          <a href="caseRelationMap.jsp" class="menu-card">
+          <a href="procedureCheck.jsp" class="menu-card">
             <div class="menu-icon-wrap mi-green">
               <svg viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="1.8" stroke-linecap="round">
-                <circle cx="6" cy="12" r="2.5"/>
-                <circle cx="18" cy="5" r="2.5"/>
-                <circle cx="18" cy="19" r="2.5"/>
-                <line x1="8.3" y1="10.9" x2="15.7" y2="6.1"/>
-                <line x1="8.3" y1="13.1" x2="15.7" y2="17.9"/>
+                <path d="M9 11l3 3L22 4"/>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
               </svg>
             </div>
-            <div class="menu-name mn-green">사건 관계망</div>
-            <div class="menu-desc">인물·관계 수동 시각화</div>
+            <div class="menu-name mn-green">절차 위반 방지</div>
+            <div class="menu-desc">실시간 체크리스트</div>
           </a>
 
           <a href="askAI" class="menu-card">
@@ -440,9 +437,9 @@
       </div>
       <span class="nav-label">AI</span>
     </a>
-    <a href="lawSearch.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-      <span class="nav-label">법전</span>
+    <a href="board.jsp" class="nav-item">
+      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <span class="nav-label">커뮤니티</span>
     </a>
     <a href="mypage.jsp" class="nav-item">
       <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
