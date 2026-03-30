@@ -144,9 +144,9 @@
       <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
       <span class="nav-label">AI</span>
     </a>
-    <a href="lawSearch.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-      <span class="nav-label">법전</span>
+    <a href="board.jsp" class="nav-item">
+      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <span class="nav-label">커뮤니티</span>
     </a>
     <a href="mypage.jsp" class="nav-item">
       <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
@@ -173,10 +173,10 @@ var NOTIFS = [
     id:2, type:'alert', unread:true, critical:true,
     icon:'ni-amber',
     iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
-    tag:'관계망',
+    tag:'절차 위반',
     title:'변호인 고지 누락 경고',
     desc:'사건 2024-0255(협박사건) 진행 중 변호인 조력권 고지 여부가 확인되지 않았습니다.',
-    time:'12분 전', link:'caseRelationMap.jsp'
+    time:'12분 전', link:'procedureCheck.jsp'
   },
   {
     id:3, type:'case', unread:true, critical:false,
@@ -191,10 +191,10 @@ var NOTIFS = [
     id:4, type:'case', unread:true, critical:false,
     icon:'ni-green',
     iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="1.8" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
-    tag:'관계망',
-    title:'사건 2024-0271 관계망 확인',
-    desc:'사기사건 인물 관계망을 확인하고 보드를 업데이트하세요.',
-    time:'3시간 전', link:'caseRelationMap.jsp'
+    tag:'절차 점검',
+    title:'사건 2024-0271 절차 점검 완료',
+    desc:'사기사건 전체 수사 절차가 적법하게 이행된 것으로 확인되었습니다.',
+    time:'3시간 전', link:'procedureCheck.jsp'
   },
   {
     id:5, type:'sys', unread:false, critical:false,
