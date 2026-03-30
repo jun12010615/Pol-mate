@@ -447,28 +447,137 @@ function doSearch() {
   document.getElementById('resultSection').style.display  = 'none';
 
   if (aiModeOn) {
-    // AI 모드
+    // AI 모드 — Ollama로 법령 해석
     document.getElementById('aiCard').style.display = 'block';
     document.getElementById('aiBody').innerHTML =
       '<div class="ai-spinner"><div class="spinner-sm"></div><span style="font-size:12px;color:var(--text-muted);">Ollama 분석 중...</span></div>';
     callLawAI(q);
   } else {
-    // 키워드 검색
-    var results = LAW_DB.filter(function(l) {
-      return l.name.includes(q) || l.num.includes(q) || l.act.includes(q) ||
-             l.preview.includes(q) || l.tags.some(function(t) { return t.includes(q.replace(' ','')); });
-    });
-    document.getElementById('resultCount').textContent = results.length + '건';
-    document.getElementById('resultSection').style.display = 'block';
-    if (!results.length) {
-      document.getElementById('emptyState').style.display = 'block';
-      document.getElementById('resultSection').style.display = 'none';
-    } else {
-      renderLaws(results);
-    }
+    // ── 국가법령정보 API 호출 (LawApiServlet 경유) ──────────────
+    document.getElementById('aiCard').style.display = 'block';
+    document.getElementById('aiBody').innerHTML =
+      '<div class="ai-spinner"><div class="spinner-sm"></div>' +
+      '<span style="font-size:12px;color:var(--text-muted);">국가법령정보 검색 중...</span></div>';
+
+    fetch('lawApi?query=' + encodeURIComponent(q) + '&target=law&display=10')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        document.getElementById('aiCard').style.display = 'none';
+
+        // API 키 미설정 또는 오류 → 내장 DB 폴백
+        if (!data.success || data.fallback) {
+          searchLocalDb(q);
+          return;
+        }
+
+        // API 응답 파싱
+        // 응답 구조: data.data.LawSearch.law = [{법령명한글, 법령일련번호, ...}]
+        try {
+          var lawSearch = data.data.LawSearch;
+          var laws = lawSearch.law;
+          if (!laws) { searchLocalDb(q); return; }
+
+          // 배열이 아닌 경우(결과 1건) 배열로 변환
+          if (!Array.isArray(laws)) laws = [laws];
+
+          document.getElementById('resultCount').textContent = (lawSearch.totalCnt || laws.length) + '건';
+          document.getElementById('resultSection').style.display = 'block';
+
+          if (laws.length === 0) {
+            document.getElementById('emptyState').style.display = 'block';
+            document.getElementById('resultSection').style.display = 'none';
+          } else {
+            renderApiLaws(laws);
+          }
+        } catch(e) {
+          // JSON 파싱 실패 시 내장 DB로 폴백
+          searchLocalDb(q);
+        }
+      })
+      .catch(function() {
+        document.getElementById('aiCard').style.display = 'none';
+        // 서블릿 연결 실패 시 내장 DB 폴백
+        searchLocalDb(q);
+      });
   }
   window.scrollTo(0, 0);
 }
+
+// ── 내장 DB 검색 (폴백) ──────────────────────────────────────────
+function searchLocalDb(q) {
+  var results = LAW_DB.filter(function(l) {
+    return l.name.includes(q) || l.num.includes(q) || l.act.includes(q) ||
+           l.preview.includes(q) || l.tags.some(function(t) { return t.includes(q.replace(' ','')); });
+  });
+  document.getElementById('resultCount').textContent = results.length + '건 (내장 DB)';
+  document.getElementById('resultSection').style.display = 'block';
+  if (!results.length) {
+    document.getElementById('emptyState').style.display = 'block';
+    document.getElementById('resultSection').style.display = 'none';
+  } else {
+    renderLaws(results);
+  }
+}
+
+// ── 국가법령정보 API 결과 렌더 ────────────────────────────────────
+function renderApiLaws(laws) {
+  var html = laws.map(function(l, i) {
+    var lawName = l['법령명한글'] || l['법령명'] || '';
+    var mst     = l['법령일련번호'] || '';
+    var dept    = l['소관부처명'] || '';
+    var date    = l['시행일자']   || '';
+    return '<div class="law-card" style="animation-delay:' + (i*0.06) + 's" onclick="openApiLaw(\'' + mst + '\',\'' + escStr(lawName) + '\')">' +
+      '<div class="law-card-top">' +
+        '<div>' +
+          '<div class="law-act">' + dept + '</div>' +
+          '<div class="law-name">' + lawName + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="law-preview">시행일: ' + date + '</div>' +
+      '<div class="law-tags">' +
+        '<span class="law-tag">국가법령정보 API</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  document.getElementById('lawList').innerHTML = html;
+}
+
+// ── 국가법령정보 API 법령 상세 조회 ──────────────────────────────
+function openApiLaw(mst, lawName) {
+  if (!mst) return;
+
+  // 드로어 열고 로딩 상태 표시
+  document.getElementById('drawerAct').textContent      = '국가법령정보';
+  document.getElementById('drawerLawTitle').textContent = lawName;
+  document.getElementById('drawerFullText').textContent = '조문 로딩 중...';
+  document.getElementById('drawerInterpText').textContent = '';
+  document.getElementById('aiExplainBox').style.display = 'none';
+  document.getElementById('lawDrawer').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  currentLawId = null; // API 조회 모드
+
+  fetch('lawApi?query=' + encodeURIComponent(lawName) + '&mst=' + encodeURIComponent(mst))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.success || !data.contentData) {
+        document.getElementById('drawerFullText').textContent = '조문 조회에 실패했습니다.';
+        return;
+      }
+      try {
+        // 법령 본문 파싱
+        // 구조: contentData.법령.조문.조문내용 등 (API 버전마다 상이)
+        var contentStr = JSON.stringify(data.contentData, null, 2);
+        document.getElementById('drawerFullText').textContent = contentStr;
+      } catch(e) {
+        document.getElementById('drawerFullText').textContent = JSON.stringify(data.contentData);
+      }
+    })
+    .catch(function() {
+      document.getElementById('drawerFullText').textContent = '조문 조회 중 오류가 발생했습니다.';
+    });
+}
+
+function escStr(s) { return (s||'').replace(/'/g, "\\'"); }
 
 // ── 법령 렌더 ────────────────────────────────────────────────────
 function renderLaws(list) {
