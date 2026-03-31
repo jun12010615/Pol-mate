@@ -242,8 +242,61 @@
 </head>
 <body>
 
+<%@ page import="java.sql.*, Servlet.DBConnectionMgr" %>
 <%
-  String userName = "김민준";
+  String loginUser = (String) session.getAttribute("loginUser");
+  if (loginUser == null) { response.sendRedirect("login.jsp"); return; }
+  String userName = (String) session.getAttribute("userName");
+  if (userName == null) userName = loginUser;
+
+  int cntActive = 0, cntContradiction = 0, cntTranscript = 0;
+  String alertCaseId = null, alertCaseName = null;
+  java.util.List<String[]> recentCases = new java.util.ArrayList<>();
+
+  DBConnectionMgr mgr = DBConnectionMgr.getInstance();
+  java.sql.Connection conn = null;
+  try {
+    conn = mgr.getConnection();
+
+    java.sql.PreparedStatement ps1 = conn.prepareStatement(
+      "SELECT COUNT(*) FROM CASES c JOIN TEAM_MEMBERS tm ON c.team_id=tm.team_id WHERE tm.user_id=? AND c.status!='완료'");
+    ps1.setString(1, loginUser);
+    java.sql.ResultSet rs1 = ps1.executeQuery();
+    if (rs1.next()) cntActive = rs1.getInt(1);
+    rs1.close(); ps1.close();
+
+    java.sql.PreparedStatement ps2 = conn.prepareStatement(
+      "SELECT COUNT(DISTINCT t.transcript_id) FROM TRANSCRIPTS t JOIN CASES c ON t.case_id=c.case_id JOIN TEAM_MEMBERS tm ON c.team_id=tm.team_id WHERE tm.user_id=? AND t.has_contradiction=1");
+    ps2.setString(1, loginUser);
+    java.sql.ResultSet rs2 = ps2.executeQuery();
+    if (rs2.next()) cntContradiction = rs2.getInt(1);
+    rs2.close(); ps2.close();
+
+    java.sql.PreparedStatement ps3 = conn.prepareStatement("SELECT COUNT(*) FROM TRANSCRIPTS WHERE user_id=?");
+    ps3.setString(1, loginUser);
+    java.sql.ResultSet rs3 = ps3.executeQuery();
+    if (rs3.next()) cntTranscript = rs3.getInt(1);
+    rs3.close(); ps3.close();
+
+    java.sql.PreparedStatement ps4 = conn.prepareStatement(
+      "SELECT c.case_id,c.case_name FROM CASES c JOIN TEAM_MEMBERS tm ON c.team_id=tm.team_id WHERE tm.user_id=? AND c.status='모순탐지' ORDER BY c.updated_at DESC LIMIT 1");
+    ps4.setString(1, loginUser);
+    java.sql.ResultSet rs4 = ps4.executeQuery();
+    if (rs4.next()) { alertCaseId=rs4.getString(1); alertCaseName=rs4.getString(2); }
+    rs4.close(); ps4.close();
+
+    java.sql.PreparedStatement ps5 = conn.prepareStatement(
+      "SELECT c.case_id,c.case_name,c.status,c.updated_at FROM CASES c JOIN TEAM_MEMBERS tm ON c.team_id=tm.team_id WHERE tm.user_id=? ORDER BY c.updated_at DESC LIMIT 3");
+    ps5.setString(1, loginUser);
+    java.sql.ResultSet rs5 = ps5.executeQuery();
+    while (rs5.next()) {
+      String upd = rs5.getString("updated_at");
+      recentCases.add(new String[]{ rs5.getString("case_id"), rs5.getString("case_name"), rs5.getString("status"), upd!=null?upd.substring(0,10):"" });
+    }
+    rs5.close(); ps5.close();
+
+  } catch (Exception e) { e.printStackTrace(); }
+  finally { mgr.freeConnection(conn); }
 %>
 
 <div class="screen">
@@ -286,12 +339,14 @@
 
   <!-- 경고 배너 -->
   <div class="alert-strip">
+    <% if (alertCaseId != null) { %>
     <div class="alert-banner" onclick="location.href='caseList.jsp'">
       <div class="alert-pulse"></div>
       <div class="alert-text">
-        <strong>사건 2024-0312</strong> — 진술 모순이 탐지되었습니다. 검토가 필요합니다.
+        <strong>사건 <%= alertCaseId %></strong> — 진술 모순이 탐지되었습니다. 검토가 필요합니다.
       </div>
     </div>
+    <% } %>
   </div>
 
   <!-- ══ 콘텐츠 ══ -->
@@ -369,16 +424,16 @@
     <!-- 통계 -->
     <div class="stats-row">
       <div class="stat-card">
-        <div class="stat-val">12</div>
+        <div class="stat-val"><%= cntActive %></div>
         <div class="stat-lbl">진행 사건</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val red">3</div>
+        <div class="stat-val red"><%= cntContradiction %></div>
         <div class="stat-lbl">모순 탐지</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val">28</div>
-        <div class="stat-lbl">완료 조서</div>
+        <div class="stat-val"><%= cntTranscript %></div>
+        <div class="stat-lbl">작성 조서</div>
       </div>
     </div>
 
@@ -386,27 +441,25 @@
     <div class="sec-pad">
       <div class="sec-label">최근 사건</div>
       <div class="case-list">
-        <a href="caseList.jsp" class="case-item urgent" style="animation-delay:0.05s">
+      <%
+        String[] delays = {"0.05s","0.1s","0.15s"};
+        for (int ci=0; ci<recentCases.size(); ci++) {
+          String[] rc = recentCases.get(ci);
+          String rcId=rc[0], rcName=rc[1], rcStatus=rc[2], rcDate=rc[3];
+          boolean isUrgent = "모순탐지".equals(rcStatus);
+          String badgeCls = "진행중".equals(rcStatus)?"bo":"완료".equals(rcStatus)?"bi":"모순탐지".equals(rcStatus)?"bw bd2":"bd2";
+      %>
+        <a href="caseList.jsp" class="case-item <%= isUrgent?"urgent":"" %>" style="animation-delay:<%= delays[ci] %>">
           <div>
-            <div class="case-title">2024-0312 절도사건</div>
-            <div class="case-meta">2025.03.24 · 진술 분석 완료</div>
+            <div class="case-title"><%= rcId %> <%= rcName %></div>
+            <div class="case-meta"><%= rcDate %></div>
           </div>
-          <span class="badge bw">검토필요</span>
+          <span class="badge <%= badgeCls %>"><%= rcStatus %></span>
         </a>
-        <a href="caseList.jsp" class="case-item" style="animation-delay:0.1s">
-          <div>
-            <div class="case-title">2024-0289 폭행사건</div>
-            <div class="case-meta">2025.03.21 · 조서 작성 중</div>
-          </div>
-          <span class="badge bo">진행중</span>
-        </a>
-        <a href="caseList.jsp" class="case-item" style="animation-delay:0.15s">
-          <div>
-            <div class="case-title">2024-0271 사기사건</div>
-            <div class="case-meta">2025.03.18 · 관계망 업데이트</div>
-          </div>
-          <span class="badge bi">완료</span>
-        </a>
+      <% } %>
+      <% if (recentCases.isEmpty()) { %>
+        <div style="text-align:center;padding:24px;color:var(--tm);font-size:13px;">배정된 사건이 없습니다.</div>
+      <% } %>
       </div>
     </div>
 
