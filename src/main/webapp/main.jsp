@@ -357,8 +357,8 @@
         <!-- 주요 기능 -->
         <div class="sec-label">주요 기능</div>
         <div class="menu-grid">
-
-          <a href="voiceTranscript.jsp" class="menu-card">
+    
+		<a href="writeTranscript.jsp" class="menu-card">
             <div class="menu-icon-wrap mi-navy">
               <svg viewBox="0 0 24 24" fill="none" stroke="#1a2744" stroke-width="1.8" stroke-linecap="round">
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
@@ -367,7 +367,7 @@
                 <line x1="8" y1="23" x2="16" y2="23"/>
               </svg>
             </div>
-            <div class="menu-name mn-navy">음성 조서 변환</div>
+            <div class="menu-name mn-navy">조서 작성</div>
             <div class="menu-desc">STT + 모순 탐지</div>
           </a>
 
