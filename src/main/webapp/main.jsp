@@ -316,15 +316,18 @@
             <div class="menu-desc">STT + 모순 탐지</div>
           </a>
 
-          <a href="procedureCheck.jsp" class="menu-card">
+          <a href="caseRelationMap.jsp" class="menu-card">
             <div class="menu-icon-wrap mi-green">
               <svg viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="1.8" stroke-linecap="round">
-                <path d="M9 11l3 3L22 4"/>
-                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                <circle cx="6" cy="12" r="2.5"/>
+                <circle cx="18" cy="5" r="2.5"/>
+                <circle cx="18" cy="19" r="2.5"/>
+                <line x1="8.4" y1="11.0" x2="15.6" y2="6.5"/>
+                <line x1="8.4" y1="13.0" x2="15.6" y2="17.5"/>
               </svg>
             </div>
-            <div class="menu-name mn-green">절차 위반 방지</div>
-            <div class="menu-desc">실시간 체크리스트</div>
+            <div class="menu-name mn-green">사건 관계망</div>
+            <div class="menu-desc">인물 · 관계 시각화</div>
           </a>
 
           <a href="askAI" class="menu-card">
@@ -400,7 +403,7 @@
         <a href="caseList.jsp" class="case-item" style="animation-delay:0.15s">
           <div>
             <div class="case-title">2024-0271 사기사건</div>
-            <div class="case-meta">2025.03.18 · 절차 점검 완료</div>
+            <div class="case-meta">2025.03.18 · 관계망 업데이트</div>
           </div>
           <span class="badge bi">완료</span>
         </a>

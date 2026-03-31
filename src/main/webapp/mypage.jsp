@@ -624,12 +624,13 @@
         <div class="menu-row">
           <div class="menu-icon-wrap bg-purple">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" class="stroke-purple">
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              <circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="18" cy="19" r="2.5"/>
+              <line x1="8.4" y1="11.0" x2="15.6" y2="6.5"/><line x1="8.4" y1="13.0" x2="15.6" y2="17.5"/>
             </svg>
           </div>
           <div class="menu-text">
-            <div class="menu-name">절차 위반 경고</div>
-            <div class="menu-sub">실시간 팝업 경고 알림</div>
+            <div class="menu-name">관계망 변경 알림</div>
+            <div class="menu-sub">인물·관계 업데이트 알림</div>
           </div>
           <div class="menu-right">
             <label class="toggle-wrap">
@@ -810,7 +811,7 @@
       <div class="history-item">
         <div>
           <div class="h-title">2024-0271 사기사건</div>
-          <div class="h-meta">2025.03.18 · 절차 점검 완료</div>
+          <div class="h-meta">2025.03.18 · 관계망 업데이트</div>
         </div>
         <span class="h-badge h-badge-done">완료</span>
       </div>
@@ -970,7 +971,7 @@ function renderStats(period) {
     '<div class="stat-tile"><div class="tile-num">' + s.cases  + '</div><div class="tile-lbl">담당 사건</div></div>' +
     '<div class="stat-tile"><div class="tile-num">' + s.docs   + '</div><div class="tile-lbl">조서 처리</div></div>' +
     '<div class="stat-tile"><div class="tile-num">' + s.contra + '</div><div class="tile-lbl">모순 탐지</div></div>' +
-    '<div class="stat-tile"><div class="tile-num">' + s.proc   + '</div><div class="tile-lbl">절차 점검</div></div>';
+    '<div class="stat-tile"><div class="tile-num">' + s.proc   + '</div><div class="tile-lbl">관계망 등록</div></div>';
   const data   = BAR_DATA[period];
   const labels = BAR_LABELS[period];
   const mx     = Math.max(...data);
