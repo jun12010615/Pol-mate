@@ -1,363 +1,689 @@
 package Servlet;
 
-import BoardDAO.BoardDAO;
-import BoardDTO.*;
-
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
-import jakarta.servlet.annotation.WebServlet;
 import java.io.*;
-import java.util.List;
+import java.sql.*;
+import java.util.*;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
- * BoardServlet
- * board.jsp 의 모든 AJAX 요청을 처리합니다.
+ * 커뮤니티 게시판 서블릿
+ * URL: /board
  *
- * [URL 구조]
- * GET  /board                          → board.jsp 포워드 (목록 페이지)
- * GET  /board?action=list              → 게시글 목록 JSON
- * GET  /board?action=detail&postId=1   → 게시글 상세 JSON
- * POST /board?action=write             → 게시글 등록
- * POST /board?action=delete            → 게시글 삭제
- * POST /board?action=comment           → 댓글 등록
- * POST /board?action=like              → 좋아요 토글 (post / comment)
+ * action 파라미터로 기능 분기:
+ *   list    - 게시글 목록 조회 (GET)
+ *   detail  - 게시글 상세 + 댓글 조회 (GET)
+ *   write   - 게시글 등록 (POST)
+ *   delete  - 게시글 삭제 (POST)
+ *   comment - 댓글 등록 (POST)
+ *   like    - 게시글/댓글 추천 토글 (POST)
  */
 @WebServlet("/board")
 public class BoardServlet extends HttpServlet {
 
-    private BoardDAO boardDAO;
-
+    /* ═══════════════════════════════════════════════
+       GET  →  list / detail
+    ═══════════════════════════════════════════════ */
     @Override
-    public void init() {
-        boardDAO = new BoardDAO();
-    }
-
-    // ═══════════════════════════════════════════════════════
-    // GET
-    // ═══════════════════════════════════════════════════════
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        req.setCharacterEncoding("UTF-8");
-        resp.setCharacterEncoding("UTF-8");
+        response.setContentType("application/json;charset=UTF-8");
+        request.setCharacterEncoding("UTF-8");
 
-        String action = req.getParameter("action");
-
-        // action 없으면 → board.jsp 포워드
-        if (action == null) {
-            req.getRequestDispatcher("/board.jsp").forward(req, resp);
+        // 세션 체크
+        HttpSession session = request.getSession(false);
+        String loginUser = (session != null) ? (String) session.getAttribute("loginUser") : null;
+        if (loginUser == null) {
+            response.getWriter().write("{\"error\":\"로그인이 필요합니다.\"}");
             return;
         }
 
-        resp.setContentType("application/json; charset=UTF-8");
-        PrintWriter out = resp.getWriter();
-
-        // 로그인 체크
-        HttpSession session = req.getSession(false);
-        if (session == null || session.getAttribute("loginUser") == null) {
-            out.print("{\"result\":\"fail\",\"msg\":\"로그인이 필요합니다.\"}");
-            return;
-        }
-        String loginUserId = (String) session.getAttribute("loginUser");
+        String action = request.getParameter("action");
+        if (action == null) action = "list";
 
         switch (action) {
-
-            // ── 게시글 목록 ──────────────────────────────────
-            case "list":
-                String category = nvl(req.getParameter("category"), "all");
-                String keyword  = nvl(req.getParameter("keyword"),  "");
-                String sort     = nvl(req.getParameter("sort"),     "latest");
-
-                List<BoardPostDTO> posts = boardDAO.getPostList(category, keyword, sort, loginUserId);
-                out.print(postListToJson(posts));
-                break;
-
-            // ── 게시글 상세 ──────────────────────────────────
-            case "detail":
-                int postId = toInt(req.getParameter("postId"), 0);
-                if (postId == 0) {
-                    out.print("{\"result\":\"fail\",\"msg\":\"잘못된 요청입니다.\"}");
-                    break;
-                }
-                boardDAO.increaseViewCount(postId);
-                BoardPostDTO post = boardDAO.getPostById(postId, loginUserId);
-                List<BoardCommentDTO> comments = boardDAO.getComments(postId, loginUserId);
-
-                if (post == null) {
-                    out.print("{\"result\":\"fail\",\"msg\":\"게시글을 찾을 수 없습니다.\"}");
-                } else {
-                    out.print(postDetailToJson(post, comments));
-                }
-                break;
-
+            case "list":   handleList(request, response, loginUser);   break;
+            case "detail": handleDetail(request, response, loginUser); break;
             default:
-                out.print("{\"result\":\"fail\",\"msg\":\"알 수 없는 요청입니다.\"}");
+                response.getWriter().write("{\"error\":\"알 수 없는 action\"}");
         }
     }
 
-    // ═══════════════════════════════════════════════════════
-    // POST
-    // ═══════════════════════════════════════════════════════
+    /* ═══════════════════════════════════════════════
+       POST  →  write / delete / comment / like
+    ═══════════════════════════════════════════════ */
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        req.setCharacterEncoding("UTF-8");
-        resp.setCharacterEncoding("UTF-8");
-        resp.setContentType("application/json; charset=UTF-8");
+        response.setContentType("application/json;charset=UTF-8");
+        request.setCharacterEncoding("UTF-8");
 
-        PrintWriter out = resp.getWriter();
-
-        // 로그인 체크
-        HttpSession session = req.getSession(false);
-        if (session == null || session.getAttribute("loginUser") == null) {
-            out.print("{\"result\":\"fail\",\"msg\":\"로그인이 필요합니다.\"}");
+        // 세션 체크
+        HttpSession session = request.getSession(false);
+        String loginUser = (session != null) ? (String) session.getAttribute("loginUser") : null;
+        if (loginUser == null) {
+            response.getWriter().write("{\"error\":\"로그인이 필요합니다.\"}");
             return;
         }
-        String loginUserId = (String) session.getAttribute("loginUser");
 
-        String action = nvl(req.getParameter("action"), "");
+        String action = request.getParameter("action");
+        if (action == null) action = "";
 
         switch (action) {
-
-            // ── 게시글 등록 ──────────────────────────────────
-            case "write":
-                String category = nvl(req.getParameter("category"), "");
-                String title    = nvl(req.getParameter("title"),    "");
-                String content  = nvl(req.getParameter("content"),  "");
-                String tagsRaw  = nvl(req.getParameter("tags"),     "");
-
-                if (category.isEmpty() || title.isEmpty() || content.isEmpty()) {
-                    out.print("{\"result\":\"fail\",\"msg\":\"카테고리, 제목, 내용은 필수입니다.\"}");
-                    break;
-                }
-
-                BoardPostDTO newPost = new BoardPostDTO();
-                newPost.setUserId(loginUserId);
-                newPost.setCategory(category);
-                newPost.setTitle(title);
-                newPost.setContent(content);
-
-                // 태그 파싱 (쉼표 구분)
-                if (!tagsRaw.isEmpty()) {
-                    List<BoardTagDTO> tagList = new java.util.ArrayList<>();
-                    for (String t : tagsRaw.split(",")) {
-                        String trimmed = t.trim();
-                        if (!trimmed.isEmpty()) {
-                            tagList.add(new BoardTagDTO(0, trimmed));
-                        }
-                    }
-                    newPost.setTags(tagList);
-                }
-
-                // 구매링크 파싱 (gear 전용, 최대 3개)
-                // 파라미터: linkName0, linkUrl0, linkName1, linkUrl1, linkName2, linkUrl2
-                if ("gear".equals(category)) {
-                    List<BoardLinkDTO> linkList = new java.util.ArrayList<>();
-                    for (int i = 0; i < 3; i++) {
-                        String lName = nvl(req.getParameter("linkName" + i), "");
-                        String lUrl  = nvl(req.getParameter("linkUrl"  + i), "");
-                        if (!lName.isEmpty() && !lUrl.isEmpty()) {
-                            linkList.add(new BoardLinkDTO(0, lName, lUrl));
-                        }
-                    }
-                    newPost.setLinks(linkList);
-                }
-
-                boolean writeOk = boardDAO.insertPost(newPost);
-                out.print(writeOk
-                    ? "{\"result\":\"ok\",\"msg\":\"게시글이 등록됐습니다.\",\"postId\":" + newPost.getPostId() + "}"
-                    : "{\"result\":\"fail\",\"msg\":\"게시글 등록에 실패했습니다.\"}");
-                break;
-
-            // ── 게시글 삭제 ──────────────────────────────────
-            case "delete":
-                int deletePostId = toInt(req.getParameter("postId"), 0);
-                if (deletePostId == 0) {
-                    out.print("{\"result\":\"fail\",\"msg\":\"잘못된 요청입니다.\"}");
-                    break;
-                }
-                boolean deleteOk = boardDAO.deletePost(deletePostId, loginUserId);
-                out.print(deleteOk
-                    ? "{\"result\":\"ok\",\"msg\":\"삭제됐습니다.\"}"
-                    : "{\"result\":\"fail\",\"msg\":\"삭제 권한이 없거나 실패했습니다.\"}");
-                break;
-
-            // ── 댓글 등록 ────────────────────────────────────
-            case "comment":
-                int commentPostId = toInt(req.getParameter("postId"), 0);
-                String commentContent = nvl(req.getParameter("content"), "");
-
-                if (commentPostId == 0 || commentContent.isEmpty()) {
-                    out.print("{\"result\":\"fail\",\"msg\":\"댓글 내용을 입력하세요.\"}");
-                    break;
-                }
-
-                BoardCommentDTO newComment = new BoardCommentDTO();
-                newComment.setPostId(commentPostId);
-                newComment.setUserId(loginUserId);
-                newComment.setContent(commentContent);
-
-                boolean commentOk = boardDAO.insertComment(newComment);
-                out.print(commentOk
-                    ? "{\"result\":\"ok\",\"msg\":\"댓글이 등록됐습니다.\"}"
-                    : "{\"result\":\"fail\",\"msg\":\"댓글 등록에 실패했습니다.\"}");
-                break;
-
-            // ── 좋아요 토글 ──────────────────────────────────
-            // targetType: "post" | "comment"
-            case "like":
-                String targetType = nvl(req.getParameter("targetType"), "");
-                int    targetId   = toInt(req.getParameter("targetId"), 0);
-
-                if (targetId == 0 || (!targetType.equals("post") && !targetType.equals("comment"))) {
-                    out.print("{\"result\":\"fail\",\"msg\":\"잘못된 요청입니다.\"}");
-                    break;
-                }
-
-                BoardLikeDTO likeDto = new BoardLikeDTO(loginUserId, targetType, targetId);
-                boolean alreadyLiked = boardDAO.isLiked(loginUserId, targetType, targetId);
-
-                boolean likeOk;
-                String  likeState;
-                if (alreadyLiked) {
-                    likeOk    = boardDAO.deleteLike(likeDto);
-                    likeState = "unliked";
-                } else {
-                    likeOk    = boardDAO.insertLike(likeDto);
-                    likeState = "liked";
-                }
-
-                out.print(likeOk
-                    ? "{\"result\":\"ok\",\"state\":\"" + likeState + "\"}"
-                    : "{\"result\":\"fail\",\"msg\":\"좋아요 처리에 실패했습니다.\"}");
-                break;
-
+            case "write":   handleWrite(request, response, loginUser);   break;
+            case "delete":  handleDelete(request, response, loginUser);  break;
+            case "comment": handleComment(request, response, loginUser); break;
+            case "like":    handleLike(request, response, loginUser);    break;
             default:
-                out.print("{\"result\":\"fail\",\"msg\":\"알 수 없는 요청입니다.\"}");
+                response.getWriter().write("{\"error\":\"알 수 없는 action\"}");
         }
     }
 
-    // ═══════════════════════════════════════════════════════
-    // JSON 직렬화 - 게시글 목록
-    // ═══════════════════════════════════════════════════════
-    private String postListToJson(List<BoardPostDTO> list) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{\"result\":\"ok\",\"posts\":[");
-        for (int i = 0; i < list.size(); i++) {
-            BoardPostDTO p = list.get(i);
-            if (i > 0) sb.append(",");
-            sb.append("{");
-            sb.append("\"postId\":"      ).append(p.getPostId()).append(",");
-            sb.append("\"userId\":\""    ).append(esc(p.getUserId())).append("\",");
-            sb.append("\"userName\":\""  ).append(esc(p.getUserName())).append("\",");
-            sb.append("\"category\":\""  ).append(esc(p.getCategory())).append("\",");
-            sb.append("\"title\":\""     ).append(esc(p.getTitle())).append("\",");
-            sb.append("\"preview\":\""   ).append(esc(preview(p.getContent()))).append("\",");
-            sb.append("\"viewCount\":"   ).append(p.getViewCount()).append(",");
-            sb.append("\"likeCount\":"   ).append(p.getLikeCount()).append(",");
-            sb.append("\"commentCount\":").append(p.getCommentCount()).append(",");
-            sb.append("\"isHot\":"       ).append(p.isHot()).append(",");
-            sb.append("\"createdAt\":\""  ).append(p.getCreatedAt()).append("\"");
-            sb.append("}");
-        }
-        sb.append("]}");
-        return sb.toString();
-    }
+    /* ═══════════════════════════════════════════════
+       게시글 목록 조회
+       파라미터: category(all/tip/gear/free/mine), sort(latest/popular), keyword
+    ═══════════════════════════════════════════════ */
+    private void handleList(HttpServletRequest req, HttpServletResponse res, String loginUser)
+            throws IOException {
 
-    // ═══════════════════════════════════════════════════════
-    // JSON 직렬화 - 게시글 상세
-    // ═══════════════════════════════════════════════════════
-    private String postDetailToJson(BoardPostDTO p, List<BoardCommentDTO> comments) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{\"result\":\"ok\",\"post\":{");
-        sb.append("\"postId\":"     ).append(p.getPostId()).append(",");
-        sb.append("\"userId\":\""   ).append(esc(p.getUserId())).append("\",");
-        sb.append("\"userName\":\"" ).append(esc(p.getUserName())).append("\",");
-        sb.append("\"category\":\"" ).append(esc(p.getCategory())).append("\",");
-        sb.append("\"title\":\""    ).append(esc(p.getTitle())).append("\",");
-        sb.append("\"content\":\""  ).append(esc(p.getContent())).append("\",");
-        sb.append("\"viewCount\":"  ).append(p.getViewCount()).append(",");
-        sb.append("\"likeCount\":"  ).append(p.getLikeCount()).append(",");
-        sb.append("\"isHot\":"      ).append(p.isHot()).append(",");
-        sb.append("\"liked\":"      ).append(p.isLikedByCurrentUser()).append(",");
-        sb.append("\"createdAt\":\"").append(p.getCreatedAt()).append("\",");
-        sb.append("\"updatedAt\":\"").append(p.getUpdatedAt()).append("\",");
+        String category = req.getParameter("category");
+        String sort     = req.getParameter("sort");
+        String keyword  = req.getParameter("keyword");
+        if (category == null || category.isEmpty()) category = "all";
+        if (sort     == null || sort.isEmpty())     sort     = "latest";
+        if (keyword  == null) keyword = "";
 
-        // 태그
-        sb.append("\"tags\":[");
-        List<BoardTagDTO> tags = p.getTags();
-        if (tags != null) {
-            for (int i = 0; i < tags.size(); i++) {
-                if (i > 0) sb.append(",");
-                sb.append("\"").append(esc(tags.get(i).getTagName())).append("\"");
+        DBConnectionMgr mgr = DBConnectionMgr.getInstance();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = mgr.getConnection();
+
+            // 동적 쿼리 구성
+            StringBuilder sql = new StringBuilder(
+                "SELECT p.post_id, p.category, p.title, p.content, " +
+                "p.view_count, p.like_count, p.created_at, " +
+                "p.user_id, u.user_name, u.user_rank, " +
+                "(SELECT COUNT(*) FROM board_comments bc WHERE bc.post_id = p.post_id) AS comment_count " +
+                "FROM board_posts p " +
+                "LEFT JOIN users u ON p.user_id = u.user_id " +
+                "WHERE 1=1 "
+            );
+
+            List<Object> params = new ArrayList<>();
+
+            // 카테고리 필터
+            if ("mine".equals(category)) {
+                sql.append("AND p.user_id = ? ");
+                params.add(loginUser);
+            } else if (!"all".equals(category)) {
+                sql.append("AND p.category = ? ");
+                params.add(category);
             }
-        }
-        sb.append("],");
 
-        // 구매링크
-        sb.append("\"links\":[");
-        List<BoardLinkDTO> links = p.getLinks();
-        if (links != null) {
-            for (int i = 0; i < links.size(); i++) {
-                if (i > 0) sb.append(",");
-                sb.append("{");
-                sb.append("\"linkName\":\"").append(esc(links.get(i).getLinkName())).append("\",");
-                sb.append("\"linkUrl\":\"" ).append(esc(links.get(i).getLinkUrl())).append("\"");
-                sb.append("}");
+            // 키워드 검색
+            if (!keyword.isEmpty()) {
+                sql.append("AND (p.title LIKE ? OR p.content LIKE ?) ");
+                params.add("%" + keyword + "%");
+                params.add("%" + keyword + "%");
             }
+
+            // 정렬
+            if ("popular".equals(sort)) {
+                sql.append("ORDER BY p.like_count DESC, p.created_at DESC ");
+            } else {
+                sql.append("ORDER BY p.created_at DESC ");
+            }
+
+            pstmt = conn.prepareStatement(sql.toString());
+            for (int i = 0; i < params.size(); i++) {
+                pstmt.setObject(i + 1, params.get(i));
+            }
+            rs = pstmt.executeQuery();
+
+            JSONArray arr = new JSONArray();
+            while (rs.next()) {
+                int postId = rs.getInt("post_id");
+                JSONObject p = new JSONObject();
+                p.put("id",           postId);
+                p.put("cat",          rs.getString("category"));
+                p.put("title",        rs.getString("title"));
+
+                // 미리보기: 최대 80자
+                String content = rs.getString("content");
+                p.put("preview", content != null && content.length() > 80
+                        ? content.substring(0, 80) + "..." : content);
+
+                p.put("views",        rs.getInt("view_count"));
+                p.put("likes",        rs.getInt("like_count"));
+                p.put("commentCount", rs.getInt("comment_count"));
+                p.put("hot",          rs.getInt("like_count") >= 20);
+                p.put("userId",       rs.getString("user_id"));
+                p.put("author",       rs.getString("user_name"));
+                p.put("authorRank",   rs.getString("user_rank"));
+                p.put("isMine",       loginUser.equals(rs.getString("user_id")));
+
+                // 날짜 포맷 (yyyy.MM.dd)
+                Timestamp ts = rs.getTimestamp("created_at");
+                p.put("date", ts != null
+                        ? new java.text.SimpleDateFormat("yyyy.MM.dd").format(ts) : "");
+
+                // 태그 조회
+                p.put("tags", getTagsForPost(conn, postId));
+
+                arr.put(p);
+            }
+
+            res.getWriter().write(arr.toString());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            res.getWriter().write("{\"error\":\"목록 조회 중 오류가 발생했습니다.\"}");
+        } finally {
+            mgr.freeConnection(conn, pstmt, rs);
         }
-        sb.append("]},");
+    }
 
-        // 댓글
-        sb.append("\"comments\":[");
-        for (int i = 0; i < comments.size(); i++) {
-            BoardCommentDTO c = comments.get(i);
-            if (i > 0) sb.append(",");
-            sb.append("{");
-            sb.append("\"commentId\":"  ).append(c.getCommentId()).append(",");
-            sb.append("\"userId\":\""   ).append(esc(c.getUserId())).append("\",");
-            sb.append("\"userName\":\"" ).append(esc(c.getUserName())).append("\",");
-            sb.append("\"content\":\""  ).append(esc(c.getContent())).append("\",");
-            sb.append("\"likeCount\":"  ).append(c.getLikeCount()).append(",");
-            sb.append("\"liked\":"      ).append(c.isLikedByCurrentUser()).append(",");
-            sb.append("\"createdAt\":\"").append(c.getCreatedAt()).append("\"");
-            sb.append("}");
+    /* ═══════════════════════════════════════════════
+       게시글 상세 조회 (조회수 +1, 댓글·링크·태그 포함)
+       파라미터: id (post_id)
+    ═══════════════════════════════════════════════ */
+    private void handleDetail(HttpServletRequest req, HttpServletResponse res, String loginUser)
+            throws IOException {
+
+        String idStr = req.getParameter("id");
+        if (idStr == null || idStr.isEmpty()) {
+            res.getWriter().write("{\"error\":\"id가 필요합니다.\"}");
+            return;
         }
-        sb.append("]}");
+        int postId;
+        try { postId = Integer.parseInt(idStr); }
+        catch (NumberFormatException e) {
+            res.getWriter().write("{\"error\":\"잘못된 id\"}");
+            return;
+        }
 
-        return sb.toString();
+        DBConnectionMgr mgr = DBConnectionMgr.getInstance();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = mgr.getConnection();
+
+            // 조회수 +1
+            pstmt = conn.prepareStatement(
+                "UPDATE board_posts SET view_count = view_count + 1 WHERE post_id = ?");
+            pstmt.setInt(1, postId);
+            pstmt.executeUpdate();
+            mgr.freeConnection(null, pstmt);
+
+            // 게시글 조회
+            pstmt = conn.prepareStatement(
+                "SELECT p.post_id, p.category, p.title, p.content, " +
+                "p.view_count, p.like_count, p.created_at, " +
+                "p.user_id, u.user_name, u.user_rank, u.user_org " +
+                "FROM board_posts p " +
+                "LEFT JOIN users u ON p.user_id = u.user_id " +
+                "WHERE p.post_id = ?"
+            );
+            pstmt.setInt(1, postId);
+            rs = pstmt.executeQuery();
+
+            if (!rs.next()) {
+                res.getWriter().write("{\"error\":\"게시글을 찾을 수 없습니다.\"}");
+                return;
+            }
+
+            JSONObject p = new JSONObject();
+            p.put("id",          rs.getInt("post_id"));
+            p.put("cat",         rs.getString("category"));
+            p.put("title",       rs.getString("title"));
+            p.put("content",     rs.getString("content"));
+            p.put("views",       rs.getInt("view_count"));
+            p.put("likes",       rs.getInt("like_count"));
+            p.put("userId",      rs.getString("user_id"));
+            p.put("author",      rs.getString("user_name"));
+            p.put("authorRank",  rs.getString("user_rank"));
+            p.put("authorOrg",   rs.getString("user_org"));
+            p.put("isMine",      loginUser.equals(rs.getString("user_id")));
+
+            Timestamp ts = rs.getTimestamp("created_at");
+            p.put("date", ts != null
+                    ? new java.text.SimpleDateFormat("yyyy.MM.dd").format(ts) : "");
+
+            mgr.freeConnection(null, pstmt, rs);
+            pstmt = null; rs = null;
+
+            // 내가 추천했는지 여부
+            pstmt = conn.prepareStatement(
+                "SELECT COUNT(*) FROM board_likes " +
+                "WHERE user_id=? AND target_type='post' AND target_id=?");
+            pstmt.setString(1, loginUser);
+            pstmt.setInt(2, postId);
+            rs = pstmt.executeQuery();
+            rs.next();
+            p.put("liked", rs.getInt(1) > 0);
+            mgr.freeConnection(null, pstmt, rs);
+            pstmt = null; rs = null;
+
+            // 태그
+            p.put("tags", getTagsForPost(conn, postId));
+
+            // 구매 링크 (gear 전용)
+            p.put("links", getLinksForPost(conn, postId));
+
+            // 댓글 목록
+            pstmt = conn.prepareStatement(
+                "SELECT c.comment_id, c.content, c.created_at, c.user_id, " +
+                "u.user_name, u.user_rank, " +
+                "(SELECT COUNT(*) FROM board_likes bl " +
+                " WHERE bl.target_type='comment' AND bl.target_id=c.comment_id) AS like_count " +
+                "FROM board_comments c " +
+                "LEFT JOIN users u ON c.user_id = u.user_id " +
+                "WHERE c.post_id = ? " +
+                "ORDER BY c.created_at ASC"
+            );
+            pstmt.setInt(1, postId);
+            rs = pstmt.executeQuery();
+
+            JSONArray comments = new JSONArray();
+            while (rs.next()) {
+                JSONObject c = new JSONObject();
+                c.put("id",         rs.getInt("comment_id"));
+                c.put("author",     rs.getString("user_name"));
+                c.put("rank",       rs.getString("user_rank"));
+                c.put("userId",     rs.getString("user_id"));
+                c.put("text",       rs.getString("content"));
+                c.put("likes",      rs.getInt("like_count"));
+                c.put("isMine",     loginUser.equals(rs.getString("user_id")));
+
+                Timestamp cts = rs.getTimestamp("created_at");
+                c.put("time", cts != null ? formatRelativeTime(cts) : "");
+                comments.put(c);
+            }
+            p.put("comments", comments);
+
+            res.getWriter().write(p.toString());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            res.getWriter().write("{\"error\":\"상세 조회 중 오류가 발생했습니다.\"}");
+        } finally {
+            mgr.freeConnection(conn, pstmt, rs);
+        }
     }
 
-    // ═══════════════════════════════════════════════════════
-    // 유틸
-    // ═══════════════════════════════════════════════════════
+    /* ═══════════════════════════════════════════════
+       게시글 등록
+       파라미터: category, title, content, tags(쉼표구분),
+                 linkNames[], linkUrls[]
+    ═══════════════════════════════════════════════ */
+    private void handleWrite(HttpServletRequest req, HttpServletResponse res, String loginUser)
+            throws IOException {
 
-    /** null 이면 기본값 반환 */
-    private String nvl(String s, String def) {
-        return (s != null && !s.isEmpty()) ? s : def;
+        String category = req.getParameter("category");
+        String title    = req.getParameter("title");
+        String content  = req.getParameter("content");
+        String tagsRaw  = req.getParameter("tags");
+
+        if (category == null || category.isEmpty() ||
+            title    == null || title.trim().isEmpty() ||
+            content  == null || content.trim().isEmpty()) {
+            res.getWriter().write("{\"success\":false,\"error\":\"필수 항목을 모두 입력하세요.\"}");
+            return;
+        }
+
+        DBConnectionMgr mgr = DBConnectionMgr.getInstance();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = mgr.getConnection();
+            conn.setAutoCommit(false);
+
+            // 게시글 삽입
+            pstmt = conn.prepareStatement(
+                "INSERT INTO board_posts (user_id, category, title, content) VALUES (?,?,?,?)",
+                Statement.RETURN_GENERATED_KEYS
+            );
+            pstmt.setString(1, loginUser);
+            pstmt.setString(2, category);
+            pstmt.setString(3, title.trim());
+            pstmt.setString(4, content.trim());
+            pstmt.executeUpdate();
+
+            rs = pstmt.getGeneratedKeys();
+            rs.next();
+            int newPostId = rs.getInt(1);
+            mgr.freeConnection(null, pstmt, rs);
+            pstmt = null; rs = null;
+
+            // 태그 삽입
+            if (tagsRaw != null && !tagsRaw.trim().isEmpty()) {
+                String[] tags = tagsRaw.split(",");
+                for (String tag : tags) {
+                    String t = tag.trim();
+                    if (!t.isEmpty()) {
+                        pstmt = conn.prepareStatement(
+                            "INSERT INTO board_tags (post_id, tag_name) VALUES (?,?)");
+                        pstmt.setInt(1, newPostId);
+                        pstmt.setString(2, t);
+                        pstmt.executeUpdate();
+                        mgr.freeConnection(null, pstmt);
+                        pstmt = null;
+                    }
+                }
+            }
+
+            // 구매 링크 삽입 (gear 카테고리, 최대 3개)
+            if ("gear".equals(category)) {
+                String[] linkNames = req.getParameterValues("linkNames");
+                String[] linkUrls  = req.getParameterValues("linkUrls");
+                if (linkNames != null && linkUrls != null) {
+                    int max = Math.min(linkNames.length, Math.min(linkUrls.length, 3));
+                    for (int i = 0; i < max; i++) {
+                        String lname = linkNames[i].trim();
+                        String lurl  = linkUrls[i].trim();
+                        if (!lname.isEmpty() && !lurl.isEmpty()) {
+                            pstmt = conn.prepareStatement(
+                                "INSERT INTO board_links (post_id, link_name, link_url) VALUES (?,?,?)");
+                            pstmt.setInt(1, newPostId);
+                            pstmt.setString(2, lname);
+                            pstmt.setString(3, lurl);
+                            pstmt.executeUpdate();
+                            mgr.freeConnection(null, pstmt);
+                            pstmt = null;
+                        }
+                    }
+                }
+            }
+
+            conn.commit();
+            res.getWriter().write("{\"success\":true,\"postId\":" + newPostId + "}");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            try { if (conn != null) conn.rollback(); } catch (Exception ignored) {}
+            res.getWriter().write("{\"success\":false,\"error\":\"게시글 등록 중 오류가 발생했습니다.\"}");
+        } finally {
+            try { if (conn != null) conn.setAutoCommit(true); } catch (Exception ignored) {}
+            mgr.freeConnection(conn, pstmt, rs);
+        }
     }
 
-    /** 숫자 파싱 실패 시 기본값 반환 */
-    private int toInt(String s, int def) {
-        try { return Integer.parseInt(s); }
-        catch (Exception e) { return def; }
+    /* ═══════════════════════════════════════════════
+       게시글 삭제 (본인 글만)
+       파라미터: postId
+    ═══════════════════════════════════════════════ */
+    private void handleDelete(HttpServletRequest req, HttpServletResponse res, String loginUser)
+            throws IOException {
+
+        String idStr = req.getParameter("postId");
+        if (idStr == null) {
+            res.getWriter().write("{\"success\":false,\"error\":\"postId 필요\"}");
+            return;
+        }
+        int postId;
+        try { postId = Integer.parseInt(idStr); }
+        catch (NumberFormatException e) {
+            res.getWriter().write("{\"success\":false,\"error\":\"잘못된 postId\"}");
+            return;
+        }
+
+        DBConnectionMgr mgr = DBConnectionMgr.getInstance();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+
+        try {
+            conn = mgr.getConnection();
+
+            // 작성자 확인
+            pstmt = conn.prepareStatement(
+                "SELECT user_id FROM board_posts WHERE post_id=?");
+            pstmt.setInt(1, postId);
+            ResultSet rs = pstmt.executeQuery();
+            if (!rs.next() || !loginUser.equals(rs.getString("user_id"))) {
+                res.getWriter().write("{\"success\":false,\"error\":\"삭제 권한이 없습니다.\"}");
+                mgr.freeConnection(conn, pstmt, rs);
+                return;
+            }
+            mgr.freeConnection(null, pstmt, rs);
+            pstmt = null;
+
+            // 삭제 (CASCADE로 댓글·태그·링크·추천 자동 삭제)
+            pstmt = conn.prepareStatement("DELETE FROM board_posts WHERE post_id=?");
+            pstmt.setInt(1, postId);
+            pstmt.executeUpdate();
+
+            res.getWriter().write("{\"success\":true}");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            res.getWriter().write("{\"success\":false,\"error\":\"삭제 중 오류가 발생했습니다.\"}");
+        } finally {
+            mgr.freeConnection(conn, pstmt);
+        }
     }
 
-    /** JSON 문자열 이스케이프 */
-    private String esc(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
+    /* ═══════════════════════════════════════════════
+       댓글 등록
+       파라미터: postId, content
+    ═══════════════════════════════════════════════ */
+    private void handleComment(HttpServletRequest req, HttpServletResponse res, String loginUser)
+            throws IOException {
+
+        String idStr   = req.getParameter("postId");
+        String content = req.getParameter("content");
+
+        if (idStr == null || content == null || content.trim().isEmpty()) {
+            res.getWriter().write("{\"success\":false,\"error\":\"내용을 입력하세요.\"}");
+            return;
+        }
+        int postId;
+        try { postId = Integer.parseInt(idStr); }
+        catch (NumberFormatException e) {
+            res.getWriter().write("{\"success\":false,\"error\":\"잘못된 postId\"}");
+            return;
+        }
+
+        DBConnectionMgr mgr = DBConnectionMgr.getInstance();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+
+        try {
+            conn = mgr.getConnection();
+            pstmt = conn.prepareStatement(
+                "INSERT INTO board_comments (post_id, user_id, content) VALUES (?,?,?)");
+            pstmt.setInt(1, postId);
+            pstmt.setString(2, loginUser);
+            pstmt.setString(3, content.trim());
+            pstmt.executeUpdate();
+
+            res.getWriter().write("{\"success\":true}");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            res.getWriter().write("{\"success\":false,\"error\":\"댓글 등록 중 오류가 발생했습니다.\"}");
+        } finally {
+            mgr.freeConnection(conn, pstmt);
+        }
     }
 
-    /** 미리보기 텍스트 (80자 자르기) */
-    private String preview(String content) {
-        if (content == null) return "";
-        return content.length() > 80 ? content.substring(0, 80) + "..." : content;
+    /* ═══════════════════════════════════════════════
+       추천 토글 (게시글 / 댓글 공용)
+       파라미터: targetType(post/comment), targetId
+    ═══════════════════════════════════════════════ */
+    private void handleLike(HttpServletRequest req, HttpServletResponse res, String loginUser)
+            throws IOException {
+
+        String targetType = req.getParameter("targetType");
+        String targetIdStr = req.getParameter("targetId");
+
+        if (targetType == null || targetIdStr == null) {
+            res.getWriter().write("{\"success\":false,\"error\":\"파라미터 부족\"}");
+            return;
+        }
+        if (!"post".equals(targetType) && !"comment".equals(targetType)) {
+            res.getWriter().write("{\"success\":false,\"error\":\"잘못된 targetType\"}");
+            return;
+        }
+        int targetId;
+        try { targetId = Integer.parseInt(targetIdStr); }
+        catch (NumberFormatException e) {
+            res.getWriter().write("{\"success\":false,\"error\":\"잘못된 targetId\"}");
+            return;
+        }
+
+        DBConnectionMgr mgr = DBConnectionMgr.getInstance();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = mgr.getConnection();
+            conn.setAutoCommit(false);
+
+            // 이미 추천했는지 확인
+            pstmt = conn.prepareStatement(
+                "SELECT COUNT(*) FROM board_likes " +
+                "WHERE user_id=? AND target_type=? AND target_id=?");
+            pstmt.setString(1, loginUser);
+            pstmt.setString(2, targetType);
+            pstmt.setInt(3, targetId);
+            rs = pstmt.executeQuery();
+            rs.next();
+            boolean alreadyLiked = rs.getInt(1) > 0;
+            mgr.freeConnection(null, pstmt, rs);
+            pstmt = null; rs = null;
+
+            if (alreadyLiked) {
+                // 추천 취소
+                pstmt = conn.prepareStatement(
+                    "DELETE FROM board_likes " +
+                    "WHERE user_id=? AND target_type=? AND target_id=?");
+                pstmt.setString(1, loginUser);
+                pstmt.setString(2, targetType);
+                pstmt.setInt(3, targetId);
+                pstmt.executeUpdate();
+                mgr.freeConnection(null, pstmt);
+                pstmt = null;
+
+                // like_count 캐시 -1 (게시글만)
+                if ("post".equals(targetType)) {
+                    pstmt = conn.prepareStatement(
+                        "UPDATE board_posts SET like_count = GREATEST(like_count-1, 0) WHERE post_id=?");
+                    pstmt.setInt(1, targetId);
+                    pstmt.executeUpdate();
+                }
+            } else {
+                // 추천
+                pstmt = conn.prepareStatement(
+                    "INSERT INTO board_likes (user_id, target_type, target_id) VALUES (?,?,?)");
+                pstmt.setString(1, loginUser);
+                pstmt.setString(2, targetType);
+                pstmt.setInt(3, targetId);
+                pstmt.executeUpdate();
+                mgr.freeConnection(null, pstmt);
+                pstmt = null;
+
+                // like_count 캐시 +1 (게시글만)
+                if ("post".equals(targetType)) {
+                    pstmt = conn.prepareStatement(
+                        "UPDATE board_posts SET like_count = like_count+1 WHERE post_id=?");
+                    pstmt.setInt(1, targetId);
+                    pstmt.executeUpdate();
+                }
+            }
+
+            conn.commit();
+
+            // 현재 추천수 반환
+            int currentLikes = 0;
+            if ("post".equals(targetType)) {
+                mgr.freeConnection(null, pstmt);
+                pstmt = conn.prepareStatement(
+                    "SELECT like_count FROM board_posts WHERE post_id=?");
+                pstmt.setInt(1, targetId);
+                rs = pstmt.executeQuery();
+                if (rs.next()) currentLikes = rs.getInt(1);
+            } else {
+                mgr.freeConnection(null, pstmt);
+                pstmt = conn.prepareStatement(
+                    "SELECT COUNT(*) FROM board_likes " +
+                    "WHERE target_type='comment' AND target_id=?");
+                pstmt.setInt(1, targetId);
+                rs = pstmt.executeQuery();
+                if (rs.next()) currentLikes = rs.getInt(1);
+            }
+
+            res.getWriter().write(
+                "{\"success\":true,\"liked\":" + !alreadyLiked +
+                ",\"likes\":" + currentLikes + "}"
+            );
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            try { if (conn != null) conn.rollback(); } catch (Exception ignored) {}
+            res.getWriter().write("{\"success\":false,\"error\":\"추천 처리 중 오류가 발생했습니다.\"}");
+        } finally {
+            try { if (conn != null) conn.setAutoCommit(true); } catch (Exception ignored) {}
+            mgr.freeConnection(conn, pstmt, rs);
+        }
+    }
+
+    /* ═══════════════════════════════════════════════
+       헬퍼: 태그 목록 조회
+    ═══════════════════════════════════════════════ */
+    private JSONArray getTagsForPost(Connection conn, int postId) throws SQLException {
+        JSONArray tags = new JSONArray();
+        PreparedStatement ps = conn.prepareStatement(
+            "SELECT tag_name FROM board_tags WHERE post_id=? ORDER BY tag_id");
+        ps.setInt(1, postId);
+        ResultSet r = ps.executeQuery();
+        while (r.next()) tags.put(r.getString("tag_name"));
+        r.close(); ps.close();
+        return tags;
+    }
+
+    /* ═══════════════════════════════════════════════
+       헬퍼: 구매 링크 목록 조회
+    ═══════════════════════════════════════════════ */
+    private JSONArray getLinksForPost(Connection conn, int postId) throws SQLException {
+        JSONArray links = new JSONArray();
+        PreparedStatement ps = conn.prepareStatement(
+            "SELECT link_name, link_url FROM board_links WHERE post_id=? ORDER BY link_id");
+        ps.setInt(1, postId);
+        ResultSet r = ps.executeQuery();
+        while (r.next()) {
+            JSONObject lk = new JSONObject();
+            lk.put("name", r.getString("link_name"));
+            lk.put("url",  r.getString("link_url"));
+            links.put(lk);
+        }
+        r.close(); ps.close();
+        return links;
+    }
+
+    /* ═══════════════════════════════════════════════
+       헬퍼: 상대 시간 포맷 (N분 전, N시간 전, N일 전)
+    ═══════════════════════════════════════════════ */
+    private String formatRelativeTime(Timestamp ts) {
+        long diff = System.currentTimeMillis() - ts.getTime();
+        long minutes = diff / 60000;
+        if (minutes < 1)  return "방금 전";
+        if (minutes < 60) return minutes + "분 전";
+        long hours = minutes / 60;
+        if (hours < 24)   return hours + "시간 전";
+        long days = hours / 24;
+        return days + "일 전";
     }
 }
