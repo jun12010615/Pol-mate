@@ -172,11 +172,11 @@ var NOTIFS = [
   {
     id:2, type:'alert', unread:true, critical:true,
     icon:'ni-amber',
-    iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
-    tag:'절차 위반',
-    title:'변호인 고지 누락 경고',
-    desc:'사건 2024-0255(협박사건) 진행 중 변호인 조력권 고지 여부가 확인되지 않았습니다.',
-    time:'12분 전', link:'procedureCheck.jsp'
+    iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="18" cy="19" r="2.5"/><line x1="8.4" y1="11.0" x2="15.6" y2="6.5"/><line x1="8.4" y1="13.0" x2="15.6" y2="17.5"/></svg>',
+    tag:'관계망',
+    title:'관계망 진술 불일치 감지',
+    desc:'사건 2024-0255(협박사건) 관계망에서 홍길동-이철수 진술 상태가 mismatch로 변경되었습니다.',
+    time:'12분 전', link:'caseRelationMap.jsp'
   },
   {
     id:3, type:'case', unread:true, critical:false,
@@ -190,11 +190,11 @@ var NOTIFS = [
   {
     id:4, type:'case', unread:true, critical:false,
     icon:'ni-green',
-    iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="1.8" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
-    tag:'절차 점검',
-    title:'사건 2024-0271 절차 점검 완료',
-    desc:'사기사건 전체 수사 절차가 적법하게 이행된 것으로 확인되었습니다.',
-    time:'3시간 전', link:'procedureCheck.jsp'
+    iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="18" cy="19" r="2.5"/><line x1="8.4" y1="11.0" x2="15.6" y2="6.5"/><line x1="8.4" y1="13.0" x2="15.6" y2="17.5"/></svg>',
+    tag:'관계망',
+    title:'사건 2024-0271 관계망 업데이트',
+    desc:'사기사건 관계망에 신규 인물 2명이 추가되었습니다. 관계도를 확인해 주세요.',
+    time:'3시간 전', link:'caseRelationMap.jsp'
   },
   {
     id:5, type:'sys', unread:false, critical:false,
