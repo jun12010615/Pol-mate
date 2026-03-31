@@ -294,7 +294,7 @@
 var CASES = [
   { id:'2024-0312', name:'절도사건', suspect:'홍길동', date:'2025.03.24', status:'검토필요', progress:75, urgent:true,  docs:3, stage:'조서 분석 완료' },
   { id:'2024-0289', name:'폭행사건', suspect:'김철수', date:'2025.03.21', status:'진행중',   progress:45, urgent:false, docs:2, stage:'조서 작성 중' },
-  { id:'2024-0271', name:'사기사건', suspect:'이영희', date:'2025.03.18', status:'완료',     progress:100,urgent:false, docs:4, stage:'절차 점검 완료' },
+  { id:'2024-0271', name:'사기사건', suspect:'이영희', date:'2025.03.18', status:'완료',     progress:100,urgent:false, docs:4, stage:'관계망 업데이트 완료' },
   { id:'2024-0255', name:'협박사건', suspect:'박민수', date:'2025.03.12', status:'모순탐지', progress:60, urgent:true,  docs:2, stage:'모순 항목 검토 필요' },
   { id:'2024-0244', name:'강도사건', suspect:'최수진', date:'2025.03.10', status:'완료',     progress:100,urgent:false, docs:5, stage:'최종 제출 완료' },
   { id:'2024-0230', name:'마약사건', suspect:'정태양', date:'2025.03.05', status:'진행중',   progress:30, urgent:false, docs:1, stage:'초기 조사 중' }
@@ -419,9 +419,9 @@ function openCase(id) {
       '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>' +
       '<span>조서 추가</span>' +
     '</a>' +
-    '<a href="procedureCheck.jsp" class="action-btn">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.8" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>' +
-      '<span>절차 점검</span>' +
+    '<a href="caseRelationMap.jsp" class="action-btn">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="18" cy="19" r="2.5"/><line x1="8.4" y1="11.0" x2="15.6" y2="6.5"/><line x1="8.4" y1="13.0" x2="15.6" y2="17.5"/></svg>' +
+      '<span>관계망 보기</span>' +
     '</a>' +
     '<a href="voiceTranscript.jsp" class="action-btn">' +
       '<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
