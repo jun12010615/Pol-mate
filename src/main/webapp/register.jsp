@@ -193,8 +193,9 @@
           <label class="field-label">비밀번호 확인 <span class="required">*</span></label>
           <div class="field-wrap">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <input type="password" id="userPwCf" class="field-input" placeholder="비밀번호를 다시 입력하세요">
+            <input type="password" id="userPwCf" class="field-input" placeholder="비밀번호를 다시 입력하세요" oninput="checkPwMatch()">
           </div>
+          <p class="field-ok"  id="pwOk"  style="display:none">비밀번호가 일치합니다.</p>
           <p class="field-err" id="pwErr" style="display:none">비밀번호가 일치하지 않습니다.</p>
         </div>
 
@@ -336,26 +337,73 @@
 <script>
 let idChecked = false;
 
-// ── 중복 확인 (임시: admin, test, hong 만 사용중으로 처리) ──
-const USED_IDS = ['admin','test','hong'];
+// ── 아이디 중복 확인 ──
 function checkId() {
   const v = document.getElementById('userId').value.trim();
   if (!v) { alert('아이디를 입력하세요.'); return; }
-  if (!/^[a-z0-9]{4,16}$/.test(v)) { showErr('idErr','영문 소문자+숫자 4~16자로 입력하세요.'); idChecked=false; return; }
-  if (USED_IDS.includes(v)) {
-    document.getElementById('idOk').style.display  = 'none';
-    document.getElementById('idHint').style.display= 'none';
-    document.getElementById('idErr').style.display = 'block';
-    document.getElementById('idErr').textContent   = '이미 사용 중인 아이디입니다.';
-    idChecked = false;
+  if (!/^[a-z0-9]{4,16}$/.test(v)) { showErr('idErr', '영문 소문자+숫자 4~16자로 입력하세요.'); idChecked = false; return; }
+
+  fetch('register?action=checkId&userId=' + encodeURIComponent(v))
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(data => {
+      if (data.success) {
+        document.getElementById('idErr').style.display  = 'none';
+        document.getElementById('idHint').style.display = 'none';
+        document.getElementById('idOk').style.display   = 'block';
+        idChecked = true;
+      } else {
+        document.getElementById('idOk').style.display   = 'none';
+        document.getElementById('idHint').style.display = 'none';
+        document.getElementById('idErr').style.display  = 'block';
+        document.getElementById('idErr').textContent    = data.message;
+        idChecked = false;
+      }
+    })
+    .catch(err => { alert('서버 통신 오류: ' + err.message + '\nRegisterServlet.java가 배포되었는지 확인하세요.'); idChecked = false; });
+}
+
+// ── 비밀번호 강도 체크 (실시간) ──
+function checkPwStrength() {
+  const pw = document.getElementById('userPw').value;
+  const hint = document.getElementById('pwHint');
+  const hasLen  = pw.length >= 8;
+  const hasAlpha= /[a-zA-Z]/.test(pw);
+  const hasNum  = /[0-9]/.test(pw);
+  const hasSpc  = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pw);
+  const missing = [];
+  if (!hasLen)   missing.push('8자 이상');
+  if (!hasAlpha) missing.push('영문');
+  if (!hasNum)   missing.push('숫자');
+  if (!hasSpc)   missing.push('특수문자');
+  if (missing.length === 0) {
+    hint.style.color = 'var(--success)';
+    hint.textContent = '사용 가능한 비밀번호입니다.';
   } else {
-    document.getElementById('idErr').style.display  = 'none';
-    document.getElementById('idHint').style.display = 'none';
-    document.getElementById('idOk').style.display   = 'block';
-    idChecked = true;
+    hint.style.color = 'var(--danger)';
+    hint.textContent = missing.join(', ') + ' 필요';
+  }
+  hint.style.display = 'block';
+}
+
+// ── 비밀번호 확인 일치 체크 (실시간) ──
+function checkPwMatch() {
+  const pw   = document.getElementById('userPw').value;
+  const pwcf = document.getElementById('userPwCf').value;
+  if (!pwcf) {
+    document.getElementById('pwOk').style.display  = 'none';
+    document.getElementById('pwErr').style.display = 'none';
+    return;
+  }
+  if (pw === pwcf) {
+    document.getElementById('pwOk').style.display  = 'block';
+    document.getElementById('pwErr').style.display = 'none';
+  } else {
+    document.getElementById('pwOk').style.display  = 'none';
+    document.getElementById('pwErr').style.display = 'block';
   }
 }
 
+// ── 에러 메시지 표시 ──
 function showErr(id, msg) {
   const el = document.getElementById(id);
   el.textContent = msg;
@@ -369,8 +417,11 @@ function goStep2() {
   const pwcf = document.getElementById('userPwCf').value;
   const name = document.getElementById('userName').value.trim();
   const phone= document.getElementById('userPhone').value.trim();
-  if (!pw || pw.length < 8)   { alert('비밀번호를 8자 이상 입력해 주세요.'); return; }
-  if (pw !== pwcf)             { document.getElementById('pwErr').style.display='block'; return; }
+  if (!pw || pw.length < 8)              { alert('비밀번호를 8자 이상 입력해 주세요.'); return; }
+  if (!/[a-zA-Z]/.test(pw))             { alert('비밀번호에 영문자를 포함해 주세요.'); return; }
+  if (!/[0-9]/.test(pw))                { alert('비밀번호에 숫자를 포함해 주세요.'); return; }
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pw)) { alert('비밀번호에 특수문자를 포함해 주세요.'); return; }
+  if (pw !== pwcf)                       { document.getElementById('pwErr').style.display='block'; return; }
   else                         { document.getElementById('pwErr').style.display='none'; }
   if (!name)                   { alert('이름을 입력해 주세요.'); return; }
   if (!phone)                  { alert('연락처를 입력해 주세요.'); return; }
@@ -418,16 +469,39 @@ function toggleChk(id) {
   else     document.getElementById('chkAll').classList.remove('checked');
 }
 
-// ── 가입 완료 ──
+// ── 가입 완료 (서버 POST) ──
 function submitRegister() {
   if (!['chk1','chk2','chk3'].every(i => document.getElementById(i).classList.contains('checked'))) {
     alert('필수 약관에 모두 동의해 주세요.'); return;
   }
-  const userId = document.getElementById('userId').value.trim();
-  document.getElementById('doneId').textContent = userId;
-  document.getElementById('formContent').style.display = 'none';
-  document.getElementById('doneScreen').style.display  = 'block';
-  window.scrollTo(0,0);
+
+  const params = new URLSearchParams();
+  params.append('userId',    document.getElementById('userId').value.trim());
+  params.append('userPw',    document.getElementById('userPw').value);
+  params.append('userName',  document.getElementById('userName').value.trim());
+  params.append('userPhone', document.getElementById('userPhone').value.trim());
+  params.append('userOrg',   document.getElementById('userOrg').value);
+  params.append('userRank',  document.getElementById('userRank').value);
+  params.append('userDept',  document.getElementById('userDept').value.trim());
+  params.append('badgeNum',  document.getElementById('badgeNum').value.trim());
+
+  fetch('register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+    body: params.toString()
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      document.getElementById('doneId').textContent = params.get('userId');
+      document.getElementById('formContent').style.display = 'none';
+      document.getElementById('doneScreen').style.display  = 'block';
+      window.scrollTo(0, 0);
+    } else {
+      alert('가입 실패: ' + data.message);
+    }
+  })
+  .catch(() => alert('서버 통신 오류가 발생했습니다.'));
 }
 </script>
 </body>

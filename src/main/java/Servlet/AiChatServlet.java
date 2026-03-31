@@ -47,6 +47,8 @@ public class AiChatServlet extends HttpServlet {
             return;
         }
 
+        //dddd
+        
         // 카테고리 프리픽스 추가
         String prompt = SYSTEM_PROMPT;
         if (category != null && !category.trim().isEmpty()) {
