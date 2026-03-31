@@ -408,6 +408,51 @@ public class BoardDAO {
             pool.freeConnection(conn, ps);
         }
     }
+    
+ // ═══════════════════════════════════════════════════════
+    // 댓글 삭제 (본인 작성 댓글만, 좋아요도 함께 삭제)
+    // ═══════════════════════════════════════════════════════
+    public boolean deleteComment(int commentId, String loginUserId) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+ 
+        try {
+            conn = pool.getConnection();
+            conn.setAutoCommit(false);
+ 
+            // 작성자 본인 확인
+            ps = conn.prepareStatement("SELECT user_id FROM BOARD_COMMENTS WHERE comment_id = ?");
+            ps.setInt(1, commentId);
+            ResultSet rs = ps.executeQuery();
+            if (!rs.next() || !loginUserId.equals(rs.getString("user_id"))) {
+                rs.close();
+                conn.rollback();
+                return false;
+            }
+            rs.close();
+            ps.close();
+            
+            // 댓글 좋아요 삭제
+            ps = conn.prepareStatement("DELETE FROM BOARD_LIKES WHERE target_type='comment' AND target_id = ?");
+            ps.setInt(1, commentId);
+            ps.executeUpdate();
+            ps.close();
+            
+            // 댓글 삭제
+            ps = conn.prepareStatement("DELETE FROM BOARD_COMMENTS WHERE comment_id = ?");
+            ps.setInt(1, commentId);
+            ps.executeUpdate();
+            conn.commit();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            try { if (conn != null) conn.rollback(); } catch (SQLException se) { se.printStackTrace(); }
+            return false;
+        } finally {
+            try { if (conn != null) conn.setAutoCommit(true); } catch (SQLException se) { se.printStackTrace(); }
+            pool.freeConnection(conn, ps);
+        }
+    }
 
     // ═══════════════════════════════════════════════════════
     // 추천 여부 확인

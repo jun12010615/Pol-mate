@@ -839,9 +839,27 @@ function deletePost(id) {
 }
 
 function deleteComment(postId, cmtId) {
-  // 댓글 삭제: post action=delete 를 comment 전용으로 쓸 경우를 위해
-  // 현재 서블릿 구조상 게시글 삭제만 구현. 필요 시 추가.
-  showToast('댓글 삭제 기능은 준비 중입니다.');
+  if (!confirm('댓글을 삭제하시겠습니까?')) return;
+
+  var form = new FormData();
+  var params = new URLSearchParams();
+  params.append('action', 'deleteComment');
+  params.append('commentId', cmtId);
+  fetch('board', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString()
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    if (data.success) {
+      showToast('댓글이 삭제됐습니다.');
+      openDetail(postId); // 상세 새로고침
+    } else {
+      showToast(data.error || '삭제에 실패했습니다.');
+    }
+  })
+  .catch(function(e){ console.error(e); showToast('오류가 발생했습니다.'); });
 }
 
 

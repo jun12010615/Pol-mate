@@ -1,7 +1,5 @@
 package Servlet;
 
-import BoardDAO.BoardDAO;
-import BoardDTO.*;
 
 import java.io.*;
 import java.sql.Timestamp;
@@ -72,11 +70,13 @@ public class BoardServlet extends HttpServlet {
         String action = nvl(req.getParameter("action"), "");
 
         switch (action) {
-            case "write":   handleWrite(req, res, loginUser);   break;
-            case "delete":  handleDelete(req, res, loginUser);  break;
-            case "comment": handleComment(req, res, loginUser); break;
-            case "like":    handleLike(req, res, loginUser);    break;
-            default:        writeError(res, "알 수 없는 action");
+            case "write":   handleWrite(request, response, loginUser);   break;
+            case "delete":  handleDelete(request, response, loginUser);  break;
+            case "comment": handleComment(request, response, loginUser); break;
+            case "deleteComment": handleDeleteComment(request, response, loginUser); break;
+            case "like":    handleLike(request, response, loginUser);    break;
+            default:
+                response.getWriter().write("{\"error\":\"알 수 없는 action\"}");
         }
     }
 
@@ -194,8 +194,47 @@ public class BoardServlet extends HttpServlet {
     private void handleDelete(HttpServletRequest req, HttpServletResponse res, String loginUser)
             throws IOException {
 
-        int postId = parseIntParam(req, res, "postId");
-        if (postId < 0) return;
+        String idStr = req.getParameter("postId");
+        if (idStr == null) {
+            res.getWriter().write("{\"success\":false,\"error\":\"postId 필요\"}");
+            return;
+        }
+        int postId;
+        try { postId = Integer.parseInt(idStr); }
+        catch (NumberFormatException e) {
+            res.getWriter().write("{\"success\":false,\"error\":\"잘못된 postId\"}");
+            return;
+        }
+
+        DBConnectionMgr mgr = DBConnectionMgr.getInstance();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+
+        try {
+            conn = mgr.getConnection();
+
+            // 작성자 확인
+            pstmt = conn.prepareStatement(
+                "SELECT user_id FROM board_posts WHERE post_id=?");
+            pstmt.setInt(1, postId);
+            ResultSet rs = pstmt.executeQuery();
+            if (!rs.next() || !loginUser.equals(rs.getString("user_id"))) {
+                res.getWriter().write("{\"success\":false,\"error\":\"삭제 권한이 없습니다.\"}");
+                rs.close();
+                try { conn.rollback(); } catch (Exception ignored) {}
+                try { conn.setAutoCommit(true); } catch (Exception ignored) {}  // ← 이게 핵심!
+                mgr.freeConnection(conn, pstmt, rs);
+                return;
+            }
+            mgr.freeConnection(null, pstmt, rs);
+            pstmt = null;
+
+            // 삭제 (CASCADE로 댓글·태그·링크·추천 자동 삭제)
+            pstmt = conn.prepareStatement("DELETE FROM board_posts WHERE post_id=?");
+            pstmt.setInt(1, postId);
+            pstmt.executeUpdate();
+
+            res.getWriter().write("{\"success\":true}");
 
         boolean ok = dao.deletePost(postId, loginUser);
         if (ok) {
@@ -229,9 +268,78 @@ public class BoardServlet extends HttpServlet {
         writeResult(res, ok, ok ? "등록됐습니다." : "댓글 등록 중 오류가 발생했습니다.");
     }
 
-    // ═══════════════════════════════════════════════════════
-    // 추천 토글 (게시글 / 댓글 공용)
-    // ═══════════════════════════════════════════════════════
+    /* ═══════════════════════════════════════════════
+       댓글 삭제 (본인 댓글만)
+       파라미터: commentId
+    ═══════════════════════════════════════════════ */
+    private void handleDeleteComment(HttpServletRequest req, HttpServletResponse res, String loginUser)
+            throws IOException {
+
+        String idStr = req.getParameter("commentId");
+        if (idStr == null) {
+            res.getWriter().write("{\"success\":false,\"error\":\"commentId 필요\"}");
+            return;
+        }
+        int commentId;
+        try { commentId = Integer.parseInt(idStr); }
+        catch (NumberFormatException e) {
+            res.getWriter().write("{\"success\":false,\"error\":\"잘못된 commentId\"}");
+            return;
+        }
+
+        DBConnectionMgr mgr = DBConnectionMgr.getInstance();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = mgr.getConnection();
+            conn.setAutoCommit(false);
+
+            // 작성자 확인
+            pstmt = conn.prepareStatement(
+                "SELECT user_id FROM board_comments WHERE comment_id=?");
+            pstmt.setInt(1, commentId);
+            rs = pstmt.executeQuery();
+            if (!rs.next() || !loginUser.equals(rs.getString("user_id"))) {
+                res.getWriter().write("{\"success\":false,\"error\":\"삭제 권한이 없습니다.\"}");
+                mgr.freeConnection(conn, pstmt, rs);
+                return;
+            }
+            mgr.freeConnection(null, pstmt, rs);
+            pstmt = null; rs = null;
+
+            // 댓글 좋아요 삭제
+            pstmt = conn.prepareStatement(
+                "DELETE FROM board_likes WHERE target_type='comment' AND target_id=?");
+            pstmt.setInt(1, commentId);
+            pstmt.executeUpdate();
+            mgr.freeConnection(null, pstmt);
+            pstmt = null;
+
+            // 댓글 삭제
+            pstmt = conn.prepareStatement(
+                "DELETE FROM board_comments WHERE comment_id=?");
+            pstmt.setInt(1, commentId);
+            pstmt.executeUpdate();
+
+            conn.commit();
+            res.getWriter().write("{\"success\":true}");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            try { if (conn != null) conn.rollback(); } catch (Exception ignored) {}
+            res.getWriter().write("{\"success\":false,\"error\":\"댓글 삭제 중 오류가 발생했습니다.\"}");
+        } finally {
+            try { if (conn != null) conn.setAutoCommit(true); } catch (Exception ignored) {}
+            mgr.freeConnection(conn, pstmt, rs);
+        }
+    }
+
+    /* ═══════════════════════════════════════════════
+       추천 토글 (게시글 / 댓글 공용)
+       파라미터: targetType(post/comment), targetId
+    ═══════════════════════════════════════════════ */
     private void handleLike(HttpServletRequest req, HttpServletResponse res, String loginUser)
             throws IOException {
 
