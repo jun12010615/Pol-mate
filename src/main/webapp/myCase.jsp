@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" import="java.sql.*, java.util.*, Servlet.DBConnectionMgr"%>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -191,6 +191,187 @@
 </style>
 </head>
 <body>
+<%!
+  // JS 문자열 이스케이프(따옴표/개행 최소 처리)
+  public String esc(String s) {
+    if (s == null) return "";
+    return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ").replace("\r", " ");
+  }
+%>
+<%
+  String loginUser = (String) session.getAttribute("loginUser");
+  if (loginUser == null) { response.sendRedirect("login.jsp"); return; }
+
+  int docTotal = 0;
+  int docContradiction = 0;
+  List<String[]> transcriptDocs = new ArrayList<>(); // [id, caseId, caseName, stmtType, stmtName, date, status, words]
+  List<String[]> caseDocs = new ArrayList<>(); // [caseId, caseName, status, updatedDate(yyyy.MM.dd), suspectName, docsCount]
+
+  DBConnectionMgr mgr = DBConnectionMgr.getInstance();
+  Connection conn = null;
+  PreparedStatement ps = null;
+  ResultSet rs = null;
+  // JS로 내려보낼 JSON(배열 리터럴). 에러 발생 시에도 최소한 "[]"로 렌더되게 기본값 유지.
+  StringBuilder casesJson = new StringBuilder("[]");
+  StringBuilder docsJson  = new StringBuilder("[]");
+  try {
+    conn = mgr.getConnection();
+
+    ps = conn.prepareStatement("SELECT COUNT(*) FROM TRANSCRIPTS WHERE user_id=?");
+    ps.setString(1, loginUser);
+    rs = ps.executeQuery();
+    if (rs.next()) docTotal = rs.getInt(1);
+    rs.close(); ps.close();
+
+    ps = conn.prepareStatement("SELECT COUNT(*) FROM TRANSCRIPTS WHERE user_id=? AND has_contradiction=1");
+    ps.setString(1, loginUser);
+    rs = ps.executeQuery();
+    if (rs.next()) docContradiction = rs.getInt(1);
+    rs.close(); ps.close();
+
+    ps = conn.prepareStatement(
+      "SELECT t.transcript_id, t.case_id, IFNULL(c.case_name,''), t.stmt_type, t.stmt_name, " +
+      "       t.has_contradiction, DATE_FORMAT(t.created_at, '%Y.%m.%d') AS created_date, " +
+      "       CHAR_LENGTH(t.original_text) AS words " +
+      "FROM TRANSCRIPTS t LEFT JOIN CASES c ON t.case_id=c.case_id " +
+      "WHERE t.user_id=? " +
+      "ORDER BY t.created_at DESC " +
+      "LIMIT 200"
+    );
+    ps.setString(1, loginUser);
+    rs = ps.executeQuery();
+    while (rs.next()) {
+      String id       = String.valueOf(rs.getInt(1));
+      String caseId   = rs.getString(2);
+      String caseName = rs.getString(3);
+      String stmtType = rs.getString(4);
+      String stmtName = rs.getString(5);
+      int hasContra   = rs.getInt(6);
+      String date     = rs.getString(7);
+      String words    = String.valueOf(rs.getInt(8));
+      String status   = (hasContra == 1) ? "모순탐지" : "완료";
+      transcriptDocs.add(new String[]{id, caseId, caseName, stmtType, stmtName, date, status, words});
+    }
+
+    rs.close(); rs = null;
+    ps.close(); ps = null;
+
+    // ── 사건 목록(탭1)용 CASES 데이터 ─────────────────────────────
+    // UI에서 필요로 하는 필드(사건명/상태/진행률/조서수/피의자 등)를
+    // TRANSCRIPTS(피의자 진술)로 보완해서 구성합니다.
+    ps = conn.prepareStatement(
+      "SELECT c.case_id, c.case_name, c.status, " +
+      "       DATE_FORMAT(c.updated_at, '%Y.%m.%d') AS updated_date, " +
+      "       (SELECT t.stmt_name FROM TRANSCRIPTS t " +
+      "         WHERE t.case_id=c.case_id AND t.stmt_type='피의자' " +
+      "         ORDER BY t.created_at DESC LIMIT 1) AS suspect_name, " +
+      "       (SELECT COUNT(*) FROM TRANSCRIPTS t2 WHERE t2.case_id=c.case_id) AS docs_count " +
+      "FROM CASES c " +
+      "JOIN TEAM_MEMBERS tm ON c.team_id = tm.team_id " +
+      "WHERE tm.user_id=? " +
+      "ORDER BY c.updated_at DESC " +
+      "LIMIT 200"
+    );
+    ps.setString(1, loginUser);
+    rs = ps.executeQuery();
+    while (rs.next()) {
+      String caseId       = rs.getString(1);
+      String caseName     = rs.getString(2);
+      String status       = rs.getString(3);
+      String updatedDate  = rs.getString(4);
+      String suspectName  = rs.getString(5);
+      String docsCount    = String.valueOf(rs.getInt(6));
+      caseDocs.add(new String[]{
+        caseId,
+        caseName,
+        status,
+        updatedDate,
+        suspectName,
+        docsCount
+      });
+    }
+
+    rs.close(); rs = null;
+    ps.close(); ps = null;
+
+    // ── JS로 넘길 JSON(배열 리터럴) 구성 ─────────────────────────────
+    casesJson = new StringBuilder();
+    casesJson.append("[");
+    for (int i=0; i<caseDocs.size(); i++) {
+      String[] c = caseDocs.get(i);
+      String caseId       = c[0];
+      String caseName     = c[1];
+      String status       = c[2];
+      String updatedDate  = c[3];
+      String suspectName  = (c[4] == null) ? "" : c[4];
+      int docsCount       = Integer.parseInt((c[5] == null) ? "0" : c[5]);
+
+      boolean urgent = "모순탐지".equals(status);
+      int progress;
+      String stage;
+      if ("완료".equals(status)) {
+        progress = 100;
+        stage = "최종 제출 완료";
+      } else if ("모순탐지".equals(status)) {
+        progress = 70;
+        stage = "모순 항목 검토 필요";
+      } else if ("진행중".equals(status)) {
+        progress = 55;
+        stage = "조서 작성 중";
+      } else {
+        progress = 40;
+        stage = "조서 분석 완료";
+      }
+      if (i > 0) casesJson.append(",");
+      casesJson.append("{");
+      casesJson.append("\"id\":\"").append(esc(caseId)).append("\",");
+      casesJson.append("\"name\":\"").append(esc(caseName)).append("\",");
+      casesJson.append("\"suspect\":\"").append(esc(suspectName)).append("\",");
+      casesJson.append("\"date\":\"").append(esc(updatedDate)).append("\",");
+      casesJson.append("\"status\":\"").append(esc(status)).append("\",");
+      casesJson.append("\"progress\":").append(progress).append(",");
+      casesJson.append("\"urgent\":").append(urgent ? "true" : "false").append(",");
+      casesJson.append("\"docs\":").append(docsCount).append(",");
+      casesJson.append("\"stage\":\"").append(esc(stage)).append("\"");
+      casesJson.append("}");
+    }
+    casesJson.append("]");
+
+    docsJson = new StringBuilder();
+    docsJson.append("[");
+    for (int i=0; i<transcriptDocs.size(); i++) {
+      String[] d = transcriptDocs.get(i);
+      String id       = d[0];
+      String caseId   = d[1];
+      String caseName = d[2];
+      String stmtType = d[3];
+      String stmtName = d[4];
+      String date     = d[5];
+      String status   = d[6];
+      String words    = d[7];
+      String title = ((stmtName != null && !stmtName.isEmpty()) ? stmtName : "진술자")
+        + " " + ((stmtType != null && !stmtType.isEmpty()) ? stmtType : "진술") + " 조서";
+
+      if (i > 0) docsJson.append(",");
+      docsJson.append("{");
+      docsJson.append("\"id\":\"").append(esc(id)).append("\",");
+      docsJson.append("\"caseId\":\"").append(esc(caseId)).append("\",");
+      docsJson.append("\"caseName\":\"").append(esc(caseName)).append("\",");
+      docsJson.append("\"title\":\"").append(esc(title)).append("\",");
+      docsJson.append("\"type\":\"").append(esc(stmtType)).append("\",");
+      docsJson.append("\"date\":\"").append(esc(date)).append("\",");
+      docsJson.append("\"status\":\"").append(esc(status)).append("\",");
+      docsJson.append("\"words\":").append(words);
+      docsJson.append("}");
+    }
+    docsJson.append("]");
+  } catch (Exception e) {
+    e.printStackTrace();
+  } finally {
+    mgr.freeConnection(conn, ps, rs);
+  }
+
+%>
 <div class="screen">
 
   <!-- 헤더 -->
@@ -236,9 +417,9 @@
     <div class="tab-panel" id="panelDoc">
 
       <div class="stats-strip">
-        <div class="stat-mini"><div class="stat-num">28</div><div class="stat-lbl">전체 조서</div></div>
-        <div class="stat-mini"><div class="stat-num">5</div><div class="stat-lbl">작성중</div></div>
-        <div class="stat-mini"><div class="stat-num">3</div><div class="stat-lbl">모순탐지</div></div>
+        <div class="stat-mini"><div class="stat-num"><%= docTotal %></div><div class="stat-lbl">전체 조서</div></div>
+        <div class="stat-mini"><div class="stat-num">0</div><div class="stat-lbl">작성중</div></div>
+        <div class="stat-mini"><div class="stat-num"><%= docContradiction %></div><div class="stat-lbl">모순탐지</div></div>
       </div>
 
       <div class="section-label">최근 조서</div>
@@ -289,25 +470,14 @@
   </div>
 </div>
 
-<script>
-// ── 임시 데이터 (DB 연동 후 서블릿으로 교체) ─────────────────────
-var CASES = [
-  { id:'2024-0312', name:'절도사건', suspect:'홍길동', date:'2025.03.24', status:'검토필요', progress:75, urgent:true,  docs:3, stage:'조서 분석 완료' },
-  { id:'2024-0289', name:'폭행사건', suspect:'김철수', date:'2025.03.21', status:'진행중',   progress:45, urgent:false, docs:2, stage:'조서 작성 중' },
-  { id:'2024-0271', name:'사기사건', suspect:'이영희', date:'2025.03.18', status:'완료',     progress:100,urgent:false, docs:4, stage:'관계망 업데이트 완료' },
-  { id:'2024-0255', name:'협박사건', suspect:'박민수', date:'2025.03.12', status:'모순탐지', progress:60, urgent:true,  docs:2, stage:'모순 항목 검토 필요' },
-  { id:'2024-0244', name:'강도사건', suspect:'최수진', date:'2025.03.10', status:'완료',     progress:100,urgent:false, docs:5, stage:'최종 제출 완료' },
-  { id:'2024-0230', name:'마약사건', suspect:'정태양', date:'2025.03.05', status:'진행중',   progress:30, urgent:false, docs:1, stage:'초기 조사 중' }
-];
+<!-- JS에서 사용할 JSON 데이터(IDE JS 파서 오인 방지) -->
+<script type="application/json" id="casesData"><%= casesJson.toString() %></script>
+<script type="application/json" id="docsData"><%= docsJson.toString() %></script>
 
-var DOCS = [
-  { id:'D001', caseId:'2024-0312', title:'홍길동 1차 진술 조서', type:'피의자', date:'2025.03.24', status:'검토필요', words:1240 },
-  { id:'D002', caseId:'2024-0312', title:'목격자 A 진술 조서',   type:'목격자', date:'2025.03.23', status:'완료',     words:820  },
-  { id:'D003', caseId:'2024-0289', title:'김철수 1차 진술 조서', type:'피의자', date:'2025.03.21', status:'작성중',   words:560  },
-  { id:'D004', caseId:'2024-0255', title:'박민수 2차 진술 조서', type:'피의자', date:'2025.03.14', status:'모순탐지', words:1580 },
-  { id:'D005', caseId:'2024-0271', title:'이영희 최종 조서',     type:'피의자', date:'2025.03.18', status:'완료',     words:2100 },
-  { id:'D006', caseId:'2024-0244', title:'강도사건 수사보고서',  type:'보고서', date:'2025.03.11', status:'완료',     words:3200 }
-];
+<script>
+// ── 사건 목록 데이터 (로그인 유저 기준) ──
+var CASES = JSON.parse(document.getElementById('casesData').textContent || '[]');
+var DOCS  = JSON.parse(document.getElementById('docsData').textContent  || '[]');
 
 var currentFilter = 'all';
 var currentTab    = 'case';
