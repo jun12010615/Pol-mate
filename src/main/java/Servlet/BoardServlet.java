@@ -1,5 +1,6 @@
 package Servlet;
 
+
 import java.io.*;
 import java.sql.*;
 import java.util.*;
@@ -78,6 +79,7 @@ public class BoardServlet extends HttpServlet {
             case "write":   handleWrite(request, response, loginUser);   break;
             case "delete":  handleDelete(request, response, loginUser);  break;
             case "comment": handleComment(request, response, loginUser); break;
+            case "deleteComment": handleDeleteComment(request, response, loginUser); break;
             case "like":    handleLike(request, response, loginUser);    break;
             default:
                 response.getWriter().write("{\"error\":\"알 수 없는 action\"}");
@@ -453,6 +455,9 @@ public class BoardServlet extends HttpServlet {
             ResultSet rs = pstmt.executeQuery();
             if (!rs.next() || !loginUser.equals(rs.getString("user_id"))) {
                 res.getWriter().write("{\"success\":false,\"error\":\"삭제 권한이 없습니다.\"}");
+                rs.close();
+                try { conn.rollback(); } catch (Exception ignored) {}
+                try { conn.setAutoCommit(true); } catch (Exception ignored) {}  // ← 이게 핵심!
                 mgr.freeConnection(conn, pstmt, rs);
                 return;
             }
@@ -515,6 +520,74 @@ public class BoardServlet extends HttpServlet {
             res.getWriter().write("{\"success\":false,\"error\":\"댓글 등록 중 오류가 발생했습니다.\"}");
         } finally {
             mgr.freeConnection(conn, pstmt);
+        }
+    }
+
+    /* ═══════════════════════════════════════════════
+       댓글 삭제 (본인 댓글만)
+       파라미터: commentId
+    ═══════════════════════════════════════════════ */
+    private void handleDeleteComment(HttpServletRequest req, HttpServletResponse res, String loginUser)
+            throws IOException {
+
+        String idStr = req.getParameter("commentId");
+        if (idStr == null) {
+            res.getWriter().write("{\"success\":false,\"error\":\"commentId 필요\"}");
+            return;
+        }
+        int commentId;
+        try { commentId = Integer.parseInt(idStr); }
+        catch (NumberFormatException e) {
+            res.getWriter().write("{\"success\":false,\"error\":\"잘못된 commentId\"}");
+            return;
+        }
+
+        DBConnectionMgr mgr = DBConnectionMgr.getInstance();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = mgr.getConnection();
+            conn.setAutoCommit(false);
+
+            // 작성자 확인
+            pstmt = conn.prepareStatement(
+                "SELECT user_id FROM board_comments WHERE comment_id=?");
+            pstmt.setInt(1, commentId);
+            rs = pstmt.executeQuery();
+            if (!rs.next() || !loginUser.equals(rs.getString("user_id"))) {
+                res.getWriter().write("{\"success\":false,\"error\":\"삭제 권한이 없습니다.\"}");
+                mgr.freeConnection(conn, pstmt, rs);
+                return;
+            }
+            mgr.freeConnection(null, pstmt, rs);
+            pstmt = null; rs = null;
+
+            // 댓글 좋아요 삭제
+            pstmt = conn.prepareStatement(
+                "DELETE FROM board_likes WHERE target_type='comment' AND target_id=?");
+            pstmt.setInt(1, commentId);
+            pstmt.executeUpdate();
+            mgr.freeConnection(null, pstmt);
+            pstmt = null;
+
+            // 댓글 삭제
+            pstmt = conn.prepareStatement(
+                "DELETE FROM board_comments WHERE comment_id=?");
+            pstmt.setInt(1, commentId);
+            pstmt.executeUpdate();
+
+            conn.commit();
+            res.getWriter().write("{\"success\":true}");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            try { if (conn != null) conn.rollback(); } catch (Exception ignored) {}
+            res.getWriter().write("{\"success\":false,\"error\":\"댓글 삭제 중 오류가 발생했습니다.\"}");
+        } finally {
+            try { if (conn != null) conn.setAutoCommit(true); } catch (Exception ignored) {}
+            mgr.freeConnection(conn, pstmt, rs);
         }
     }
 
