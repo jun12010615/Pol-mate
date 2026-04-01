@@ -64,6 +64,7 @@
   .field-input:focus { border-color: var(--accent); background: #fff; }
   .field-input::placeholder { color: var(--text-muted); font-size: 12px; }
   .field-input.no-icon { padding-left: 12px; }
+  .field-input:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .inline-row { display: flex; gap: 8px; }
   .inline-row .field-input { flex: 1; }
@@ -224,9 +225,10 @@
       <div class="card">
         <div class="card-title">소속 및 직급 정보</div>
 
+        <!-- 소속 기관 -->
         <div class="field-group">
           <label class="field-label">소속 기관 <span class="required">*</span></label>
-          <select id="userOrg" class="field-input no-icon">
+          <select id="userOrg" class="field-input no-icon" onchange="loadDepts()">
             <option value="">선택하세요</option>
             <option>서울지방경찰청</option>
             <option>부산지방경찰청</option>
@@ -241,14 +243,16 @@
           </select>
         </div>
 
+        <!-- 부서명 (기관 선택 후 동적 로드) -->
         <div class="field-group">
           <label class="field-label">부서명</label>
-          <div class="field-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-            <input type="text" id="userDept" class="field-input" placeholder="예: 형사과 2팀">
-          </div>
+          <select id="userDept" class="field-input no-icon" disabled>
+            <option value="">소속 기관을 먼저 선택하세요</option>
+          </select>
+          <p class="field-hint" id="deptHint" style="display:none">소속 기관 선택 후 부서를 선택할 수 있습니다.</p>
         </div>
 
+        <!-- 계급 -->
         <div class="field-group">
           <label class="field-label">계급 <span class="required">*</span></label>
           <select id="userRank" class="field-input no-icon">
@@ -264,6 +268,7 @@
           </select>
         </div>
 
+        <!-- 수사관 번호 -->
         <div class="field-group" style="margin-bottom:0">
           <label class="field-label">수사관 번호 <span class="required">*</span></label>
           <div class="field-wrap">
@@ -362,6 +367,49 @@ function checkId() {
     .catch(err => { alert('서버 통신 오류: ' + err.message + '\nRegisterServlet.java가 배포되었는지 확인하세요.'); idChecked = false; });
 }
 
+// ── 기관 선택 시 부서 목록 동적 로드 ──
+function loadDepts() {
+  const org = document.getElementById('userOrg').value;
+  const deptSel = document.getElementById('userDept');
+  const deptHint = document.getElementById('deptHint');
+
+  // 기관 미선택 시 부서 초기화
+  if (!org) {
+    deptSel.innerHTML = '<option value="">소속 기관을 먼저 선택하세요</option>';
+    deptSel.disabled = true;
+    deptHint.style.display = 'none';
+    return;
+  }
+
+  deptSel.innerHTML = '<option value="">불러오는 중...</option>';
+  deptSel.disabled = true;
+
+  fetch('register?action=getDepts&org=' + encodeURIComponent(org))
+    .then(r => r.json())
+    .then(depts => {
+      deptSel.innerHTML = '<option value="">선택하세요 (선택)</option>';
+      if (depts.length === 0) {
+        deptSel.innerHTML = '<option value="">등록된 부서가 없습니다</option>';
+        deptHint.style.display = 'block';
+        deptHint.textContent = '부서 정보가 없습니다. 관리자에게 문의하세요.';
+      } else {
+        depts.forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d.dept_id;
+          opt.textContent = d.dept_name;
+          deptSel.appendChild(opt);
+        });
+        deptSel.disabled = false;
+        deptHint.style.display = 'none';
+      }
+    })
+    .catch(() => {
+      deptSel.innerHTML = '<option value="">불러오기 실패</option>';
+      deptHint.style.display = 'block';
+      deptHint.textContent = '부서 목록을 불러오지 못했습니다. 다시 시도해 주세요.';
+    });
+}
+
 // ── 비밀번호 강도 체크 (실시간) ──
 function checkPwStrength() {
   const pw = document.getElementById('userPw').value;
@@ -422,9 +470,9 @@ function goStep2() {
   if (!/[0-9]/.test(pw))                { alert('비밀번호에 숫자를 포함해 주세요.'); return; }
   if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pw)) { alert('비밀번호에 특수문자를 포함해 주세요.'); return; }
   if (pw !== pwcf)                       { document.getElementById('pwErr').style.display='block'; return; }
-  else                         { document.getElementById('pwErr').style.display='none'; }
-  if (!name)                   { alert('이름을 입력해 주세요.'); return; }
-  if (!phone)                  { alert('연락처를 입력해 주세요.'); return; }
+  else                                   { document.getElementById('pwErr').style.display='none'; }
+  if (!name)                             { alert('이름을 입력해 주세요.'); return; }
+  if (!phone)                            { alert('연락처를 입력해 주세요.'); return; }
   setStep(2);
 }
 
@@ -482,7 +530,7 @@ function submitRegister() {
   params.append('userPhone', document.getElementById('userPhone').value.trim());
   params.append('userOrg',   document.getElementById('userOrg').value);
   params.append('userRank',  document.getElementById('userRank').value);
-  params.append('userDept',  document.getElementById('userDept').value.trim());
+  params.append('deptId',    document.getElementById('userDept').value);  // dept_id (숫자) 전송
   params.append('badgeNum',  document.getElementById('badgeNum').value.trim());
 
   fetch('register', {

@@ -9,7 +9,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>POL-MATE | 내 조서 관리</title>
+<title>POL-MATE | 내 사건 관리</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -37,16 +37,6 @@
   }
   .btn-new svg { width:13px; height:13px; stroke:#fff; }
 
-  /* 탭 */
-  .tab-row { display:flex; border-top:1px solid rgba(255,255,255,0.1); }
-  .tab-btn {
-    flex:1; padding:12px 0; font-size:13px; font-weight:400;
-    color:rgba(255,255,255,0.5); background:none; border:none;
-    cursor:pointer; font-family:'Noto Sans KR',sans-serif;
-    border-bottom:2px solid transparent; transition:all 0.2s;
-  }
-  .tab-btn.active { color:#fff; border-bottom-color:#fff; font-weight:500; }
-
   /* 검색 바 */
   .search-wrap { background:var(--navy); padding:0 16px 16px; }
   .search-box {
@@ -63,9 +53,6 @@
   /* ── 콘텐츠 ── */
   .content { flex:1; overflow-y:auto; padding-bottom:calc(var(--bottom-nav-h) + 16px); }
 
-  .tab-panel { display:none; }
-  .tab-panel.active { display:block; }
-
   /* 필터 칩 */
   .filter-row {
     display:flex; gap:8px; padding:14px 16px 10px; overflow-x:auto;
@@ -81,7 +68,6 @@
 
   /* 사건 카드 */
   .case-list { padding:0 16px; display:flex; flex-direction:column; gap:10px; }
-
   .case-card {
     background:var(--card); border-radius:16px; border:1px solid var(--border);
     padding:16px; cursor:pointer; transition:border-color 0.2s;
@@ -113,34 +99,6 @@
   .fill-amber  { background:#f59e0b; }
   .case-progress-pct  { font-size:10px; color:var(--text-muted); white-space:nowrap; }
 
-  /* 조서 리스트 (탭2) */
-  .doc-card {
-    background:var(--card); border-radius:14px; border:1px solid var(--border);
-    margin:0 16px 10px; padding:15px 16px; display:flex; align-items:center; gap:14px;
-    cursor:pointer; transition:background 0.15s; animation:fadeUp 0.3s ease both;
-  }
-  .doc-card:active { background:var(--bg); }
-  .doc-icon { width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .doc-icon svg { width:20px; height:20px; }
-  .di-blue   { background:#eff6ff; }
-  .di-green  { background:var(--success-bg); }
-  .di-amber  { background:var(--warn-bg); }
-  .di-gray   { background:#f3f4f6; }
-  .doc-info  { flex:1; min-width:0; }
-  .doc-title { font-size:13px; font-weight:500; color:var(--text-primary); margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .doc-meta  { font-size:11px; color:var(--text-muted); }
-  .doc-right { display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
-  .doc-date  { font-size:10px; color:var(--text-muted); }
-
-  /* 통계 헤더 (탭2) */
-  .stats-strip {
-    display:grid; grid-template-columns:repeat(3,1fr); gap:10px;
-    padding:14px 16px 10px;
-  }
-  .stat-mini { background:var(--card); border-radius:12px; border:1px solid var(--border); padding:12px; text-align:center; }
-  .stat-num  { font-size:20px; font-weight:700; color:var(--navy); }
-  .stat-lbl  { font-size:10px; color:var(--text-muted); margin-top:2px; }
-
   /* 빈 상태 */
   .empty-state { padding:48px 20px; text-align:center; }
   .empty-icon  { width:60px; height:60px; background:var(--bg); border-radius:50%; margin:0 auto 14px; display:flex; align-items:center; justify-content:center; }
@@ -148,10 +106,7 @@
   .empty-title { font-size:14px; font-weight:500; color:var(--text-secondary); margin-bottom:6px; }
   .empty-desc  { font-size:12px; color:var(--text-muted); }
 
-  /* 섹션 라벨 */
-  .section-label { font-size:10px; font-weight:500; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.6px; padding:14px 16px 8px; }
-
-  /* ── 드로어: 사건 상세 ── */
+  /* ── 드로어 ── */
   .overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:200; display:none; align-items:flex-end; justify-content:center; }
   .overlay.open { display:flex; }
   .drawer { background:var(--card); border-radius:20px 20px 0 0; width:100%; max-width:420px; padding:0 0 36px; animation:slideUp 0.28s ease both; max-height:88vh; overflow-y:auto; }
@@ -161,16 +116,10 @@
   .drawer-sub    { font-size:12px; color:var(--text-muted); margin-top:3px; }
   .drawer-body   { padding:16px 20px; }
 
-  .detail-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); }
-  .detail-row:last-child { border-bottom:none; }
-  .detail-key { font-size:12px; color:var(--text-muted); }
-  .detail-val { font-size:12px; font-weight:500; color:var(--text-primary); text-align:right; }
-
   .action-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; }
   .action-btn {
     background:var(--bg); border:1px solid var(--border); border-radius:12px;
-    padding:14px 10px; text-align:center; cursor:pointer; text-decoration:none; display:block;
-    transition:background 0.15s;
+    padding:14px 10px; text-align:center; cursor:pointer; text-decoration:none; display:block; transition:background 0.15s;
   }
   .action-btn:active { background:var(--border); }
   .action-btn svg { width:20px; height:20px; display:block; margin:0 auto 6px; }
@@ -190,81 +139,38 @@
   .nav-item:not(.active) .nav-icon svg { stroke:var(--text-muted); }
   .nav-item:not(.active) .nav-label    { color:var(--text-muted); }
 
-  .status-btn {
-    padding:10px 8px; border:1px solid var(--border); border-radius:10px;
-    background:var(--card); font-size:13px; font-family:'Noto Sans KR',sans-serif;
-    color:var(--text-secondary); cursor:pointer; transition:all 0.15s;
-  }
+  .status-btn { padding:10px 8px; border:1px solid var(--border); border-radius:10px; background:var(--card); font-size:13px; font-family:'Noto Sans KR',sans-serif; color:var(--text-secondary); cursor:pointer; transition:all 0.15s; }
   .status-btn.selected { background:var(--navy); color:#fff; border-color:var(--navy); }
 
   /* ── 드로어 내 조서 목록 ── */
   .drawer-doc-list { display:flex; flex-direction:column; gap:8px; margin-bottom:6px; }
-  .drawer-doc-item {
-    display:flex; align-items:center; gap:10px;
-    background:var(--bg); border:1px solid var(--border); border-radius:12px;
-    padding:11px 13px; cursor:pointer; transition:border-color 0.15s;
-  }
+  .drawer-doc-item { display:flex; align-items:center; gap:10px; background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:11px 13px; cursor:pointer; transition:border-color 0.15s; }
   .drawer-doc-item:active { border-color:var(--accent); }
   .drawer-doc-item.checked { border-color:var(--accent); background:#eff6ff; }
-
-  /* 체크박스 커스텀 */
-  .doc-checkbox {
-    width:18px; height:18px; border-radius:5px; border:2px solid var(--border);
-    background:var(--card); display:flex; align-items:center; justify-content:center;
-    flex-shrink:0; transition:all 0.15s; cursor:pointer;
-  }
+  .doc-checkbox { width:18px; height:18px; border-radius:5px; border:2px solid var(--border); background:var(--card); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.15s; }
   .doc-checkbox.on { background:var(--accent); border-color:var(--accent); }
-  .doc-checkbox.on::after {
-    content:''; display:block; width:5px; height:9px;
-    border:2px solid #fff; border-top:none; border-left:none;
-    transform:rotate(45deg) translateY(-1px);
-  }
-
+  .doc-checkbox.on::after { content:''; display:block; width:5px; height:9px; border:2px solid #fff; border-top:none; border-left:none; transform:rotate(45deg) translateY(-1px); }
   .drawer-doc-icon { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .drawer-doc-icon svg { width:17px; height:17px; }
   .drawer-doc-info { flex:1; min-width:0; }
   .drawer-doc-title { font-size:12px; font-weight:500; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .drawer-doc-meta  { font-size:10px; color:var(--text-muted); margin-top:2px; }
   .drawer-doc-badge { flex-shrink:0; }
-
-  /* 모순탐지 비활성 */
-  .action-btn.disabled {
-    opacity:0.38; cursor:not-allowed; pointer-events:none;
-  }
-  .action-btn.contra-active {
-    background:var(--danger-bg); border-color:var(--danger);
-  }
+  .action-btn.disabled { opacity:0.38; cursor:not-allowed; pointer-events:none; }
+  .action-btn.contra-active { background:var(--danger-bg); border-color:var(--danger); }
   .action-btn.contra-active svg { stroke:var(--danger) !important; }
   .action-btn.contra-active span { color:var(--danger) !important; }
 
-  /* ── 조서 내용 팝업 ── */
-  .popup-overlay {
-    position:fixed; inset:0; background:rgba(0,0,0,0.55);
-    z-index:400; display:none; align-items:center; justify-content:center; padding:20px;
-  }
+  /* ── 팝업 ── */
+  .popup-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:400; display:none; align-items:center; justify-content:center; padding:20px; }
   .popup-overlay.open { display:flex; }
-  .popup-sheet {
-    background:var(--card); border-radius:16px; width:100%; max-width:380px;
-    max-height:75vh; display:flex; flex-direction:column;
-    animation:slideUp 0.22s ease both;
-  }
-  .popup-head {
-    padding:16px 18px 12px; border-bottom:1px solid var(--border);
-    display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
-  }
+  .popup-sheet { background:var(--card); border-radius:16px; width:100%; max-width:380px; max-height:75vh; display:flex; flex-direction:column; animation:slideUp 0.22s ease both; }
+  .popup-head { padding:16px 18px 12px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
   .popup-title { font-size:14px; font-weight:600; color:var(--text-primary); flex:1; }
-  .popup-close {
-    width:28px; height:28px; border-radius:50%; border:none; background:var(--bg);
-    display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;
-  }
+  .popup-close { width:28px; height:28px; border-radius:50%; border:none; background:var(--bg); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
   .popup-close svg { width:14px; height:14px; stroke:var(--text-muted); }
-  .popup-body {
-    flex:1; overflow-y:auto; padding:14px 18px 18px;
-    font-size:13px; color:var(--text-primary); line-height:1.8; white-space:pre-wrap;
-  }
+  .popup-body { flex:1; overflow-y:auto; padding:14px 18px 18px; font-size:13px; color:var(--text-primary); line-height:1.8; white-space:pre-wrap; }
   .popup-empty { color:var(--text-muted); font-size:12px; text-align:center; padding:24px 0; }
-
-  /* ── 모순탐지 결과 팝업 ── */
   .contra-result { font-size:13px; color:var(--text-primary); line-height:1.8; white-space:pre-wrap; }
   .contra-loading { text-align:center; padding:30px 0; color:var(--text-muted); font-size:13px; }
 
@@ -276,63 +182,33 @@
 <body>
 <div class="screen">
 
-  <!-- 헤더 -->
   <div class="top-header">
     <div class="header-row">
-      <span class="header-title">내 조서 관리</span>
+      <span class="header-title">내 사건 관리</span>
       <button class="btn-new" onclick="openNewCaseDrawer()">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         새 사건
       </button>
     </div>
-    <div class="tab-row">
-      <button class="tab-btn active" id="tabCase" onclick="switchTab('case')">사건 목록</button>
-      <button class="tab-btn"        id="tabDoc"  onclick="switchTab('doc')">조서 목록</button>
-    </div>
     <div class="search-wrap">
       <div class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" class="search-input" id="searchInput" placeholder="사건번호 또는 사건명 검색..." oninput="filterItems()">
+        <input type="text" class="search-input" id="searchInput" placeholder="사건번호 또는 사건명 검색...">
       </div>
     </div>
   </div>
 
   <div class="content">
-
-    <!-- ═══ 사건 목록 탭 ═══ -->
-    <div class="tab-panel active" id="panelCase">
-
-      <div class="filter-row">
-        <button class="chip active" onclick="setFilter(this,'all')">전체</button>
-        <button class="chip" onclick="setFilter(this,'검토필요')">검토필요</button>
-        <button class="chip" onclick="setFilter(this,'진행중')">진행중</button>
-        <button class="chip" onclick="setFilter(this,'완료')">완료</button>
-        <button class="chip" onclick="setFilter(this,'모순탐지')">모순탐지</button>
-      </div>
-
-      <div class="case-list" id="caseList">
-        <!-- JS로 렌더 -->
-      </div>
+    <div class="filter-row">
+      <button class="chip active" onclick="setFilter(this,'all')">전체</button>
+      <button class="chip" onclick="setFilter(this,'검토필요')">검토필요</button>
+      <button class="chip" onclick="setFilter(this,'진행중')">진행중</button>
+      <button class="chip" onclick="setFilter(this,'완료')">완료</button>
+      <button class="chip" onclick="setFilter(this,'모순탐지')">모순탐지</button>
     </div>
+    <div class="case-list" id="caseList"></div>
+  </div>
 
-    <!-- ═══ 조서 목록 탭 ═══ -->
-    <div class="tab-panel" id="panelDoc">
-
-      <div class="stats-strip">
-        <div class="stat-mini"><div class="stat-num">28</div><div class="stat-lbl">전체 조서</div></div>
-        <div class="stat-mini"><div class="stat-num">5</div><div class="stat-lbl">작성중</div></div>
-        <div class="stat-mini"><div class="stat-num">3</div><div class="stat-lbl">모순탐지</div></div>
-      </div>
-
-      <div class="section-label">최근 조서</div>
-      <div id="docList">
-        <!-- JS로 렌더 -->
-      </div>
-    </div>
-
-  </div><!-- /content -->
-
-  <!-- 하단 네비 -->
   <nav class="bottom-nav">
     <a href="main.jsp" class="nav-item">
       <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
@@ -357,7 +233,7 @@
   </nav>
 </div>
 
-<!-- ═══ 사건 상세 드로어 ═══ -->
+<!-- 사건 상세 드로어 -->
 <div class="overlay" id="caseDrawer" onclick="closeOnBg(event,'caseDrawer')">
   <div class="drawer">
     <div class="drawer-handle"></div>
@@ -366,41 +242,35 @@
       <div class="drawer-sub"   id="drawerSub">-</div>
     </div>
     <div class="drawer-body">
-      <!-- 조서 목록 -->
       <div id="drawerDocList"></div>
-      <!-- 액션 버튼 -->
       <div class="action-grid" id="drawerActions"></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ 조서 내용 팝업 ═══ -->
+<!-- 조서 내용 팝업 -->
 <div class="popup-overlay" id="transcriptPopup" onclick="closeTranscriptPopup(event)">
   <div class="popup-sheet">
     <div class="popup-head">
       <div class="popup-title" id="popupTitle">-</div>
-      <button class="popup-close" onclick="closeTranscriptPopup()">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      <button class="popup-close" onclick="closeTranscriptPopup()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="popup-body" id="popupBody"></div>
   </div>
 </div>
 
-<!-- ═══ 모순탐지 결과 팝업 ═══ -->
+<!-- 모순탐지 결과 팝업 -->
 <div class="popup-overlay" id="contraPopup" onclick="closeContraPopup(event)">
   <div class="popup-sheet">
     <div class="popup-head">
       <div class="popup-title" id="contraPopupTitle">모순 분석 결과</div>
-      <button class="popup-close" onclick="closeContraPopup()">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      <button class="popup-close" onclick="closeContraPopup()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="popup-body" id="contraPopupBody"></div>
   </div>
 </div>
 
-<!-- ═══ 새 사건 등록 드로어 ═══ -->
+<!-- 새 사건 등록 드로어 -->
 <div class="overlay" id="newCaseDrawer" onclick="closeOnBg(event,'newCaseDrawer')">
   <div class="drawer">
     <div class="drawer-handle"></div>
@@ -410,44 +280,33 @@
     </div>
     <div class="drawer-body">
       <div style="display:flex;flex-direction:column;gap:12px;">
-
-        <!-- 담당 팀 표시 (자동, 읽기 전용) -->
         <div style="background:#f4f6fb;border-radius:10px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;">
-          <span style="font-size:12px;color:var(--text-muted);">담당 팀</span>
-          <span id="newCaseTeamLabel" style="font-size:13px;font-weight:500;color:var(--navy);">불러오는 중...</span>
+          <span style="font-size:12px;color:var(--text-muted);">담당 부서</span>
+          <span id="newCaseDeptLabel" style="font-size:13px;font-weight:500;color:var(--navy);">불러오는 중...</span>
         </div>
-        <input type="hidden" id="newCaseTeamId">
-
         <div>
           <label style="font-size:11px;color:var(--text-muted);font-weight:500;display:block;margin-bottom:5px;">사건번호 <span style="color:var(--danger)">*</span></label>
-          <input id="newCaseId" type="text" placeholder="예: 2024-0312" maxlength="9"
-            style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;">
+          <input id="newCaseId" type="text" placeholder="예: 2024-0312" maxlength="9" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;">
         </div>
         <div>
           <label style="font-size:11px;color:var(--text-muted);font-weight:500;display:block;margin-bottom:5px;">사건명 <span style="color:var(--danger)">*</span></label>
-          <input id="newCaseName" type="text" placeholder="예: 절도사건" maxlength="50"
-            style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;">
+          <input id="newCaseName" type="text" placeholder="예: 절도사건" maxlength="50" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;">
         </div>
         <div>
           <label style="font-size:11px;color:var(--text-muted);font-weight:500;display:block;margin-bottom:5px;">피의자 성명 (선택)</label>
-          <input id="newSuspect" type="text" placeholder="홍길동" maxlength="30"
-            style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;">
+          <input id="newSuspect" type="text" placeholder="홍길동" maxlength="30" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;">
         </div>
         <div>
           <label style="font-size:11px;color:var(--text-muted);font-weight:500;display:block;margin-bottom:5px;">적용 법조 (선택)</label>
-          <input id="newCharge" type="text" placeholder="형법 제329조" maxlength="100"
-            style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;">
+          <input id="newCharge" type="text" placeholder="형법 제329조" maxlength="100" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;">
         </div>
-        <button onclick="submitNewCase()"
-          style="width:100%;padding:14px;background:var(--navy);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:500;font-family:'Noto Sans KR',sans-serif;cursor:pointer;margin-top:4px;">
-          등록하기
-        </button>
+        <button onclick="submitNewCase()" style="width:100%;padding:14px;background:var(--navy);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:500;font-family:'Noto Sans KR',sans-serif;cursor:pointer;margin-top:4px;">등록하기</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ═══ 상태·진행률 수정 드로어 ═══ -->
+<!-- 상태·진행률 수정 드로어 -->
 <div class="overlay" id="editDrawer" onclick="closeOnBg(event,'editDrawer')">
   <div class="drawer">
     <div class="drawer-handle"></div>
@@ -459,7 +318,7 @@
       <div style="display:flex;flex-direction:column;gap:14px;">
         <div>
           <label style="font-size:11px;color:var(--text-muted);font-weight:500;display:block;margin-bottom:8px;">상태</label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="statusBtnGroup">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
             <button class="status-btn" data-val="진행중"   onclick="selectStatus(this)">진행중</button>
             <button class="status-btn" data-val="검토필요" onclick="selectStatus(this)">검토필요</button>
             <button class="status-btn" data-val="완료"     onclick="selectStatus(this)">완료</button>
@@ -468,14 +327,9 @@
         </div>
         <div>
           <label style="font-size:11px;color:var(--text-muted);font-weight:500;display:block;margin-bottom:8px;">진행률 <span id="progressDisplay" style="color:var(--navy);font-weight:700;">0%</span></label>
-          <input type="range" id="progressSlider" min="0" max="100" step="5" value="0"
-            oninput="document.getElementById('progressDisplay').textContent=this.value+'%'"
-            style="width:100%;accent-color:var(--navy);">
+          <input type="range" id="progressSlider" min="0" max="100" step="5" value="0" oninput="document.getElementById('progressDisplay').textContent=this.value+'%'" style="width:100%;accent-color:var(--navy);">
         </div>
-        <button onclick="submitEditCase()"
-          style="width:100%;padding:14px;background:var(--navy);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:500;font-family:'Noto Sans KR',sans-serif;cursor:pointer;">
-          저장하기
-        </button>
+        <button onclick="submitEditCase()" style="width:100%;padding:14px;background:var(--navy);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:500;font-family:'Noto Sans KR',sans-serif;cursor:pointer;">저장하기</button>
       </div>
     </div>
   </div>
@@ -484,629 +338,210 @@
 <div id="toast" style="position:fixed;bottom:84px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;opacity:0;transition:all 0.3s;pointer-events:none;z-index:999;white-space:nowrap;font-family:'Noto Sans KR',sans-serif;"></div>
 
 <script>
-/* ═══════════════════════════════════════════════════════
-   상태 변수
-═══════════════════════════════════════════════════════ */
-var CASES          = [];
-var DOCS           = [];
-var currentFilter  = 'all';
-var currentTab     = 'case';
-var currentCaseId  = null; // 현재 열린 사건 드로어
-var editCaseId     = null; // 현재 수정 중인 사건
-var selectedStatus = '';
+var CASES = [], currentFilter = 'all', currentCaseId = null, editCaseId = null, selectedStatus = '';
+var BADGE_CLS = { '검토필요':'badge-warn','진행중':'badge-ok','완료':'badge-done','모순탐지':'badge-danger' };
 
-var BADGE_CLS = { '검토필요':'badge-warn', '진행중':'badge-ok', '완료':'badge-done', '모순탐지':'badge-danger' };
-
-/* ═══════════════════════════════════════════════════════
-   탭 전환
-═══════════════════════════════════════════════════════ */
-function switchTab(tab) {
-  currentTab = tab;
-  document.getElementById('panelCase').classList.toggle('active', tab === 'case');
-  document.getElementById('panelDoc').classList.toggle('active',  tab === 'doc');
-  document.getElementById('tabCase').classList.toggle('active',   tab === 'case');
-  document.getElementById('tabDoc').classList.toggle('active',    tab === 'doc');
-  document.getElementById('searchInput').value = '';
-  if (tab === 'doc') loadDocList();
-  else               loadCaseList();
-}
-
-/* ═══════════════════════════════════════════════════════
-   필터 칩
-═══════════════════════════════════════════════════════ */
 function setFilter(el, val) {
-  document.querySelectorAll('.chip').forEach(function(c) { c.classList.remove('active'); });
-  el.classList.add('active');
-  currentFilter = val;
-  loadCaseList();
+  document.querySelectorAll('.chip').forEach(function(c){c.classList.remove('active');});
+  el.classList.add('active'); currentFilter = val; loadCaseList();
 }
 
-/* ═══════════════════════════════════════════════════════
-   검색 (디바운스)
-═══════════════════════════════════════════════════════ */
-var _searchTimer = null;
-document.getElementById('searchInput').addEventListener('input', function() {
-  clearTimeout(_searchTimer);
-  _searchTimer = setTimeout(function() {
-    if (currentTab === 'case') loadCaseList();
-    else                       loadDocList();
-  }, 350);
+var _st = null;
+document.getElementById('searchInput').addEventListener('input', function(){
+  clearTimeout(_st); _st = setTimeout(loadCaseList, 350);
 });
 
-/* ═══════════════════════════════════════════════════════
-   DB: 사건 목록 로드
-═══════════════════════════════════════════════════════ */
 function loadCaseList() {
-  var keyword = document.getElementById('searchInput').value.trim();
-  var url = 'caseApi?action=caseList'
-    + '&status='  + encodeURIComponent(currentFilter)
-    + '&keyword=' + encodeURIComponent(keyword);
-
-  document.getElementById('caseList').innerHTML =
-    '<div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;">불러오는 중...</div>';
-
-  fetch(url)
-    .then(function(r) {
-      if (!r.ok) {
-        return r.text().then(function(t) {
-          console.error('[caseList] HTTP ' + r.status, t);
-          throw new Error('HTTP ' + r.status);
-        });
-      }
-      return r.json();
+  var kw = document.getElementById('searchInput').value.trim();
+  document.getElementById('caseList').innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;">불러오는 중...</div>';
+  fetch('caseApi?action=caseList&status=' + encodeURIComponent(currentFilter) + '&keyword=' + encodeURIComponent(kw))
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(function(data){
+      if(data.error){ document.getElementById('caseList').innerHTML='<div class="empty-state"><div class="empty-title" style="color:var(--danger)">'+data.error+'</div></div>'; return; }
+      CASES = Array.isArray(data) ? data : []; renderCases(CASES);
     })
-    .then(function(data) {
-      if (data.error) {
-        document.getElementById('caseList').innerHTML =
-          '<div class="empty-state"><div class="empty-title" style="color:var(--danger)">' + data.error + '</div></div>';
-        return;
-      }
-      CASES = Array.isArray(data) ? data : [];
-      renderCases(CASES);
-    })
-    .catch(function(e) {
-      console.error('[caseList] 오류:', e);
-      document.getElementById('caseList').innerHTML =
-        '<div class="empty-state"><div class="empty-title" style="color:var(--danger)">목록 로드 실패</div><div class="empty-desc">콘솔(F12)에서 오류 내용을 확인하세요</div></div>';
-    });
+    .catch(function(e){ console.error(e); document.getElementById('caseList').innerHTML='<div class="empty-state"><div class="empty-title" style="color:var(--danger)">목록 로드 실패</div></div>'; });
 }
 
-/* ═══════════════════════════════════════════════════════
-   DB: 조서 목록 + 통계 로드
-═══════════════════════════════════════════════════════ */
-function loadDocList() {
-  var keyword = document.getElementById('searchInput').value.trim();
-
-  // 통계
-  fetch('caseApi?action=docStats')
-    .then(function(r) { return r.json(); })
-    .then(function(s) {
-      if (!s.error) {
-        document.querySelector('.stats-strip').innerHTML =
-          '<div class="stat-mini"><div class="stat-num">' + (s.total||0) + '</div><div class="stat-lbl">전체 조서</div></div>' +
-          '<div class="stat-mini"><div class="stat-num">' + (s.contradiction||0) + '</div><div class="stat-lbl">모순탐지</div></div>' +
-          '<div class="stat-mini"><div class="stat-num">' + ((s.total||0) - (s.contradiction||0)) + '</div><div class="stat-lbl">정상</div></div>';
-      }
-    });
-
-  // 목록
-  document.getElementById('docList').innerHTML =
-    '<div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;">불러오는 중...</div>';
-
-  fetch('caseApi?action=docList&keyword=' + encodeURIComponent(keyword))
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (data.error) { showToast(data.error); return; }
-      DOCS = Array.isArray(data) ? data : [];
-      renderDocs(DOCS);
-    })
-    .catch(function(e) { console.error(e); showToast('조서 목록 로드 실패'); });
-}
-
-/* ═══════════════════════════════════════════════════════
-   사건 렌더
-═══════════════════════════════════════════════════════ */
 function renderCases(list) {
-  if (!list.length) {
-    document.getElementById('caseList').innerHTML =
-      '<div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>' +
-      '<div class="empty-title">사건이 없습니다</div>' +
-      '<div class="empty-desc">새 사건을 등록해 보세요</div></div>';
+  if(!list.length){
+    document.getElementById('caseList').innerHTML='<div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><div class="empty-title">사건이 없습니다</div><div class="empty-desc">새 사건을 등록해 보세요</div></div>';
     return;
   }
-  var html = '';
-  list.forEach(function(c, i) {
-    var badgeCls = BADGE_CLS[c.status] || 'badge-info';
-    var fillCls  = c.progress === 100 ? 'fill-green' : (c.progress >= 60 ? 'fill-blue' : 'fill-amber');
-    // 피의자 표시 (미입력이면 숨김)
-    var suspectTag = (c.suspect && c.suspect !== '미입력')
-      ? '<span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">피의자: ' + escHtml(c.suspect) + '</span>'
-      : '';
-    // 담당 형사: 계급 + 이름
-    var detectiveTxt = (c.rank ? c.rank + ' ' : '') + escHtml(c.detective);
-    html += '<div class="case-card' + (c.urgent ? ' urgent' : '') + '" style="animation-delay:' + (i*0.05) + 's" onclick="openCase(\'' + escStr(c.id) + '\')">' +
-      '<div class="case-top">' +
-        '<div><div class="case-num">' + escHtml(c.id) + '</div><div class="case-name">' + escHtml(c.name) + '</div></div>' +
-        '<div style="display:flex;align-items:center;gap:7px;flex-shrink:0;">' +
-          suspectTag +
-          '<span class="badge ' + badgeCls + '">' + escHtml(c.status) + '</span>' +
-        '</div>' +
-      '</div>' +
+  var html='';
+  list.forEach(function(c,i){
+    var bc=BADGE_CLS[c.status]||'badge-info';
+    var fc=c.progress===100?'fill-green':(c.progress>=60?'fill-blue':'fill-amber');
+    var st=(c.suspect&&c.suspect!=='미입력')?'<span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">피의자: '+escHtml(c.suspect)+'</span>':'';
+    var dt=(c.rank?c.rank+' ':'')+escHtml(c.detective);
+    var tt=!c.isMine?'<span style="font-size:10px;background:#f0fdf4;color:#16a34a;padding:2px 7px;border-radius:10px;margin-left:4px;">팀원</span>':'';
+    html+='<div class="case-card'+(c.urgent?' urgent':'')+'" style="animation-delay:'+(i*0.05)+'s" onclick="openCase(\''+escStr(c.id)+'\')">' +
+      '<div class="case-top"><div><div class="case-num">'+escHtml(c.id)+tt+'</div><div class="case-name">'+escHtml(c.name)+'</div></div>' +
+      '<div style="display:flex;align-items:center;gap:7px;flex-shrink:0;">'+st+'<span class="badge '+bc+'">'+escHtml(c.status)+'</span></div></div>' +
       '<div class="case-meta">' +
-        '<div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' + detectiveTxt + '</div>' +
-        '<div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' + escHtml(c.date) + '</div>' +
-        '<div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>조서 ' + c.docs + '건</div>' +
+        '<div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'+dt+'</div>' +
+        '<div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'+escHtml(c.date)+'</div>' +
+        '<div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>조서 '+c.docs+'건</div>' +
       '</div>' +
-      '<div class="case-progress-wrap">' +
-        '<div class="case-progress-bar"><div class="case-progress-fill ' + fillCls + '" style="width:' + c.progress + '%"></div></div>' +
-        '<span class="case-progress-pct">' + c.progress + '%</span>' +
-      '</div>' +
+      '<div class="case-progress-wrap"><div class="case-progress-bar"><div class="case-progress-fill '+fc+'" style="width:'+c.progress+'%"></div></div><span class="case-progress-pct">'+c.progress+'%</span></div>' +
     '</div>';
   });
-  document.getElementById('caseList').innerHTML = html;
+  document.getElementById('caseList').innerHTML=html;
 }
 
-/* ═══════════════════════════════════════════════════════
-   조서 렌더
-═══════════════════════════════════════════════════════ */
-function renderDocs(list) {
-  if (!list.length) {
-    document.getElementById('docList').innerHTML =
-      '<div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div>' +
-      '<div class="empty-title">조서가 없습니다</div>' +
-      '<div class="empty-desc">새 조서를 작성해 보세요</div></div>';
-    return;
-  }
-  var html = '';
-  var iconMap  = { '피의자':'di-blue', '목격자':'di-green', '참고인':'di-amber', '피해자':'di-amber' };
-  var strokeMap= { '피의자':'#1d4ed8', '목격자':'#15803d', '참고인':'#b45309', '피해자':'#b45309' };
-  list.forEach(function(d, i) {
-    var iconCls  = iconMap[d.type]   || 'di-gray';
-    var stroke   = strokeMap[d.type] || '#6b7280';
-    var badgeCls = BADGE_CLS[d.status] || 'badge-info';
-    html += '<div class="doc-card" style="animation-delay:' + (i*0.05) + 's" onclick="location.href=\'writeTranscript.jsp\'">' +
-      '<div class="doc-icon ' + iconCls + '"><svg viewBox="0 0 24 24" fill="none" stroke="' + stroke + '" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>' +
-      '<div class="doc-info">' +
-        '<div class="doc-title">' + escHtml(d.title) + '</div>' +
-        '<div class="doc-meta">' + escHtml(d.caseId) + ' · ' + escHtml(d.type) + ' · ' + (d.words||0).toLocaleString() + '자</div>' +
-      '</div>' +
-      '<div class="doc-right">' +
-        '<span class="badge ' + badgeCls + '">' + escHtml(d.status) + '</span>' +
-        '<span class="doc-date">' + escHtml(d.date) + '</span>' +
-      '</div>' +
-    '</div>';
-  });
-  document.getElementById('docList').innerHTML = html;
-}
-
-/* ═══════════════════════════════════════════════════════
-   사건 상세 드로어 (조서 목록 + 체크박스 + 액션)
-═══════════════════════════════════════════════════════ */
-var checkedDocs   = [];   // 체크된 transcript_id 배열
-var currentDocs   = [];   // 현재 드로어에 표시 중인 조서 배열 (내용 팝업용)
-var currentCaseData = {}; // 현재 열린 사건 데이터
+var checkedDocs=[], currentDocs=[], currentCaseData={};
 
 function openCase(id) {
-  currentCaseId   = id;
-  checkedDocs     = [];
-  currentDocs     = [];
-  currentCaseData = {};
-
-  document.getElementById('drawerTitle').textContent   = id;
-  document.getElementById('drawerSub').textContent     = '불러오는 중...';
-  document.getElementById('drawerDocList').innerHTML   = '';
-  document.getElementById('drawerActions').innerHTML   = '';
+  currentCaseId=id; checkedDocs=[]; currentDocs=[]; currentCaseData={};
+  document.getElementById('drawerTitle').textContent=id;
+  document.getElementById('drawerSub').textContent='불러오는 중...';
+  document.getElementById('drawerDocList').innerHTML='';
+  document.getElementById('drawerActions').innerHTML='';
   document.getElementById('caseDrawer').classList.add('open');
-  document.body.style.overflow = 'hidden';
-
-  fetch('caseApi?action=caseDetail&caseId=' + encodeURIComponent(id))
-    .then(function(r) { return r.json(); })
-    .then(function(c) {
-      if (c.error) { showToast(c.error); closeDrawer('caseDrawer'); return; }
-
-      currentCaseData = c;
-      currentDocs     = Array.isArray(c.docs) ? c.docs : [];
-
-      document.getElementById('drawerTitle').textContent = c.id + ' ' + c.name;
-      document.getElementById('drawerSub').textContent   =
-        '조서 ' + c.docCount + '건' +
-        (c.suspect && c.suspect !== '미입력' ? '  ·  피의자: ' + c.suspect : '');
-
-      renderDrawerDocs(currentDocs, c);
-      renderDrawerActions(c);
+  document.body.style.overflow='hidden';
+  fetch('caseApi?action=caseDetail&caseId='+encodeURIComponent(id))
+    .then(function(r){return r.json();})
+    .then(function(c){
+      if(c.error){showToast(c.error);closeDrawer('caseDrawer');return;}
+      currentCaseData=c; currentDocs=Array.isArray(c.docs)?c.docs:[];
+      document.getElementById('drawerTitle').textContent=c.id+' '+c.name;
+      document.getElementById('drawerSub').textContent='조서 '+c.docCount+'건'+(c.suspect&&c.suspect!=='미입력'?'  ·  피의자: '+c.suspect:'');
+      renderDrawerDocs(currentDocs); renderDrawerActions(c);
     })
-    .catch(function(e) { console.error(e); showToast('상세 조회 실패'); });
+    .catch(function(){showToast('상세 조회 실패');});
 }
 
-/* 조서 목록 렌더 */
-function renderDrawerDocs(docs, c) {
-  var iconMap   = { '피의자':'#eff6ff', '피해자':'#fff7ed', '목격자':'#f0fdf4', '참고인':'#fffbeb' };
-  var strokeMap = { '피의자':'#1d4ed8', '피해자':'#c2410c', '목격자':'#15803d', '참고인':'#b45309' };
-  var badgeMap  = { '모순탐지':'badge-danger', '완료':'badge-done' };
-
-  if (!docs.length) {
-    document.getElementById('drawerDocList').innerHTML =
-      '<div style="text-align:center;padding:24px 0;color:var(--text-muted);font-size:12px;">등록된 조서가 없습니다.<br>조서 추가 버튼으로 첫 조서를 작성하세요.</div>';
-    return;
-  }
-
-  var html = '<div class="drawer-doc-list">';
-  docs.forEach(function(d, i) {
-    var bg     = iconMap[d.type]   || '#f3f4f6';
-    var stroke = strokeMap[d.type] || '#6b7280';
-    var bCls   = d.contradiction ? 'badge-danger' : 'badge-done';
-    var bTxt   = d.contradiction ? '모순탐지' : '완료';
-    html +=
-      '<div class="drawer-doc-item" id="ddi-' + d.id + '" onclick="toggleDocCheck(' + d.id + ',' + i + ')">' +
-        '<div class="doc-checkbox" id="chk-' + d.id + '"></div>' +
-        '<div class="drawer-doc-icon" style="background:' + bg + '">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="' + stroke + '" stroke-width="1.8" stroke-linecap="round">' +
-            '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>' +
-            '<polyline points="14 2 14 8 20 8"/>' +
-            '<line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>' +
-          '</svg>' +
-        '</div>' +
-        '<div class="drawer-doc-info" onclick="event.stopPropagation();openTranscriptPopup(' + i + ')">' +
-          '<div class="drawer-doc-title">' + escHtml(d.name) + ' ' + escHtml(d.type) + ' 진술 조서</div>' +
-          '<div class="drawer-doc-meta">' + escHtml(d.date) + '  ·  ' + (d.textLen||0).toLocaleString() + '자</div>' +
-        '</div>' +
-        '<div class="drawer-doc-badge"><span class="badge ' + bCls + '">' + bTxt + '</span></div>' +
-      '</div>';
+function renderDrawerDocs(docs) {
+  var im={'피의자':'#eff6ff','피해자':'#fff7ed','목격자':'#f0fdf4','참고인':'#fffbeb'};
+  var sm={'피의자':'#1d4ed8','피해자':'#c2410c','목격자':'#15803d','참고인':'#b45309'};
+  if(!docs.length){document.getElementById('drawerDocList').innerHTML='<div style="text-align:center;padding:24px 0;color:var(--text-muted);font-size:12px;">등록된 조서가 없습니다.<br>조서 추가 버튼으로 첫 조서를 작성하세요.</div>';return;}
+  var html='<div class="drawer-doc-list">';
+  docs.forEach(function(d,i){
+    var bg=im[d.type]||'#f3f4f6', st=sm[d.type]||'#6b7280';
+    var bc=d.contradiction?'badge-danger':'badge-done', bt=d.contradiction?'모순탐지':'완료';
+    html+='<div class="drawer-doc-item" id="ddi-'+d.id+'" onclick="toggleDocCheck('+d.id+','+i+')">' +
+      '<div class="doc-checkbox" id="chk-'+d.id+'"></div>' +
+      '<div class="drawer-doc-icon" style="background:'+bg+'"><svg viewBox="0 0 24 24" fill="none" stroke="'+st+'" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>' +
+      '<div class="drawer-doc-info" onclick="event.stopPropagation();openTranscriptPopup('+i+')">' +
+        '<div class="drawer-doc-title">'+escHtml(d.name)+' '+escHtml(d.type)+' 진술 조서</div>' +
+        '<div class="drawer-doc-meta">'+escHtml(d.date)+'  ·  '+(d.textLen||0).toLocaleString()+'자</div>' +
+      '</div>' +
+      '<div class="drawer-doc-badge"><span class="badge '+bc+'">'+bt+'</span></div>' +
+    '</div>';
   });
-  html += '</div>';
-  document.getElementById('drawerDocList').innerHTML = html;
+  document.getElementById('drawerDocList').innerHTML=html+'</div>';
 }
 
-/* 체크박스 토글 */
-function toggleDocCheck(docId, idx) {
-  var pos = checkedDocs.indexOf(docId);
-  if (pos === -1) {
-    checkedDocs.push(docId);
-    document.getElementById('chk-' + docId).classList.add('on');
-    document.getElementById('ddi-' + docId).classList.add('checked');
+function toggleDocCheck(docId,idx){
+  var pos=checkedDocs.indexOf(docId);
+  if(pos===-1){checkedDocs.push(docId);document.getElementById('chk-'+docId).classList.add('on');document.getElementById('ddi-'+docId).classList.add('checked');}
+  else{checkedDocs.splice(pos,1);document.getElementById('chk-'+docId).classList.remove('on');document.getElementById('ddi-'+docId).classList.remove('checked');}
+  var btn=document.getElementById('contraBtn');
+  if(btn){var a=checkedDocs.length>=2;btn.classList.toggle('disabled',!a);btn.classList.toggle('contra-active',a);}
+}
+
+function renderDrawerActions(c){
+  var del=c.isMine?'<button class="action-btn" onclick="confirmDeleteCase(\''+escStr(c.id)+'\')" style="border:none;cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.8" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg><span style="color:var(--danger)">삭제</span></button>':'';
+  document.getElementById('drawerActions').innerHTML=
+    '<a href="writeTranscript.jsp" class="action-btn primary"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg><span>조서 추가</span></a>' +
+    '<button class="action-btn" onclick="openEditDrawer(\''+escStr(c.id)+'\',\''+escStr(c.status)+'\','+c.progress+')" style="border:1px solid var(--border);cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.8" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><span>상태 수정</span></button>' +
+    '<a href="caseRelationMap.jsp" class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="18" cy="19" r="2.5"/><line x1="8.4" y1="11.0" x2="15.6" y2="6.5"/><line x1="8.4" y1="13.0" x2="15.6" y2="17.5"/></svg><span>관계망</span></a>' +
+    '<button class="action-btn disabled" id="contraBtn" onclick="runContradiction()" style="border:1px solid var(--border);cursor:not-allowed;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>모순탐지</span></button>' +
+    del +
+    '<button class="action-btn" onclick="closeDrawer(\'caseDrawer\')" style="border:none;cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>닫기</span></button>';
+}
+
+function openTranscriptPopup(idx){
+  var d=currentDocs[idx]; if(!d) return;
+  document.getElementById('popupTitle').textContent=d.name+' '+d.type+' 진술 조서 ('+d.date+')';
+  if(d.originalText!==undefined){
+    document.getElementById('popupBody').innerHTML=d.originalText?'<span>'+escHtml(d.originalText)+'</span>':'<div class="popup-empty">저장된 진술 내용이 없습니다.</div>';
   } else {
-    checkedDocs.splice(pos, 1);
-    document.getElementById('chk-' + docId).classList.remove('on');
-    document.getElementById('ddi-' + docId).classList.remove('checked');
+    document.getElementById('popupBody').innerHTML='<div class="popup-empty">불러오는 중...</div>';
+    fetch('caseApi?action=transcriptText&transcriptId='+d.id).then(function(r){return r.json();}).then(function(res){
+      d.originalText=res.text||'';
+      document.getElementById('popupBody').innerHTML=d.originalText?'<span>'+escHtml(d.originalText)+'</span>':'<div class="popup-empty">저장된 진술 내용이 없습니다.</div>';
+    }).catch(function(){document.getElementById('popupBody').innerHTML='<div class="popup-empty">불러올 수 없습니다.</div>';});
   }
-  // 모순탐지 버튼 활성/비활성 갱신
-  var btn = document.getElementById('contraBtn');
-  if (btn) {
-    var active = checkedDocs.length >= 2;
-    btn.classList.toggle('disabled',      !active);
-    btn.classList.toggle('contra-active',  active);
-  }
-}
-
-/* 액션 버튼 렌더 */
-function renderDrawerActions(c) {
-  var deleteBtn = c.isMine
-    ? '<button class="action-btn" onclick="confirmDeleteCase(\'' + escStr(c.id) + '\')" style="border:none;cursor:pointer;">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.8" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>' +
-        '<span style="color:var(--danger)">삭제</span>' +
-      '</button>'
-    : '';
-
-  document.getElementById('drawerActions').innerHTML =
-    // 조서 추가
-    '<a href="writeTranscript.jsp" class="action-btn primary">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>' +
-      '<span>조서 추가</span>' +
-    '</a>' +
-    // 상태 수정
-    '<button class="action-btn" onclick="openEditDrawer(\'' + escStr(c.id) + '\',\'' + escStr(c.status) + '\',' + c.progress + ')" style="border:1px solid var(--border);cursor:pointer;">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.8" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
-      '<span>상태 수정</span>' +
-    '</button>' +
-    // 관계망
-    '<a href="caseRelationMap.jsp" class="action-btn">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="18" cy="19" r="2.5"/><line x1="8.4" y1="11.0" x2="15.6" y2="6.5"/><line x1="8.4" y1="13.0" x2="15.6" y2="17.5"/></svg>' +
-      '<span>관계망</span>' +
-    '</a>' +
-    // 모순탐지 (기본 비활성)
-    '<button class="action-btn disabled" id="contraBtn" onclick="runContradiction()" style="border:1px solid var(--border);cursor:not-allowed;">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
-      '<span>모순탐지</span>' +
-    '</button>' +
-    deleteBtn +
-    // 닫기
-    '<button class="action-btn" onclick="closeDrawer(\'caseDrawer\')" style="border:none;cursor:pointer;">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
-      '<span>닫기</span>' +
-    '</button>';
-}
-
-/* ═══════════════════════════════════════════════════════
-   조서 내용 팝업
-═══════════════════════════════════════════════════════ */
-function openTranscriptPopup(idx) {
-  var d = currentDocs[idx];
-  if (!d) return;
-  document.getElementById('popupTitle').textContent =
-    d.name + ' ' + d.type + ' 진술 조서 (' + d.date + ')';
-
-  // 내용이 이미 있으면 바로 표시, 없으면 서버에서 조회
-  if (d.originalText !== undefined) {
-    document.getElementById('popupBody').innerHTML =
-      d.originalText
-        ? '<span>' + escHtml(d.originalText) + '</span>'
-        : '<div class="popup-empty">저장된 진술 내용이 없습니다.</div>';
-  } else {
-    document.getElementById('popupBody').innerHTML =
-      '<div class="popup-empty">불러오는 중...</div>';
-    fetch('caseApi?action=transcriptText&transcriptId=' + d.id)
-      .then(function(r) { return r.json(); })
-      .then(function(res) {
-        d.originalText = res.text || '';
-        document.getElementById('popupBody').innerHTML =
-          d.originalText
-            ? '<span>' + escHtml(d.originalText) + '</span>'
-            : '<div class="popup-empty">저장된 진술 내용이 없습니다.</div>';
-      })
-      .catch(function() {
-        document.getElementById('popupBody').innerHTML =
-          '<div class="popup-empty">조서 내용을 불러올 수 없습니다.</div>';
-      });
-  }
-
   document.getElementById('transcriptPopup').classList.add('open');
 }
+function closeTranscriptPopup(e){if(!e||e.target===document.getElementById('transcriptPopup')||!e.target)document.getElementById('transcriptPopup').classList.remove('open');}
 
-function closeTranscriptPopup(e) {
-  if (!e || e.target === document.getElementById('transcriptPopup') || !e.target) {
-    document.getElementById('transcriptPopup').classList.remove('open');
-  }
-}
-
-/* ═══════════════════════════════════════════════════════
-   모순탐지 실행
-═══════════════════════════════════════════════════════ */
-function runContradiction() {
-  if (checkedDocs.length < 2) return;
-
-  // 선택된 조서 제목 목록
-  var titles = checkedDocs.map(function(id) {
-    var d = currentDocs.find(function(x) { return x.id === id; });
-    return d ? d.name + ' ' + d.type + ' 진술' : 'ID:' + id;
-  });
-
-  document.getElementById('contraPopupTitle').textContent = '모순 분석 중...';
-  document.getElementById('contraPopupBody').innerHTML =
-    '<div class="contra-loading">' +
-      '<div style="font-size:24px;margin-bottom:10px;">🔍</div>' +
-      '<div>AI가 ' + checkedDocs.length + '개의 조서를 분석하고 있습니다...</div>' +
-      '<div style="margin-top:6px;font-size:11px;color:var(--text-muted);">' + titles.join(', ') + '</div>' +
-    '</div>';
+function runContradiction(){
+  if(checkedDocs.length<2) return;
+  var titles=checkedDocs.map(function(id){var d=currentDocs.find(function(x){return x.id===id;});return d?d.name+' '+d.type+' 진술':'ID:'+id;});
+  document.getElementById('contraPopupTitle').textContent='모순 분석 중...';
+  document.getElementById('contraPopupBody').innerHTML='<div class="contra-loading"><div style="font-size:24px;margin-bottom:10px;">🔍</div><div>AI가 '+checkedDocs.length+'개의 조서를 분석하고 있습니다...</div><div style="margin-top:6px;font-size:11px;color:var(--text-muted);">'+titles.join(', ')+'</div></div>';
   document.getElementById('contraPopup').classList.add('open');
-
-  // 선택된 조서들의 원문 텍스트 수집
-  var fetchPromises = checkedDocs.map(function(id) {
-    var d = currentDocs.find(function(x) { return x.id === id; });
-    if (d && d.originalText !== undefined) return Promise.resolve(d);
-    return fetch('caseApi?action=transcriptText&transcriptId=' + id)
-      .then(function(r) { return r.json(); })
-      .then(function(res) {
-        if (d) d.originalText = res.text || '';
-        return d;
-      });
-  });
-
-  Promise.all(fetchPromises).then(function(docs) {
-    // Ollama 모순탐지 프롬프트 구성
-    var promptParts = docs.map(function(d, i) {
-      return '【조서 ' + (i+1) + ': ' + (d ? d.name + ' ' + d.type + ' 진술' : '알 수 없음') + '】\n' +
-             (d && d.originalText ? d.originalText : '(내용 없음)');
-    });
-
-    var prompt =
-      '당신은 대한민국 경찰청 수사 AI 보조 시스템입니다.\n' +
-      '아래 ' + docs.length + '개의 진술 조서를 비교하여 모순점을 분석해 주세요.\n\n' +
-      promptParts.join('\n\n') + '\n\n' +
-      '【분석 요청】\n' +
-      '1. 각 조서 간 날짜·시간·장소·행동에서 불일치하는 항목을 구체적으로 나열하세요.\n' +
-      '2. 모순이 없으면 "모순 없음"이라고 명시하세요.\n' +
-      '3. 수사관이 추가로 확인해야 할 사항을 제안하세요.\n' +
-      '한국어로 간결하게 답변하세요.';
-
-    return fetch('http://localhost:11434/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'gemma3:1b', prompt: prompt, stream: false })
-    });
+  var fp=checkedDocs.map(function(id){var d=currentDocs.find(function(x){return x.id===id;});if(d&&d.originalText!==undefined)return Promise.resolve(d);return fetch('caseApi?action=transcriptText&transcriptId='+id).then(function(r){return r.json();}).then(function(res){if(d)d.originalText=res.text||'';return d;});});
+  Promise.all(fp).then(function(docs){
+    var pp=docs.map(function(d,i){return '【조서'+(i+1)+': '+(d?d.name+' '+d.type+' 진술':'알 수 없음')+'】\n'+(d&&d.originalText?d.originalText:'(내용 없음)');});
+    var prompt='당신은 대한민국 경찰청 수사 AI 보조 시스템입니다.\n아래 '+docs.length+'개의 진술 조서를 비교하여 모순점을 분석해 주세요.\n\n'+pp.join('\n\n')+'\n\n【분석 요청】\n1. 각 조서 간 날짜·시간·장소·행동에서 불일치하는 항목을 구체적으로 나열하세요.\n2. 모순이 없으면 "모순 없음"이라고 명시하세요.\n3. 수사관이 추가로 확인해야 할 사항을 제안하세요.\n한국어로 간결하게 답변하세요.';
+    return fetch('http://localhost:11434/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'gemma3:1b',prompt:prompt,stream:false})});
   })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    var result = data.response || '분석 결과를 받지 못했습니다.';
-    document.getElementById('contraPopupTitle').textContent = '모순 분석 결과';
-    document.getElementById('contraPopupBody').innerHTML =
-      '<div class="contra-result">' + escHtml(result) + '</div>';
-  })
-  .catch(function(e) {
-    console.error(e);
-    document.getElementById('contraPopupTitle').textContent = '분석 실패';
-    document.getElementById('contraPopupBody').innerHTML =
-      '<div class="popup-empty">Ollama 서버에 연결할 수 없습니다.<br>로컬에서 <b>ollama run gemma3:1b</b>를 실행해 주세요.</div>';
-  });
+  .then(function(r){return r.json();})
+  .then(function(data){document.getElementById('contraPopupTitle').textContent='모순 분석 결과';document.getElementById('contraPopupBody').innerHTML='<div class="contra-result">'+escHtml(data.response||'분석 결과를 받지 못했습니다.')+'</div>';})
+  .catch(function(){document.getElementById('contraPopupTitle').textContent='분석 실패';document.getElementById('contraPopupBody').innerHTML='<div class="popup-empty">Ollama 서버에 연결할 수 없습니다.<br>로컬에서 <b>ollama run gemma3:1b</b>를 실행해 주세요.</div>';});
 }
+function closeContraPopup(e){if(!e||e.target===document.getElementById('contraPopup')||!e.target)document.getElementById('contraPopup').classList.remove('open');}
 
-function closeContraPopup(e) {
-  if (!e || e.target === document.getElementById('contraPopup') || !e.target) {
-    document.getElementById('contraPopup').classList.remove('open');
-  }
-}
-
-/* ═══════════════════════════════════════════════════════
-   새 사건 등록 드로어
-═══════════════════════════════════════════════════════ */
-function openNewCaseDrawer() {
-  document.getElementById('newCaseId').value      = '';
-  document.getElementById('newCaseName').value    = '';
-  document.getElementById('newSuspect').value     = '';
-  document.getElementById('newCharge').value      = '';
-  document.getElementById('newCaseTeamId').value  = '';
-  document.getElementById('newCaseTeamLabel').textContent = '불러오는 중...';
-  document.getElementById('newCaseTeamLabel').style.color = 'var(--text-muted)';
-
+function openNewCaseDrawer(){
+  document.getElementById('newCaseId').value=''; document.getElementById('newCaseName').value='';
+  document.getElementById('newSuspect').value=''; document.getElementById('newCharge').value='';
+  document.getElementById('newCaseDeptLabel').textContent='불러오는 중...';
+  document.getElementById('newCaseDeptLabel').style.color='var(--text-muted)';
   document.getElementById('newCaseDrawer').classList.add('open');
-  document.body.style.overflow = 'hidden';
-  setTimeout(function() { document.getElementById('newCaseId').focus(); }, 300);
-
-  // 내 팀 정보 자동 조회
-  fetch('caseApi?action=myTeam')
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      if (d.error) {
-        document.getElementById('newCaseTeamLabel').textContent = '조회 실패';
-        return;
-      }
-      document.getElementById('newCaseTeamLabel').textContent = d.label;
-      document.getElementById('newCaseTeamLabel').style.color = d.teamId ? 'var(--navy)' : 'var(--text-muted)';
-      // teamId를 hidden input에 저장 (서버에서 자동 설정하므로 UI 확인용)
-      if (d.teamId) document.getElementById('newCaseTeamId').value = d.teamId;
-    })
-    .catch(function() {
-      document.getElementById('newCaseTeamLabel').textContent = '조회 실패';
-    });
+  document.body.style.overflow='hidden';
+  setTimeout(function(){document.getElementById('newCaseId').focus();},300);
+  fetch('caseApi?action=myDept').then(function(r){return r.json();}).then(function(d){
+    if(d.error){document.getElementById('newCaseDeptLabel').textContent='조회 실패';return;}
+    document.getElementById('newCaseDeptLabel').textContent=d.label;
+    document.getElementById('newCaseDeptLabel').style.color=d.deptId?'var(--navy)':'var(--text-muted)';
+  }).catch(function(){document.getElementById('newCaseDeptLabel').textContent='조회 실패';});
 }
 
-function submitNewCase() {
-  var caseId   = document.getElementById('newCaseId').value.trim();
-  var caseName = document.getElementById('newCaseName').value.trim();
-  var suspect  = document.getElementById('newSuspect').value.trim();
-  var charge   = document.getElementById('newCharge').value.trim();
-
-  if (!caseId)   { showToast('사건번호를 입력하세요.'); return; }
-  if (!caseName) { showToast('사건명을 입력하세요.'); return; }
-
-  var params = new URLSearchParams();
-  params.append('action',   'caseCreate');
-  params.append('caseId',   caseId);
-  params.append('caseName', caseName);
-  params.append('suspect',  suspect);
-  params.append('charge',   charge);
-
-  fetch('caseApi', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:params.toString() })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      if (d.success) {
-        closeDrawer('newCaseDrawer');
-        var teamLabel = document.getElementById('newCaseTeamLabel').textContent;
-        showToast('✓ 사건이 등록됐습니다' + (d.teamId ? ' · ' + teamLabel : ''));
-        loadCaseList();
-      } else {
-        showToast(d.message || '등록 실패');
-      }
-    })
-    .catch(function(e) { console.error(e); showToast('등록 중 오류 발생'); });
+function submitNewCase(){
+  var ci=document.getElementById('newCaseId').value.trim(), cn=document.getElementById('newCaseName').value.trim();
+  var ss=document.getElementById('newSuspect').value.trim(), ch=document.getElementById('newCharge').value.trim();
+  if(!ci){showToast('사건번호를 입력하세요.');return;} if(!cn){showToast('사건명을 입력하세요.');return;}
+  var p=new URLSearchParams();p.append('action','caseCreate');p.append('caseId',ci);p.append('caseName',cn);p.append('suspect',ss);p.append('charge',ch);
+  fetch('caseApi',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:p.toString()}).then(function(r){return r.json();}).then(function(d){
+    if(d.success){closeDrawer('newCaseDrawer');showToast('✓ 사건이 등록됐습니다'+(d.deptLabel?' · '+d.deptLabel:''));loadCaseList();}
+    else showToast(d.message||'등록 실패');
+  }).catch(function(){showToast('등록 중 오류 발생');});
 }
 
-/* ═══════════════════════════════════════════════════════
-   상태·진행률 수정 드로어
-═══════════════════════════════════════════════════════ */
-function openEditDrawer(caseId, status, progress) {
-  editCaseId = caseId;
-  selectedStatus = status;
-  document.getElementById('editDrawerSub').textContent = caseId;
-  document.getElementById('progressSlider').value = progress;
-  document.getElementById('progressDisplay').textContent = progress + '%';
-
-  // 상태 버튼 선택 표시
-  document.querySelectorAll('.status-btn').forEach(function(b) {
-    b.classList.toggle('selected', b.getAttribute('data-val') === status);
-  });
-
-  closeDrawer('caseDrawer');
-  document.getElementById('editDrawer').classList.add('open');
-  document.body.style.overflow = 'hidden';
+function openEditDrawer(caseId,status,progress){
+  editCaseId=caseId;selectedStatus=status;
+  document.getElementById('editDrawerSub').textContent=caseId;
+  document.getElementById('progressSlider').value=progress;
+  document.getElementById('progressDisplay').textContent=progress+'%';
+  document.querySelectorAll('.status-btn').forEach(function(b){b.classList.toggle('selected',b.getAttribute('data-val')===status);});
+  closeDrawer('caseDrawer');document.getElementById('editDrawer').classList.add('open');document.body.style.overflow='hidden';
+}
+function selectStatus(btn){document.querySelectorAll('.status-btn').forEach(function(b){b.classList.remove('selected');});btn.classList.add('selected');selectedStatus=btn.getAttribute('data-val');}
+function submitEditCase(){
+  if(!editCaseId) return;
+  var p=new URLSearchParams();p.append('action','caseStatus');p.append('caseId',editCaseId);p.append('status',selectedStatus);p.append('progress',document.getElementById('progressSlider').value);
+  fetch('caseApi',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:p.toString()}).then(function(r){return r.json();}).then(function(d){
+    if(d.success){closeDrawer('editDrawer');showToast('✓ 수정됐습니다');loadCaseList();}else showToast(d.message||'수정 실패');
+  }).catch(function(){showToast('수정 중 오류 발생');});
 }
 
-function selectStatus(btn) {
-  document.querySelectorAll('.status-btn').forEach(function(b) { b.classList.remove('selected'); });
-  btn.classList.add('selected');
-  selectedStatus = btn.getAttribute('data-val');
+function confirmDeleteCase(caseId){
+  if(!confirm('사건 ['+caseId+']을 삭제할까요?\n관련 조서·관계망 데이터도 모두 삭제됩니다.')) return;
+  var p=new URLSearchParams();p.append('action','caseDelete');p.append('caseId',caseId);
+  fetch('caseApi',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:p.toString()}).then(function(r){return r.json();}).then(function(d){
+    if(d.success){closeDrawer('caseDrawer');showToast('✓ 사건이 삭제됐습니다');loadCaseList();}else showToast(d.message||'삭제 실패');
+  }).catch(function(){showToast('삭제 중 오류 발생');});
 }
 
-function submitEditCase() {
-  if (!editCaseId) return;
+function closeDrawer(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';}
+function closeOnBg(e,id){if(e.target===document.getElementById(id))closeDrawer(id);}
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escStr(s){return String(s||'').replace(/'/g,"\\'");}
+function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';setTimeout(function(){t.style.opacity='0';t.style.transform='translateX(-50%) translateY(20px)';},2200);}
 
-  var params = new URLSearchParams();
-  params.append('action',   'caseStatus');
-  params.append('caseId',   editCaseId);
-  params.append('status',   selectedStatus);
-  params.append('progress', document.getElementById('progressSlider').value);
-
-  fetch('caseApi', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:params.toString() })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      if (d.success) {
-        closeDrawer('editDrawer');
-        showToast('✓ 수정됐습니다');
-        loadCaseList();
-      } else {
-        showToast(d.message || '수정 실패');
-      }
-    })
-    .catch(function(e) { console.error(e); showToast('수정 중 오류 발생'); });
-}
-
-/* ═══════════════════════════════════════════════════════
-   사건 삭제
-═══════════════════════════════════════════════════════ */
-function confirmDeleteCase(caseId) {
-  if (!confirm('사건 [' + caseId + ']을 삭제할까요?\n관련 조서·관계망 데이터도 모두 삭제됩니다.')) return;
-
-  var params = new URLSearchParams();
-  params.append('action', 'caseDelete');
-  params.append('caseId', caseId);
-
-  fetch('caseApi', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:params.toString() })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      if (d.success) {
-        closeDrawer('caseDrawer');
-        showToast('✓ 사건이 삭제됐습니다');
-        loadCaseList();
-      } else {
-        showToast(d.message || '삭제 실패');
-      }
-    })
-    .catch(function(e) { console.error(e); showToast('삭제 중 오류 발생'); });
-}
-
-/* ═══════════════════════════════════════════════════════
-   드로어 공통
-═══════════════════════════════════════════════════════ */
-function closeDrawer(id) {
-  document.getElementById(id).classList.remove('open');
-  document.body.style.overflow = '';
-}
-function closeOnBg(e, id) {
-  if (e.target === document.getElementById(id)) closeDrawer(id);
-}
-
-/* ═══════════════════════════════════════════════════════
-   유틸
-═══════════════════════════════════════════════════════ */
-function escHtml(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function escStr(s) {
-  return String(s||'').replace(/'/g,"\\'");
-}
-function showToast(msg) {
-  var t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.opacity = '1';
-  t.style.transform = 'translateX(-50%) translateY(0)';
-  setTimeout(function() {
-    t.style.opacity = '0';
-    t.style.transform = 'translateX(-50%) translateY(20px)';
-  }, 2200);
-}
-
-/* ═══════════════════════════════════════════════════════
-   초기 로드
-═══════════════════════════════════════════════════════ */
 loadCaseList();
 </script>
 </body>

@@ -5,7 +5,7 @@
     String userName  = (String) session.getAttribute("userName");
     if (loginUser == null) { response.sendRedirect("login.jsp"); return; }
 
-    // 내 사건 목록 조회 (드롭다운용)
+    // 내 사건 + 같은 부서(dept_id) 팀원 사건 목록 조회 (드롭다운용)
     DBConnectionMgr _mgr = DBConnectionMgr.getInstance();
     Connection _conn = null;
     PreparedStatement _ps = null;
@@ -15,7 +15,12 @@
         _conn = _mgr.getConnection();
         _ps = _conn.prepareStatement(
             "SELECT c.case_id, c.case_name FROM cases c " +
-            "WHERE (c.user_id = ? OR c.team_id IN (SELECT team_id FROM team_members WHERE user_id = ?)) " +
+            "WHERE (c.user_id = ? " +
+            "   OR c.user_id IN ( " +
+            "       SELECT u2.user_id FROM users u2 " +
+            "       JOIN users me ON me.user_id = ? " +
+            "       WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
+            "   )) " +
             "ORDER BY c.updated_at DESC");
         _ps.setString(1, loginUser);
         _ps.setString(2, loginUser);
@@ -260,7 +265,7 @@
           사건 정보
         </div>
 
-        <!-- 사건 선택 드롭다운 -->
+        <!-- 사건 선택 드롭다운 (내 사건 + 같은 부서 팀원 사건) -->
         <div style="margin-bottom:10px;">
           <label class="field-label">담당 사건 <span class="field-req">*</span></label>
           <select class="field-input" id="caseId">
@@ -536,7 +541,6 @@ function saveTranscript() {
   .then(function(d) {
     if (d.success) {
       setStep(3);
-      // 완료 화면으로 전환
       document.getElementById('inputSection').style.display = 'none';
       document.getElementById('doneSection').style.display  = 'block';
       document.getElementById('doneSummary').innerHTML =
