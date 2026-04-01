@@ -383,6 +383,12 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--bg)
   background:var(--deep);color:#fff;padding:10px 20px;border-radius:24px;
   font-size:13px;opacity:0;transition:all 0.3s;pointer-events:none;z-index:300;white-space:nowrap;
 }
+/* 수정 버튼 */
+.edit-btn{
+  border:none;background:none;font-size:12px;
+  color:#f97316;cursor:pointer;
+  font-family:'Noto Sans KR',sans-serif;padding:0;
+}
 </style>
 </head>
 <body>
@@ -751,8 +757,9 @@ function renderDetail(p) {
   }).join('');
 
   var deleteBtnHtml = p.isMine
-    ? '<button onclick="deletePost('+p.id+')" style="border:none;background:none;font-size:12px;color:var(--danger);cursor:pointer;font-family:\'Noto Sans KR\',sans-serif;padding:0;">삭제</button>'
-    : '';
+  ? '<button class="edit-btn" onclick="openEdit('+p.id+');event.stopPropagation()">수정</button>' +
+    '&nbsp;<button onclick="deletePost('+p.id+')" style="border:none;background:none;font-size:12px;color:var(--danger);cursor:pointer;font-family:\'Noto Sans KR\',sans-serif;padding:0;">삭제</button>'
+  : '';
 
   document.getElementById('detailBody').innerHTML =
     '<span class="post-cat-badge '+(CAT_BADGE[p.cat]||'')+' detail-cat-badge">'+CAT_LABEL[p.cat]+'</span>'+
@@ -823,6 +830,72 @@ function likeComment(postId, cmtId) {
     })
     .catch(function(e){ console.error(e); });
 }
+
+/* ═══════════════════════════════════════════════════════
+글 수정 - 수정 모달 열기
+═══════════════════════════════════════════════════════ */
+function openEdit(id) {
+	  fetch('board?action=detail&id=' + id)
+	    .then(function(r){ return r.json(); })
+	    .then(function(data){ _fillEditModal(id, data); })
+	    .catch(function(e){ console.error(e); showToast('불러오기 실패'); });
+	}
+
+function _fillEditModal(id, p) {
+// 글쓰기 모달 재활용: 제목/내용/태그/카테고리를 채워서 열기
+writeCat = p.cat;
+document.getElementById('wTitle').value   = p.title   || '';
+document.getElementById('wContent').value = p.content || '';
+document.getElementById('wTags').value    =
+ Array.isArray(p.tags) ? p.tags.join(', ') : (p.tags || '');
+
+// 카테고리 버튼 활성화
+['tip','gear','free'].forEach(function(c){
+ var btn = document.getElementById('sel'+c.charAt(0).toUpperCase()+c.slice(1));
+ btn.className = (c === p.cat) ? 'cat-sel-btn ' + CAT_SEL[c] : 'cat-sel-btn';
+});
+document.getElementById('gearLinkSection').style.display = (p.cat === 'gear') ? 'block' : 'none';
+
+// 헤더 텍스트·버튼 변경 (등록 → 수정)
+document.querySelector('.write-modal-header span').textContent = '게시글 수정';
+var submitBtn = document.querySelector('.write-submit-btn');
+submitBtn.textContent = '수정';
+submitBtn.onclick = function(){ submitEdit(id); };
+
+document.getElementById('writeModal').classList.add('open');
+document.getElementById('writeModal').scrollTop = 0;
+}
+
+function submitEdit(id) {
+var title   = document.getElementById('wTitle').value.trim();
+var content = document.getElementById('wContent').value.trim();
+var tagsRaw = document.getElementById('wTags').value.trim();
+if (!title)   { showToast('제목을 입력하세요.'); return; }
+if (!content) { showToast('내용을 입력하세요.'); return; }
+
+var params = new URLSearchParams();
+params.append('action',  'edit');
+params.append('postId',  id);
+params.append('title',   title);
+params.append('content', content);
+params.append('tags',    tagsRaw);
+
+fetch('board', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:params.toString() })
+ .then(function(r){ return r.json(); })
+ .then(function(d){
+   if (!d.success) { showToast(d.error || '수정 실패'); return; }
+   closeWrite();
+   // 등록 버튼 원상복구
+   var submitBtn = document.querySelector('.write-submit-btn');
+   submitBtn.textContent = '등록';
+   submitBtn.onclick = submitPost;
+   document.querySelector('.write-modal-header span').textContent = '새 게시글';
+   showToast('✓ 게시글이 수정됐습니다');
+   openDetail(id);
+ })
+ .catch(function(e){ console.error(e); showToast('수정 중 오류 발생'); });
+}
+
 
 function deletePost(id) {
   if (!confirm('게시글을 삭제할까요?')) return;
