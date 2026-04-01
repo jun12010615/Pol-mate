@@ -496,12 +496,12 @@
         <div class="stat-lbl">진행 사건</div>
       </div>
       <div class="stat-col">
-        <div class="stat-num" id="statContradiction">-</div>
+        <div class="stat-num" id="statContradiction" style="color:#dc2626;">-</div>
         <div class="stat-lbl">모순 탐지</div>
       </div>
       <div class="stat-col">
         <div class="stat-num" id="statCompleted">-</div>
-        <div class="stat-lbl">완료 조서</div>
+        <div class="stat-lbl">작성 조서</div>
       </div>
     </div>
   </div>
@@ -886,7 +886,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var s = data.stats;
       document.getElementById('statActiveCases').textContent  = s.activeCases;
       document.getElementById('statContradiction').textContent = s.contradictionCount;
-      document.getElementById('statCompleted').textContent    = s.completedTranscripts;
+      document.getElementById('statCompleted').textContent    = s.totalTranscripts;
       document.getElementById('menuHistoryCount').textContent = s.totalTranscripts + '건';
     })
     .catch(function(e) { console.error('초기 로드 실패', e); });
