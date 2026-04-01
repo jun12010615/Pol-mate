@@ -209,17 +209,21 @@ public class MypageDAO {
             mgr.freeConnection(conn, pstmt, rs);
         }
 
-        // ② 팀 사건 통계 (cases JOIN team_members)
+        // ② 팀 사건 통계 (dept_id 기반 — main.jsp와 동일 로직)
         try {
             conn = mgr.getConnection();
             String sql =
                 "SELECT COUNT(*) AS total_cases, " +
-                "  SUM(CASE WHEN c.status = '진행중' THEN 1 ELSE 0 END) AS active_cases " +
+                "  SUM(CASE WHEN c.status != '완료' THEN 1 ELSE 0 END) AS active_cases " +
                 "FROM cases c " +
-                "JOIN team_members tm ON c.team_id = tm.team_id " +
-                "WHERE tm.user_id = ?";
+                "WHERE (c.user_id = ? OR c.user_id IN (" +
+                "  SELECT u2.user_id FROM users u2 " +
+                "  JOIN users me ON me.user_id = ? " +
+                "  WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL" +
+                "))";
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, userId);
+            pstmt.setString(2, userId);
             rs = pstmt.executeQuery();
             if (rs.next()) {
                 stats.setTotalCases(rs.getInt("total_cases"));
