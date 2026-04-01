@@ -83,7 +83,7 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--bg)
 .free-dot{background:var(--free-icon);}
 
 /* ── 콘텐츠 ── */
-.content{flex:1;overflow-y:auto;padding:22px 14px calc(var(--bnav)+20px);}
+.content{flex:1;overflow-y:auto;padding:22px 14px 22px;}
 
 /* ── 검색 + 정렬 바 ── */
 .filter-bar{display:flex;gap:8px;margin-bottom:14px;align-items:center;}
@@ -132,7 +132,7 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--bg)
 .badge-tip {background:var(--tip-bg);color:var(--tip-text);border:1px solid var(--tip-bd);}
 .badge-gear{background:var(--gear-bg);color:var(--gear-text);border:1px solid var(--gear-bd);}
 .badge-free{background:var(--free-bg);color:var(--free-text);border:1px solid var(--free-bd);}
-.post-title{font-size:14px;font-weight:500;color:var(--tp);line-height:1.4;flex:1;}
+.post-title{font-size:14px;font-weight:500;color:var(--tp);line-height:1.4;flex:1;word-break:break-all;overflow-wrap:break-word;}
 .post-preview{font-size:12px;color:var(--ts);line-height:1.6;margin-bottom:11px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .post-footer{display:flex;align-items:center;justify-content:space-between;}
 .post-author{display:flex;align-items:center;gap:7px;}
@@ -449,6 +449,7 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--bg)
 
     <!-- 게시글 목록 -->
     <div class="post-list" id="postList"></div>
+    <div style="height:calc(var(--bnav) + 10px);flex-shrink:0;"></div>
   </div>
 
   <!-- 플로팅 버튼 -->
