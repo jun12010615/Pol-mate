@@ -413,7 +413,7 @@
                 <line x1="16" y1="17" x2="8" y2="17"/>
               </svg>
             </div>
-            <div class="menu-name mn-purple">내 조서 관리</div>
+            <div class="menu-name mn-purple">내 사건 관리</div>
             <div class="menu-desc">이력 · 수정 · 사건별</div>
           </a>
 
