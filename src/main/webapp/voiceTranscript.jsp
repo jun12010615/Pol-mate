@@ -467,15 +467,15 @@
         <div class="card-title">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
           AI 분석 결과
-          <span style="font-size:9px; background:#eff6ff; color:#1e40af; border-radius:4px; padding:2px 6px; margin-left:auto; font-weight:400;">gemma3:1b</span>
+          <span style="font-size:9px; background:#eff6ff; color:#1e40af; border-radius:4px; padding:2px 6px; margin-left:auto; font-weight:400;">exaone3.5:2.4b</span>
         </div>
         <div class="ai-result-box" id="aiResultBox"></div>
       </div>
 
       <!-- 저장 / 재시작 -->
-      <button class="btn-save" onclick="saveResult()">
+      <button class="btn-save" id="btnSave" onclick="saveResult()" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        조서로 저장
+        <span id="btnSaveLabel">조서로 저장</span>
       </button>
       <button class="btn-reset" onclick="resetAll()">새로 분석하기</button>
 
@@ -497,9 +497,9 @@
       <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
       <span class="nav-label">AI</span>
     </a>
-    <a href="board.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-      <span class="nav-label">커뮤니티</span>
+    <a href="lawSearch.jsp" class="nav-item">
+      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+      <span class="nav-label">법전</span>
     </a>
     <a href="mypage.jsp" class="nav-item">
       <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
@@ -510,6 +510,12 @@
 </div><!-- /screen -->
 
 <script>
+// ── 세션에서 userId 가져오기 (JSP 서버사이드) ────────────────────
+const SESSION_USER_ID = '<%= (session.getAttribute("loginUser") != null) ? session.getAttribute("loginUser") : "" %>';
+
+// 마지막 분석 결과(저장 버튼에서 사용)
+let LAST_ANALYSIS = null; // { caseId, stmtType, stmtName, originalText, aiResultText, structuredSummary, contradictions, furtherChecks, hasContradiction }
+
 // ── 파일 처리 ────────────────────────────────────────────────────
 function handleFile(input) {
   if (!input.files || !input.files[0]) return;
@@ -602,19 +608,34 @@ document.getElementById('stmtText').addEventListener('input', function() {
 });
 
 // ── 분석 시작 ────────────────────────────────────────────────────
-function startAnalysis() {
-  const text = document.getElementById('stmtText').value.trim();
-  if (!text) { alert('진술 텍스트를 입력해 주세요.'); return; }
+async function startAnalysis() {
+  const text     = document.getElementById('stmtText').value.trim();
+  const caseId   = document.getElementById('caseNum').value.trim();
+  const stmtType = document.getElementById('stmtType').value || '진술자';
+  const stmtName = document.getElementById('stmtName').value || '미입력';
+
+  if (!text)   { alert('진술 텍스트를 입력해 주세요.'); return; }
+  if (!caseId) { alert('사건번호를 입력해 주세요.'); return; }
 
   // UI 전환
   document.getElementById('inputSection').style.display = 'none';
   document.getElementById('loadingCard').style.display  = 'block';
   setStep(2);
 
-  // 로딩 스텝 애니메이션
-  animateLoadingSteps(function() {
+  // STEP 1: 같은 사건의 기존 진술 조회
+  let prevStatements = [];
+  try {
+    const prevRes  = await fetch('/Polmate/GetStatementsServlet?caseId=' + encodeURIComponent(caseId));
+    const prevData = await prevRes.json();
+    if (prevData && prevData.success) prevStatements = prevData.statements || [];
+  } catch (e) {
+    console.warn('기존 진술 조회 실패 (단일 분석으로 계속):', e.message);
+  }
+
+  // STEP 2: 로딩 스텝 애니메이션 후 Flask 호출
+  animateLoadingSteps(async function() {
     setStep(3);
-    callOllama(text);
+    await callOllamaAndSave(text, caseId, stmtType, stmtName, prevStatements);
   });
 }
 
@@ -636,90 +657,130 @@ function animateLoadingSteps(callback) {
   next();
 }
 
-// ── Ollama 호출 ──────────────────────────────────────────────────
-function callOllama(text) {
-  const caseNum  = document.getElementById('caseNum').value  || '미입력';
-  const stmtType = document.getElementById('stmtType').value || '진술자';
-  const stmtName = document.getElementById('stmtName').value || '미입력';
+// ── Flask 호출 + DB 저장 ─────────────────────────────────────────
+async function callOllamaAndSave(text, caseId, stmtType, stmtName, prevStatements) {
+  let flaskData = null;
 
-  const prompt =
-    "다음은 형사사건 수사 진술입니다. 아래 내용을 분석하여 결과를 반드시 한국어로 답해주세요.\n\n" +
-    "[사건번호: " + caseNum + "]\n" +
-    "[진술 유형: " + stmtType + "]\n" +
-    "[진술자: " + stmtName + "]\n\n" +
-    "[진술 내용]\n" + text + "\n\n" +
-    "다음 항목을 분석해주세요:\n" +
-    "1. 진술 요약 (3줄 이내)\n" +
-    "2. 모순 또는 불일치 항목 (있다면 구체적으로)\n" +
-    "3. 추가 확인이 필요한 사항\n" +
-    "4. 종합 평가";
+  try {
+    const flaskRes = await fetch('http://113.198.238.108:5001/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, caseNum: caseId, stmtType, stmtName, prevStatements })
+    });
+    flaskData = await flaskRes.json();
+  } catch (err) {
+    alert('Flask 서버 연결 실패: ' + err.message + '\npython app.py가 실행 중인지 확인하세요.');
+    resetAll();
+    return;
+  }
 
-  fetch('http://localhost:11434/api/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'gemma3:1b',
-      prompt: prompt,
-      stream: false
-    })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    showResult(text, data.response || '응답 없음', true);
-  })
-  .catch(function(err) {
-    // Ollama 미실행 시 데모 결과 표시
-    var demoResult =
-      "【진술 요약】\n진술자는 해당 날짜 오후 2시에 집에 있었다고 주장하며,\n외출 사실을 전면 부인하고 있습니다.\n\n" +
-      "【모순 항목】\n- 진술 초반 '집에 있었다'고 했으나, 이후 '잠깐 편의점을 다녀왔다'는\n  언급이 포함되어 있어 알리바이에 불일치가 발견됩니다.\n\n" +
-      "【추가 확인 필요】\n- 편의점 CCTV 확인\n- 동거인 또는 인접 주민 목격 여부 확인\n\n" +
-      "【종합 평가】\n진술에 경미한 모순이 포함되어 있으며 추가 조사가 권고됩니다.\n\n⚠ (Ollama 미연결 — 데모 결과입니다)";
-    showResult(text, demoResult, true);
-  });
+  if (!flaskData || !flaskData.success) {
+    alert('분석 실패: ' + ((flaskData && flaskData.error) || '알 수 없는 오류'));
+    resetAll();
+    return;
+  }
+
+  // 저장 버튼에서 쓰도록 결과 보관
+  const hasContradiction = (flaskData.contradiction_count || 0) > 0;
+  const aiResultText =
+    '【진술 구조 요약】\n' + (flaskData.structured_summary || '') +
+    '\n\n【최종 검토】\n'  + (flaskData.final_review || '') +
+    '\n\n【추가 확인 사항】\n' + ((flaskData.further_checks || []).join('\n') || '없음');
+
+  LAST_ANALYSIS = {
+    caseId,
+    stmtType,
+    stmtName,
+    originalText: text,
+    aiResultText,
+    structuredSummary: flaskData.structured_summary || '',
+    contradictions: flaskData.contradictions || [],
+    furtherChecks: flaskData.further_checks || [],
+    hasContradiction
+  };
+
+  showResult(text, flaskData);
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 // ── 결과 표시 ────────────────────────────────────────────────────
-function showResult(originalText, aiResponse, hasContra) {
+function showResult(originalText, data) {
   setStep(4);
   document.getElementById('loadingCard').style.display = 'none';
   document.getElementById('resultSection').style.display = 'block';
 
+  // 저장 버튼 활성화
+  var btn = document.getElementById('btnSave');
+  var lbl = document.getElementById('btnSaveLabel');
+  if (btn) {
+    btn.disabled = false;
+  }
+  if (lbl) {
+    lbl.textContent = '조서로 저장';
+  }
+
   // 진술 텍스트
   document.getElementById('transcriptBox').textContent = originalText;
 
-  // AI 분석
-  document.getElementById('aiResultBox').textContent = aiResponse;
+  // AI 분석 결과
+  document.getElementById('aiResultBox').textContent =
+    '【진술 구조 요약】\n' + (data.structured_summary || '') +
+    '\n\n【최종 검토】\n'  + (data.final_review || '') +
+    '\n\n【추가 확인 사항】\n' + ((data.further_checks || []).join('\n') || '없음');
 
-  // 모순 탐지 판단 (간단한 키워드 기반)
-  var contraKeywords = ['모순','불일치','불일치','위반','거짓','허위','불명확'];
-  var found = contraKeywords.some(function(k) { return aiResponse.includes(k); });
+  // 모순 탐지 배너
+  const count = data.contradiction_count || 0;
+  const banner = document.getElementById('contraBanner');
+  const dot    = document.getElementById('contraDot');
+  const title  = document.getElementById('contraTitle');
+  const desc   = document.getElementById('contraDesc');
+  const list   = document.getElementById('contraList');
 
-  var banner = document.getElementById('contraBanner');
-  var dot    = document.getElementById('contraDot');
-  var title  = document.getElementById('contraTitle');
-  var desc   = document.getElementById('contraDesc');
-
-  if (found) {
+  if (count > 0) {
     banner.className = 'contra-banner found';
     dot.className    = 'contra-dot red';
     title.className  = 'contra-title red';
-    title.textContent = '모순 항목이 탐지되었습니다';
-    desc.textContent  = 'AI가 진술에서 불일치 또는 모순된 내용을 발견했습니다. 아래 분석 결과를 확인하세요.';
-    document.getElementById('contraList').innerHTML =
-      '<div class="contra-item">' +
-        '<div class="contra-item-title">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
-          '알리바이 불일치' +
-        '</div>' +
-        '<div class="contra-item-desc">진술 내 시간대 및 위치 정보가 상호 모순됩니다. AI 분석 결과를 참고하여 추가 확인이 필요합니다.</div>' +
-      '</div>';
+    title.textContent = '원문 근거가 확인된 모순 ' + count + '건이 탐지되었습니다';
+    desc.textContent  = '아래 각 항목은 원본 진술에서 직접 인용된 근거가 검증된 모순입니다.';
+
+    list.innerHTML = (data.contradictions || []).map(function(c) {
+      const type = escapeHtml(c.type ?? '');
+      const a = escapeHtml(c.statement_a ?? '');
+      const b = escapeHtml(c.statement_b ?? '');
+      const r = escapeHtml(c.reason ?? '');
+
+      return ''
+        + '<div class="contra-item">'
+        +   '<div class="contra-item-title">'
+        +     '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">'
+        +       '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>'
+        +       '<line x1="12" y1="9" x2="12" y2="13"/>'
+        +       '<line x1="12" y1="17" x2="12.01" y2="17"/>'
+        +     '</svg>'
+        +     type
+        +   '</div>'
+        +   '<div class="contra-item-desc">'
+        +     '<strong>진술 A:</strong> "' + a + '"<br>'
+        +     '<strong>진술 B:</strong> "' + b + '"<br>'
+        +     '<strong>판단:</strong> ' + r
+        +   '</div>'
+        + '</div>';
+    }).join('');
   } else {
     banner.className = 'contra-banner notfound';
     dot.className    = 'contra-dot green';
     title.className  = 'contra-title green';
-    title.textContent = '명확한 모순이 탐지되지 않았습니다';
-    desc.textContent  = '진술 내에서 즉각적인 모순은 발견되지 않았으나, 전체 분석 결과를 반드시 직접 검토하세요.';
-    document.getElementById('contraList').innerHTML = '';
+    title.textContent = '원문 근거가 확인된 모순이 없습니다';
+    desc.textContent  = 'AI가 탐지한 모순 중 원문에서 인용 근거가 확인된 항목이 없습니다.';
+    list.innerHTML    = '';
   }
 
   window.scrollTo(0, 0);
@@ -743,9 +804,56 @@ function copyText() {
   });
 }
 
-function saveResult() {
-  alert('조서로 저장되었습니다.\n(DB 연동 후 실제 저장 기능이 활성화됩니다.)');
-  location.href = 'main.jsp';
+async function saveResult() {
+  if (!SESSION_USER_ID) {
+    alert('로그인 정보가 없습니다. 다시 로그인해 주세요.');
+    return;
+  }
+  if (!LAST_ANALYSIS) {
+    alert('저장할 분석 결과가 없습니다. 먼저 분석을 완료해 주세요.');
+    return;
+  }
+
+  var btn = document.getElementById('btnSave');
+  var lbl = document.getElementById('btnSaveLabel');
+  if (btn) {
+    btn.disabled = true;
+  }
+  if (lbl) {
+    lbl.textContent = '저장 중...';
+  }
+
+  try {
+    const saveRes = await fetch('/Polmate/SaveTranscriptServlet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        caseId: LAST_ANALYSIS.caseId,
+        userId: SESSION_USER_ID,
+        stmtType: LAST_ANALYSIS.stmtType,
+        stmtName: LAST_ANALYSIS.stmtName,
+        originalText: LAST_ANALYSIS.originalText,
+        aiResult: LAST_ANALYSIS.aiResultText,
+        resultSummary: LAST_ANALYSIS.structuredSummary,
+        contradictionJson: JSON.stringify(LAST_ANALYSIS.contradictions || []),
+        furtherChecks: JSON.stringify(LAST_ANALYSIS.furtherChecks || []),
+        hasContradiction: !!LAST_ANALYSIS.hasContradiction
+      })
+    });
+    const saveData = await saveRes.json();
+    if (!saveData || !saveData.success) {
+      throw new Error((saveData && saveData.error) ? saveData.error : '저장에 실패했습니다.');
+    }
+
+    if (lbl) lbl.textContent = '저장 완료';
+    setTimeout(function() { location.href = 'myCase.jsp'; }, 600);
+  } catch (e) {
+    alert('DB 저장 실패: ' + e.message);
+    if (btn) {
+      btn.disabled = false;
+    }
+    if (lbl) lbl.textContent = '조서로 저장';
+  }
 }
 
 function resetAll() {
