@@ -383,6 +383,12 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--bg)
   background:var(--deep);color:#fff;padding:10px 20px;border-radius:24px;
   font-size:13px;opacity:0;transition:all 0.3s;pointer-events:none;z-index:300;white-space:nowrap;
 }
+/* 수정 버튼 */
+.edit-btn{
+  border:none;background:none;font-size:12px;
+  color:#f97316;cursor:pointer;
+  font-family:'Noto Sans KR',sans-serif;padding:0;
+}
 </style>
 </head>
 <body>
@@ -636,7 +642,7 @@ function toggleSort() {
   var labels = ['최신순','추천순'];
   var idx = order.indexOf(currentSort);
   currentSort = order[(idx+1) % 2];
-  document.getElementById('sortLabel').textContent = labels[(idx+1)%2];
+  document.getElementById('sortLabel').textContent = labels[order.indexOf(currentSort)];
   loadList();
 }
 
@@ -715,7 +721,9 @@ function renderDetail(p) {
   if (p.cat === 'gear' && links.length) {
     var linkCards = links.map(function(lk){
       var displayUrl = (lk.url||'').replace(/^https?:\/\//,'').replace(/\/$/,'');
-      return '<a class="buy-link-card" href="'+escHtml(lk.url||'')+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">'+
+      var safeUrl = (lk.url||'');
+      if (safeUrl && !/^https?:\/\//i.test(safeUrl)) safeUrl = 'https://' + safeUrl;
+      return '<a class="buy-link-card" href="'+escHtml(safeUrl)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+
         '<div class="buy-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>'+
         '<div class="buy-link-info">'+
           '<div class="buy-link-name">'+escHtml(lk.name||'')+'</div>'+
@@ -751,8 +759,9 @@ function renderDetail(p) {
   }).join('');
 
   var deleteBtnHtml = p.isMine
-    ? '<button onclick="deletePost('+p.id+')" style="border:none;background:none;font-size:12px;color:var(--danger);cursor:pointer;font-family:\'Noto Sans KR\',sans-serif;padding:0;">삭제</button>'
-    : '';
+  ? '<button class="edit-btn" onclick="openEdit('+p.id+');event.stopPropagation()">수정</button>' +
+    '&nbsp;<button onclick="deletePost('+p.id+')" style="border:none;background:none;font-size:12px;color:var(--danger);cursor:pointer;font-family:\'Noto Sans KR\',sans-serif;padding:0;">삭제</button>'
+  : '';
 
   document.getElementById('detailBody').innerHTML =
     '<span class="post-cat-badge '+(CAT_BADGE[p.cat]||'')+' detail-cat-badge">'+CAT_LABEL[p.cat]+'</span>'+
@@ -823,6 +832,98 @@ function likeComment(postId, cmtId) {
     })
     .catch(function(e){ console.error(e); });
 }
+
+/* ═══════════════════════════════════════════════════════
+글 수정 - 수정 모달 열기
+═══════════════════════════════════════════════════════ */
+function openEdit(id) {
+	  fetch('board?action=detail&id=' + id)
+	    .then(function(r){ return r.json(); })
+	    .then(function(data){ _fillEditModal(id, data); })
+	    .catch(function(e){ console.error(e); showToast('불러오기 실패'); });
+	}
+
+function _fillEditModal(id, p) {
+// 글쓰기 모달 재활용: 제목/내용/태그/카테고리를 채워서 열기
+writeCat = p.cat;
+document.getElementById('wTitle').value   = p.title   || '';
+document.getElementById('wContent').value = p.content || '';
+document.getElementById('wTags').value    =
+ Array.isArray(p.tags) ? p.tags.join(', ') : (p.tags || '');
+
+// 카테고리 버튼 활성화
+['tip','gear','free'].forEach(function(c){
+ var btn = document.getElementById('sel'+c.charAt(0).toUpperCase()+c.slice(1));
+ btn.className = (c === p.cat) ? 'cat-sel-btn ' + CAT_SEL[c] : 'cat-sel-btn';
+});
+document.getElementById('gearLinkSection').style.display = (p.cat === 'gear') ? 'block' : 'none';
+
+var grp = document.getElementById('linkInputGroup');
+grp.innerHTML = '';
+var existLinks = Array.isArray(p.links) ? p.links : [];
+if (existLinks.length === 0) existLinks = [{ name:'', url:'' }];
+existLinks.forEach(function(lk, i) {
+  var div = document.createElement('div');
+  div.className = 'link-input-row';
+  div.setAttribute('data-idx', i);
+  div.innerHTML =
+    '<input class="write-input" placeholder="링크 이름 (예: 쿠팡, 네이버쇼핑)" style="flex:0.9" data-role="name" value="'+escHtml(lk.name||'')+'">'+
+    '<input class="write-input" placeholder="https://..." data-role="url" value="'+escHtml(lk.url||'')+'">';
+  grp.appendChild(div);
+});
+document.getElementById('linkAddBtn').style.display = existLinks.length >= 3 ? 'none' : 'flex';
+
+// 헤더 텍스트·버튼 변경 (등록 → 수정)
+document.querySelector('.write-modal-header span').textContent = '게시글 수정';
+var submitBtn = document.querySelector('.write-submit-btn');
+submitBtn.textContent = '수정';
+submitBtn.onclick = function(){ submitEdit(id); };
+
+document.getElementById('writeModal').classList.add('open');
+document.getElementById('writeModal').scrollTop = 0;
+}
+
+function submitEdit(id) {
+var title   = document.getElementById('wTitle').value.trim();
+var content = document.getElementById('wContent').value.trim();
+var tagsRaw = document.getElementById('wTags').value.trim();
+if (!title)   { showToast('제목을 입력하세요.'); return; }
+if (!content) { showToast('내용을 입력하세요.'); return; }
+
+var params = new URLSearchParams();
+params.append('action',  'edit');
+params.append('postId',  id);
+params.append('title',   title);
+params.append('content', content);
+params.append('tags',    tagsRaw);
+
+if (writeCat === 'gear') {
+    document.querySelectorAll('#linkInputGroup .link-input-row').forEach(function(row) {
+      var name = row.querySelector('[data-role="name"]').value.trim();
+      var url  = row.querySelector('[data-role="url"]').value.trim();
+      if (name && url) {
+        params.append('linkNames', name);
+        params.append('linkUrls',  url);
+      }
+    });
+  }
+
+fetch('board', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:params.toString() })
+ .then(function(r){ return r.json(); })
+ .then(function(d){
+   if (!d.success) { showToast(d.error || '수정 실패'); return; }
+   closeWrite();
+   // 등록 버튼 원상복구
+   var submitBtn = document.querySelector('.write-submit-btn');
+   submitBtn.textContent = '등록';
+   submitBtn.onclick = submitPost;
+   document.querySelector('.write-modal-header span').textContent = '새 게시글';
+   showToast('✓ 게시글이 수정됐습니다');
+   openDetail(id);
+ })
+ .catch(function(e){ console.error(e); showToast('수정 중 오류 발생'); });
+}
+
 
 function deletePost(id) {
   if (!confirm('게시글을 삭제할까요?')) return;
