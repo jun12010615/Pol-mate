@@ -64,7 +64,6 @@
     background:#ef4444;border:1.5px solid var(--deep);
   }
 
-  /* 아바타에 마스코트 아이콘 사용 */
   .avatar-btn{
     width:36px;height:36px;border-radius:50%;cursor:pointer;
     overflow:hidden;border:1.5px solid rgba(255,255,255,0.25);
@@ -141,7 +140,6 @@
   }
   .menu-icon-wrap svg{width:20px;height:20px;}
 
-  /* 아이콘 컬러 테마 */
   .mi-navy  {background:#e8edf5;}
   .mi-green {background:var(--success-bg);}
   .mi-amber {background:#fffbeb;}
@@ -197,16 +195,6 @@
   .bd2{background:#f3f4f6;color:var(--tm);}
   .br{background:var(--danger-bg);color:var(--danger);}
 
-  .view-all{
-    display:block;text-align:center;
-    font-size:12px;color:var(--deep);font-weight:500;
-    padding:13px;text-decoration:none;
-    border:1px solid var(--bd);border-radius:12px;
-    margin:0 16px 8px;background:var(--card);
-    transition:background 0.15s;
-  }
-  .view-all:active{background:var(--bg);}
-
   /* ══ BOTTOM NAV ══ */
   .bottom-nav{
   position:fixed;bottom:0;left:50%;transform:translateX(-50%);
@@ -242,43 +230,72 @@
 
   DBConnectionMgr mgr = DBConnectionMgr.getInstance();
   java.sql.Connection conn = null;
+
+  // dept_id 기반 팀원 공유 서브쿼리 (재사용)
+  // 내가 등록한 사건 OR 같은 dept_id 팀원이 등록한 사건
+  String teamCaseCond =
+    "(c.user_id = ? OR c.user_id IN (" +
+    "  SELECT u2.user_id FROM users u2 " +
+    "  JOIN users me ON me.user_id = ? " +
+    "  WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL" +
+    "))";
+
   try {
     conn = mgr.getConnection();
 
+    // ── 진행 사건 수 (완료 제외) ──────────────────────────────
     java.sql.PreparedStatement ps1 = conn.prepareStatement(
-      "SELECT COUNT(*) FROM CASES c JOIN TEAM_MEMBERS tm ON c.team_id=tm.team_id WHERE tm.user_id=? AND c.status!='완료'");
+      "SELECT COUNT(*) FROM cases c WHERE " + teamCaseCond + " AND c.status != '완료'");
     ps1.setString(1, loginUser);
+    ps1.setString(2, loginUser);
     java.sql.ResultSet rs1 = ps1.executeQuery();
     if (rs1.next()) cntActive = rs1.getInt(1);
     rs1.close(); ps1.close();
 
+    // ── 모순 탐지 조서 수 ─────────────────────────────────────
     java.sql.PreparedStatement ps2 = conn.prepareStatement(
-      "SELECT COUNT(DISTINCT t.transcript_id) FROM TRANSCRIPTS t JOIN CASES c ON t.case_id=c.case_id JOIN TEAM_MEMBERS tm ON c.team_id=tm.team_id WHERE tm.user_id=? AND t.has_contradiction=1");
+      "SELECT COUNT(DISTINCT t.transcript_id) FROM transcripts t " +
+      "JOIN cases c ON t.case_id = c.case_id " +
+      "WHERE " + teamCaseCond + " AND t.has_contradiction = 1");
     ps2.setString(1, loginUser);
+    ps2.setString(2, loginUser);
     java.sql.ResultSet rs2 = ps2.executeQuery();
     if (rs2.next()) cntContradiction = rs2.getInt(1);
     rs2.close(); ps2.close();
 
-    java.sql.PreparedStatement ps3 = conn.prepareStatement("SELECT COUNT(*) FROM TRANSCRIPTS WHERE user_id=?");
+    // ── 내가 작성한 조서 수 ───────────────────────────────────
+    java.sql.PreparedStatement ps3 = conn.prepareStatement(
+      "SELECT COUNT(*) FROM transcripts WHERE user_id = ?");
     ps3.setString(1, loginUser);
     java.sql.ResultSet rs3 = ps3.executeQuery();
     if (rs3.next()) cntTranscript = rs3.getInt(1);
     rs3.close(); ps3.close();
 
+    // ── 모순탐지 경고 사건 (최신 1건) ────────────────────────
     java.sql.PreparedStatement ps4 = conn.prepareStatement(
-      "SELECT c.case_id,c.case_name FROM CASES c JOIN TEAM_MEMBERS tm ON c.team_id=tm.team_id WHERE tm.user_id=? AND c.status='모순탐지' ORDER BY c.updated_at DESC LIMIT 1");
+      "SELECT c.case_id, c.case_name FROM cases c WHERE " + teamCaseCond +
+      " AND c.status = '모순탐지' ORDER BY c.updated_at DESC LIMIT 1");
     ps4.setString(1, loginUser);
+    ps4.setString(2, loginUser);
     java.sql.ResultSet rs4 = ps4.executeQuery();
-    if (rs4.next()) { alertCaseId=rs4.getString(1); alertCaseName=rs4.getString(2); }
+    if (rs4.next()) { alertCaseId = rs4.getString(1); alertCaseName = rs4.getString(2); }
     rs4.close(); ps4.close();
 
+    // ── 최근 사건 3건 ─────────────────────────────────────────
     java.sql.PreparedStatement ps5 = conn.prepareStatement(
-      "SELECT c.case_id,c.case_name,c.status,c.updated_at FROM CASES c JOIN TEAM_MEMBERS tm ON c.team_id=tm.team_id WHERE tm.user_id=? ORDER BY c.updated_at DESC LIMIT 3");
+      "SELECT c.case_id, c.case_name, c.status, c.updated_at FROM cases c WHERE " + teamCaseCond +
+      " ORDER BY c.updated_at DESC LIMIT 3");
     ps5.setString(1, loginUser);
+    ps5.setString(2, loginUser);
     java.sql.ResultSet rs5 = ps5.executeQuery();
     while (rs5.next()) {
       String upd = rs5.getString("updated_at");
-      recentCases.add(new String[]{ rs5.getString("case_id"), rs5.getString("case_name"), rs5.getString("status"), upd!=null?upd.substring(0,10):"" });
+      recentCases.add(new String[]{
+        rs5.getString("case_id"),
+        rs5.getString("case_name"),
+        rs5.getString("status"),
+        upd != null ? upd.substring(0, 10) : ""
+      });
     }
     rs5.close(); ps5.close();
 
@@ -303,7 +320,6 @@
           </svg>
           <span class="notif-dot"></span>
         </button>
-        <!-- 마스코트 아이콘 아바타 -->
         <a href="mypage.jsp" class="avatar-btn">
           <svg width="28" height="28" viewBox="0 0 86 86" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="#162240"/>
@@ -327,7 +343,7 @@
   <!-- 경고 배너 -->
   <div class="alert-strip">
     <% if (alertCaseId != null) { %>
-    <div class="alert-banner" onclick="location.href='caseList.jsp'">
+    <div class="alert-banner" onclick="location.href='myCase.jsp'">
       <div class="alert-pulse"></div>
       <div class="alert-text">
         <strong>사건 <%= alertCaseId %></strong> — 진술 모순이 탐지되었습니다. 검토가 필요합니다.
@@ -344,8 +360,8 @@
         <!-- 주요 기능 -->
         <div class="sec-label">주요 기능</div>
         <div class="menu-grid">
-    
-		<a href="writeTranscript.jsp" class="menu-card">
+
+          <a href="writeTranscript.jsp" class="menu-card">
             <div class="menu-icon-wrap mi-navy">
               <svg viewBox="0 0 24 24" fill="none" stroke="#1a2744" stroke-width="1.8" stroke-linecap="round">
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
@@ -374,7 +390,6 @@
 
           <a href="askAI" class="menu-card">
             <div class="menu-icon-wrap mi-amber">
-              <!-- 마스코트 아이콘 미니 -->
               <svg width="20" height="20" viewBox="0 0 86 86" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="#92400e" opacity="0.15"/>
                 <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="#92400e" stroke-width="4"/>
@@ -400,7 +415,7 @@
                 <line x1="16" y1="17" x2="8" y2="17"/>
               </svg>
             </div>
-            <div class="menu-name mn-purple">내 사건 관리</div>
+            <div class="menu-name mn-purple">내 조서 관리</div>
             <div class="menu-desc">이력 · 수정 · 사건별</div>
           </a>
 
@@ -436,7 +451,7 @@
           boolean isUrgent = "모순탐지".equals(rcStatus);
           String badgeCls = "진행중".equals(rcStatus)?"bo":"완료".equals(rcStatus)?"bi":"모순탐지".equals(rcStatus)?"bw bd2":"bd2";
       %>
-        <a href="caseList.jsp" class="case-item <%= isUrgent?"urgent":"" %>" style="animation-delay:<%= delays[ci] %>">
+        <a href="myCase.jsp" class="case-item <%= isUrgent?"urgent":"" %>" style="animation-delay:<%= delays[ci] %>">
           <div>
             <div class="case-title"><%= rcId %> <%= rcName %></div>
             <div class="case-meta"><%= rcDate %></div>
@@ -450,7 +465,7 @@
       </div>
     </div>
 
-    <a href="caseList.jsp" class="view-all">전체 사건 보기 →</a>
+
 
   </div><!-- /content -->
 
