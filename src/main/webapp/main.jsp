@@ -197,29 +197,17 @@
 
   /* ══ BOTTOM NAV ══ */
   .bottom-nav{
-    position:fixed;bottom:0;left:50%;transform:translateX(-50%);
-    width:100%;max-width:420px;height:var(--bnav);
-    background:var(--card);border-top:1px solid var(--bd);
-    display:flex;justify-content:space-around;align-items:center;
-    padding:0 8px;z-index:100;
-  }
-  .nav-item{
-    display:flex;flex-direction:column;align-items:center;
-    gap:3px;flex:1;cursor:pointer;text-decoration:none;padding:6px 0;
-  }
-  .nav-icon{width:24px;height:24px;display:flex;align-items:center;justify-content:center;}
-  .nav-icon svg{width:22px;height:22px;}
-  .nav-label{font-size:9px;}
-  .nav-item.active .nav-icon svg{stroke:var(--deep);}
-  .nav-item.active .nav-label{color:var(--deep);font-weight:500;}
-  .nav-item:not(.active) .nav-icon svg{stroke:var(--tm);}
-  .nav-item:not(.active) .nav-label{color:var(--tm);}
-
-  .nav-item.active{position:relative;}
-  .nav-item.active::before{
-    content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
-    width:20px;height:2px;background:var(--gold);border-radius:0 0 2px 2px;
-  }
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:420px;height:64px;
+  background:#ffffff;border-top:1px solid #e2e5ee;
+  display:flex;z-index:100;
+}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:#9ca3af;cursor:pointer;border:none;background:none;font-family:'Noto Sans KR',sans-serif;}
+.nav-item.active{color:#0d1a33;}
+.nav-item.active .nav-label{font-weight:600;}
+.nav-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
+.nav-icon svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;}
+.nav-label{font-size:10px;}
 
   @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
   @keyframes pulse {0%,100%{opacity:1}50%{opacity:0.35}}
@@ -483,18 +471,18 @@
 
   <!-- ══ BOTTOM NAV ══ -->
   <nav class="bottom-nav">
-    <a href="main.jsp" class="nav-item active">
-      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-      <span class="nav-label">홈</span>
-    </a>
-    <a href="myCase.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-      <span class="nav-label">조서</span>
-    </a>
-    <a href="askAI" class="nav-item">
+  <a href="main.jsp" class="nav-item active">
+    <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+    <span class="nav-label">홈</span>
+  </a>
+  <a href="myCase.jsp" class="nav-item">
+    <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+    <span class="nav-label">조서</span>
+  </a>
+  <a href="askAI" class="nav-item">
       <div class="nav-icon">
-        <svg width="22" height="22" viewBox="0 0 86 86" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/>
+        <svg width="22" height="22" viewBox="0 0 86 86" fill="none">
+          <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="currentColor" stroke-width="5"/>
           <circle cx="43" cy="40" r="11" fill="none" stroke="currentColor" stroke-width="3"/>
           <circle cx="43" cy="40" r="5" fill="currentColor"/>
           <circle cx="43" cy="40" r="2.5" fill="white"/>
@@ -506,16 +494,15 @@
       </div>
       <span class="nav-label">AI</span>
     </a>
-    <a href="board.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-      <span class="nav-label">커뮤니티</span>
-    </a>
-    <a href="mypage.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-      <span class="nav-label">마이페이지</span>
-    </a>
-  </nav>
-
+  <a href="board.jsp" class="nav-item">
+    <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+    <span class="nav-label">커뮤니티</span>
+  </a>
+  <a href="mypage.jsp" class="nav-item">
+    <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+    <span class="nav-label">마이페이지</span>
+  </a>
+</nav>
 </div>
 </body>
 </html>
