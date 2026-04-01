@@ -503,6 +503,32 @@ public class BoardServlet extends HttpServlet {
 	                 }
 	             }
 	         }
+	         
+	         pstmt = conn.prepareStatement("DELETE FROM board_links WHERE post_id=?");
+	            pstmt.setInt(1, postId);
+	            pstmt.executeUpdate();
+	            mgr.freeConnection(null, pstmt);
+	            pstmt = null;
+
+	            String[] linkNames = req.getParameterValues("linkNames");
+	            String[] linkUrls  = req.getParameterValues("linkUrls");
+	            if (linkNames != null && linkUrls != null) {
+	                int max = Math.min(linkNames.length, Math.min(linkUrls.length, 3));
+	                for (int i = 0; i < max; i++) {
+	                    String lname = linkNames[i].trim();
+	                    String lurl  = linkUrls[i].trim();
+	                    if (!lname.isEmpty() && !lurl.isEmpty()) {
+	                        pstmt = conn.prepareStatement(
+	                            "INSERT INTO board_links (post_id, link_name, link_url) VALUES (?,?,?)");
+	                        pstmt.setInt(1, postId);
+	                        pstmt.setString(2, lname);
+	                        pstmt.setString(3, lurl);
+	                        pstmt.executeUpdate();
+	                        mgr.freeConnection(null, pstmt);
+	                        pstmt = null;
+	                    }
+	                }
+	            }
 	
 	         conn.commit();
 	         res.getWriter().write("{\"success\":true}");
