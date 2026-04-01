@@ -18,6 +18,7 @@ import org.json.JSONObject;
  *   list    - 게시글 목록 조회 (GET)
  *   detail  - 게시글 상세 + 댓글 조회 (GET)
  *   write   - 게시글 등록 (POST)
+ *   edit    - 게시글 수정 (POST)
  *   delete  - 게시글 삭제 (POST)
  *   comment - 댓글 등록 (POST)
  *   like    - 게시글/댓글 추천 토글 (POST)
@@ -77,6 +78,7 @@ public class BoardServlet extends HttpServlet {
 
         switch (action) {
             case "write":   handleWrite(request, response, loginUser);   break;
+            case "edit": handleEdit(request, response, loginUser); break;
             case "delete":  handleDelete(request, response, loginUser);  break;
             case "comment": handleComment(request, response, loginUser); break;
             case "deleteComment": handleDeleteComment(request, response, loginUser); break;
@@ -421,6 +423,99 @@ public class BoardServlet extends HttpServlet {
             mgr.freeConnection(conn, pstmt, rs);
         }
     }
+    
+    /* ═══════════════════════════════════════════════
+    게시글 수정 (본인 글만)
+    파라미터: postId, title, content, tags(쉼표구분)
+	 ═══════════════════════════════════════════════ */
+	 private void handleEdit(HttpServletRequest req, HttpServletResponse res, String loginUser)
+	         throws IOException {
+	
+	     String idStr   = req.getParameter("postId");
+	     String title   = req.getParameter("title");
+	     String content = req.getParameter("content");
+	     String tagsRaw = req.getParameter("tags");
+	
+	     if (idStr == null || title == null || title.trim().isEmpty()
+	                       || content == null || content.trim().isEmpty()) {
+	         res.getWriter().write("{\"success\":false,\"error\":\"필수 항목을 모두 입력하세요.\"}");
+	         return;
+	     }
+	     int postId;
+	     try { postId = Integer.parseInt(idStr); }
+	     catch (NumberFormatException e) {
+	         res.getWriter().write("{\"success\":false,\"error\":\"잘못된 postId\"}");
+	         return;
+	     }
+	
+	     DBConnectionMgr mgr = DBConnectionMgr.getInstance();
+	     Connection conn = null;
+	     PreparedStatement pstmt = null;
+	     ResultSet rs = null;
+	
+	     try {
+	         conn = mgr.getConnection();
+	         conn.setAutoCommit(false);
+	
+	         // 작성자 본인 확인
+	         pstmt = conn.prepareStatement(
+	             "SELECT user_id FROM board_posts WHERE post_id=?");
+	         pstmt.setInt(1, postId);
+	         rs = pstmt.executeQuery();
+	         if (!rs.next() || !loginUser.equals(rs.getString("user_id"))) {
+	             res.getWriter().write("{\"success\":false,\"error\":\"수정 권한이 없습니다.\"}");
+	             mgr.freeConnection(conn, pstmt, rs);
+	             conn.rollback();
+	             return;
+	         }
+	         mgr.freeConnection(null, pstmt, rs);
+	         pstmt = null; rs = null;
+	
+	         // 제목·내용 UPDATE
+	         pstmt = conn.prepareStatement(
+	             "UPDATE board_posts SET title=?, content=?, updated_at=NOW() WHERE post_id=?");
+	         pstmt.setString(1, title.trim());
+	         pstmt.setString(2, content.trim());
+	         pstmt.setInt(3, postId);
+	         pstmt.executeUpdate();
+	         mgr.freeConnection(null, pstmt);
+	         pstmt = null;
+	
+	         // 기존 태그 삭제 후 재삽입
+	         pstmt = conn.prepareStatement("DELETE FROM board_tags WHERE post_id=?");
+	         pstmt.setInt(1, postId);
+	         pstmt.executeUpdate();
+	         mgr.freeConnection(null, pstmt);
+	         pstmt = null;
+	
+	         if (tagsRaw != null && !tagsRaw.trim().isEmpty()) {
+	             String[] tags = tagsRaw.split(",");
+	             for (String tag : tags) {
+	                 String t = tag.trim();
+	                 if (!t.isEmpty()) {
+	                     pstmt = conn.prepareStatement(
+	                         "INSERT INTO board_tags (post_id, tag_name) VALUES (?,?)");
+	                     pstmt.setInt(1, postId);
+	                     pstmt.setString(2, t);
+	                     pstmt.executeUpdate();
+	                     mgr.freeConnection(null, pstmt);
+	                     pstmt = null;
+	                 }
+	             }
+	         }
+	
+	         conn.commit();
+	         res.getWriter().write("{\"success\":true}");
+	
+	     } catch (Exception e) {
+	         e.printStackTrace();
+	         try { if (conn != null) conn.rollback(); } catch (Exception ignored) {}
+	         res.getWriter().write("{\"success\":false,\"error\":\"수정 중 오류가 발생했습니다.\"}");
+	     } finally {
+	         try { if (conn != null) conn.setAutoCommit(true); } catch (Exception ignored) {}
+	         mgr.freeConnection(conn, pstmt, rs);
+	     }
+	 }
 
     /* ═══════════════════════════════════════════════
        게시글 삭제 (본인 글만)
