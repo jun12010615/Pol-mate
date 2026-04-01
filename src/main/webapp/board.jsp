@@ -642,7 +642,7 @@ function toggleSort() {
   var labels = ['최신순','추천순'];
   var idx = order.indexOf(currentSort);
   currentSort = order[(idx+1) % 2];
-  document.getElementById('sortLabel').textContent = labels[(idx+1)%2];
+  document.getElementById('sortLabel').textContent = labels[order.indexOf(currentSort)];
   loadList();
 }
 
@@ -721,7 +721,9 @@ function renderDetail(p) {
   if (p.cat === 'gear' && links.length) {
     var linkCards = links.map(function(lk){
       var displayUrl = (lk.url||'').replace(/^https?:\/\//,'').replace(/\/$/,'');
-      return '<a class="buy-link-card" href="'+escHtml(lk.url||'')+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">'+
+      var safeUrl = (lk.url||'');
+      if (safeUrl && !/^https?:\/\//i.test(safeUrl)) safeUrl = 'https://' + safeUrl;
+      return '<a class="buy-link-card" href="'+escHtml(safeUrl)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+
         '<div class="buy-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>'+
         '<div class="buy-link-info">'+
           '<div class="buy-link-name">'+escHtml(lk.name||'')+'</div>'+
@@ -856,6 +858,21 @@ document.getElementById('wTags').value    =
 });
 document.getElementById('gearLinkSection').style.display = (p.cat === 'gear') ? 'block' : 'none';
 
+var grp = document.getElementById('linkInputGroup');
+grp.innerHTML = '';
+var existLinks = Array.isArray(p.links) ? p.links : [];
+if (existLinks.length === 0) existLinks = [{ name:'', url:'' }];
+existLinks.forEach(function(lk, i) {
+  var div = document.createElement('div');
+  div.className = 'link-input-row';
+  div.setAttribute('data-idx', i);
+  div.innerHTML =
+    '<input class="write-input" placeholder="링크 이름 (예: 쿠팡, 네이버쇼핑)" style="flex:0.9" data-role="name" value="'+escHtml(lk.name||'')+'">'+
+    '<input class="write-input" placeholder="https://..." data-role="url" value="'+escHtml(lk.url||'')+'">';
+  grp.appendChild(div);
+});
+document.getElementById('linkAddBtn').style.display = existLinks.length >= 3 ? 'none' : 'flex';
+
 // 헤더 텍스트·버튼 변경 (등록 → 수정)
 document.querySelector('.write-modal-header span').textContent = '게시글 수정';
 var submitBtn = document.querySelector('.write-submit-btn');
@@ -879,6 +896,17 @@ params.append('postId',  id);
 params.append('title',   title);
 params.append('content', content);
 params.append('tags',    tagsRaw);
+
+if (writeCat === 'gear') {
+    document.querySelectorAll('#linkInputGroup .link-input-row').forEach(function(row) {
+      var name = row.querySelector('[data-role="name"]').value.trim();
+      var url  = row.querySelector('[data-role="url"]').value.trim();
+      if (name && url) {
+        params.append('linkNames', name);
+        params.append('linkUrls',  url);
+      }
+    });
+  }
 
 fetch('board', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:params.toString() })
  .then(function(r){ return r.json(); })
