@@ -111,10 +111,10 @@
   .nav-icon { width:24px; height:24px; display:flex; align-items:center; justify-content:center; }
   .nav-icon svg { width:22px; height:22px; }
   .nav-label { font-size:9px; }
-  .nav-item.active .nav-icon svg { stroke:var(--navy); }
-  .nav-item.active .nav-label    { color:var(--navy); font-weight:500; }
-  .nav-item:not(.active) .nav-icon svg { stroke:var(--text-muted); }
-  .nav-item:not(.active) .nav-label    { color:var(--text-muted); }
+  .nav-item.active .nav-icon svg { stroke:var(--deep); }
+  .nav-item.active .nav-label    { color:var(--deep); font-weight:600; }
+  .nav-item:not(.active) .nav-icon svg { stroke:var(--tm); }
+  .nav-item:not(.active) .nav-label    { color:var(--tm); }
 
   @keyframes fadeUp  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
   @keyframes slideUp { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
@@ -168,28 +168,39 @@
   </div>
 
   <nav class="bottom-nav">
-    <a href="main.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-      <span class="nav-label">홈</span>
-    </a>
-    <a href="myCase.jsp" class="nav-item active">
-      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-      <span class="nav-label">조서</span>
-    </a>
-    <a href="askAI" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+  <a href="main.jsp" class="nav-item">
+    <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+    <span class="nav-label">홈</span>
+  </a>
+  <a href="myCase.jsp" class="nav-item active">
+    <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+    <span class="nav-label">조서</span>
+  </a>
+  <a href="askAI" class="nav-item">
+      <div class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 86 86" fill="none">
+          <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="currentColor" stroke-width="5"/>
+          <circle cx="43" cy="40" r="11" fill="none" stroke="currentColor" stroke-width="3"/>
+          <circle cx="43" cy="40" r="5" fill="currentColor"/>
+          <circle cx="43" cy="40" r="2.5" fill="white"/>
+          <circle cx="43" cy="22" r="2.8" fill="currentColor"/>
+          <circle cx="43" cy="58" r="2.8" fill="currentColor"/>
+          <circle cx="28" cy="40" r="2.8" fill="currentColor"/>
+          <circle cx="58" cy="40" r="2.8" fill="currentColor"/>
+        </svg>
+      </div>
       <span class="nav-label">AI</span>
     </a>
-    <a href="board.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-      <span class="nav-label">커뮤니티</span>
-    </a>
-    <a href="mypage.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-      <span class="nav-label">마이페이지</span>
-    </a>
-  </nav>
-</div>
+  <a href="board.jsp" class="nav-item">
+    <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+    <span class="nav-label">커뮤니티</span>
+  </a>
+  <a href="mypage.jsp" class="nav-item">
+    <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+    <span class="nav-label">마이페이지</span>
+  </a>
+</nav>
+  </div>
 
 <!-- 사건 상세 드로어 -->
 <div class="overlay" id="caseDrawer" onclick="closeOnBg(event,'caseDrawer')">
