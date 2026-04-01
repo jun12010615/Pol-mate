@@ -452,16 +452,15 @@
 <body>
 
 <%
-  // 세션 체크 (DB 연동 후 활성화)
-  // HttpSession sess = request.getSession(false);
-  // if (sess == null || sess.getAttribute("loginUser") == null) {
-  //     response.sendRedirect("login.jsp"); return;
-  // }
-  String userName  = "김민준";   // 임시
-  String userRank  = "경위";
-  String userOrg   = "서울지방경찰청 형사과";
-  String userPhone = "010-1234-5678";
-  String userId    = "test";
+  HttpSession sess = request.getSession(false);
+  if (sess == null || sess.getAttribute("loginUser") == null) {
+      response.sendRedirect("login.jsp"); return;
+  }
+  String userId    = (String) sess.getAttribute("loginUser");
+  String userName  = (String) sess.getAttribute("userName");
+  String userRank  = (String) sess.getAttribute("userRank");
+  String userOrg   = (String) sess.getAttribute("userOrg");
+  String userPhone = (String) sess.getAttribute("userPhone");
 %>
 
 <div class="screen">
@@ -493,15 +492,15 @@
   <div class="stats-band">
     <div class="stats-strip">
       <div class="stat-col">
-        <div class="stat-num">12</div>
+        <div class="stat-num" id="statActiveCases">-</div>
         <div class="stat-lbl">진행 사건</div>
       </div>
       <div class="stat-col">
-        <div class="stat-num">3</div>
+        <div class="stat-num" id="statContradiction">-</div>
         <div class="stat-lbl">모순 탐지</div>
       </div>
       <div class="stat-col">
-        <div class="stat-num">28</div>
+        <div class="stat-num" id="statCompleted">-</div>
         <div class="stat-lbl">완료 조서</div>
       </div>
     </div>
@@ -565,7 +564,7 @@
             <div class="menu-sub">작성 · 수정 · 완료 기록</div>
           </div>
           <div class="menu-right">
-            <span class="menu-value">28건</span>
+            <span class="menu-value" id="menuHistoryCount">-</span>
             <div class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>
           </div>
         </div>
@@ -796,42 +795,8 @@
   <div class="drawer">
     <div class="drawer-handle"></div>
     <div class="drawer-title">내 조서 이력</div>
-    <div class="history-list">
-      <div class="history-item">
-        <div>
-          <div class="h-title">2024-0312 절도사건</div>
-          <div class="h-meta">2025.03.24 · 진술 분석 완료</div>
-        </div>
-        <span class="h-badge h-badge-warn">검토필요</span>
-      </div>
-      <div class="history-item">
-        <div>
-          <div class="h-title">2024-0289 폭행사건</div>
-          <div class="h-meta">2025.03.21 · 조서 작성 중</div>
-        </div>
-        <span class="h-badge h-badge-ok">진행중</span>
-      </div>
-      <div class="history-item">
-        <div>
-          <div class="h-title">2024-0271 사기사건</div>
-          <div class="h-meta">2025.03.18 · 관계망 업데이트</div>
-        </div>
-        <span class="h-badge h-badge-done">완료</span>
-      </div>
-      <div class="history-item">
-        <div>
-          <div class="h-title">2024-0244 협박사건</div>
-          <div class="h-meta">2025.03.10 · 조서 최종 제출</div>
-        </div>
-        <span class="h-badge h-badge-done">완료</span>
-      </div>
-      <div class="history-item">
-        <div>
-          <div class="h-title">2024-0201 강도사건</div>
-          <div class="h-meta">2025.02.28 · 조서 최종 제출</div>
-        </div>
-        <span class="h-badge h-badge-done">완료</span>
-      </div>
+    <div class="history-list" id="historyList">
+      <!-- JS로 채움 (MypageServlet action=history) -->
     </div>
     <div style="padding:16px 20px 0;">
       <button class="d-btn-cancel" onclick="closeDrawer('historyDrawer')">닫기</button>
@@ -901,7 +866,8 @@
 function openDrawer(id) {
   document.getElementById(id).classList.add('open');
   document.body.style.overflow = 'hidden';
-  if (id === 'statsDrawer') renderStats('week');
+  if (id === 'statsDrawer')   loadStats('week');
+  if (id === 'historyDrawer') loadHistory();
 }
 function closeDrawer(id) {
   document.getElementById(id).classList.remove('open');
@@ -911,34 +877,79 @@ function closeOnBg(e, id) {
   if (e.target === document.getElementById(id)) closeDrawer(id);
 }
 
-// ── 프로필 저장 (임시: alert만 띄움) ──────────────────────────────
+// ── 초기 로드: 프로필 통계 띠 ──────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  fetch('mypage?action=load')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.user) return;
+      var s = data.stats;
+      document.getElementById('statActiveCases').textContent  = s.activeCases;
+      document.getElementById('statContradiction').textContent = s.contradictionCount;
+      document.getElementById('statCompleted').textContent    = s.completedTranscripts;
+      document.getElementById('menuHistoryCount').textContent = s.totalTranscripts + '건';
+    })
+    .catch(function(e) { console.error('초기 로드 실패', e); });
+});
+
+// ── 프로필 저장 ────────────────────────────────────────────────────
 function saveProfile() {
-  alert('저장되었습니다.\n(DB 미연동 상태 — 실제 반영은 DB 연동 후 가능합니다.)');
-  closeDrawer('profileDrawer');
+  var params = new URLSearchParams();
+  params.append('action',    'updateProfile');
+  params.append('userName',  document.getElementById('editName').value.trim());
+  params.append('userRank',  document.getElementById('editRank').value);
+  params.append('userOrg',   document.getElementById('editOrg').value.trim());
+  params.append('userPhone', document.getElementById('editPhone').value.trim());
+
+  fetch('mypage', { method: 'POST', body: params })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        alert('프로필이 저장되었습니다.');
+        closeDrawer('profileDrawer');
+        location.reload();
+      } else {
+        alert(data.message || '저장에 실패했습니다.');
+      }
+    })
+    .catch(function(e) { alert('오류가 발생했습니다.'); console.error(e); });
 }
 
 // ── 비밀번호 변경 ──────────────────────────────────────────────────
-const TEMP_PW = '1234'; // 임시 현재 비밀번호
 function changePw() {
-  const cur  = document.getElementById('curPw').value;
-  const nw   = document.getElementById('newPw').value;
-  const nwcf = document.getElementById('newPwCf').value;
-  const msg  = document.getElementById('pwChangeMsg');
+  var cur   = document.getElementById('curPw').value;
+  var nw    = document.getElementById('newPw').value;
+  var nwcf  = document.getElementById('newPwCf').value;
+  var msg   = document.getElementById('pwChangeMsg');
   msg.style.display = 'none';
 
-  if (!cur)           { showPwMsg('현재 비밀번호를 입력해 주세요.'); return; }
-  if (cur !== TEMP_PW){ showPwMsg('현재 비밀번호가 올바르지 않습니다.'); return; }
+  if (!cur)              { showPwMsg('현재 비밀번호를 입력해 주세요.'); return; }
   if (!nw || nw.length < 8) { showPwMsg('새 비밀번호를 8자 이상 입력해 주세요.'); return; }
-  if (nw !== nwcf)    { showPwMsg('새 비밀번호가 일치하지 않습니다.'); return; }
+  if (nw !== nwcf)       { showPwMsg('새 비밀번호가 일치하지 않습니다.'); return; }
 
-  alert('비밀번호가 변경되었습니다.\n(DB 미연동 상태 — 실제 반영은 DB 연동 후 가능합니다.)');
-  document.getElementById('curPw').value  = '';
-  document.getElementById('newPw').value  = '';
-  document.getElementById('newPwCf').value= '';
-  closeDrawer('pwDrawer');
+  var params = new URLSearchParams();
+  params.append('action', 'changePassword');
+  params.append('curPw',  cur);
+  params.append('newPw',  nw);
+  params.append('newPwCf',nwcf);
+
+  fetch('mypage', { method: 'POST', body: params })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        alert('비밀번호가 변경되었습니다.');
+        document.getElementById('curPw').value   = '';
+        document.getElementById('newPw').value   = '';
+        document.getElementById('newPwCf').value = '';
+        closeDrawer('pwDrawer');
+      } else {
+        showPwMsg(data.message || '변경에 실패했습니다.');
+      }
+    })
+    .catch(function(e) { alert('오류가 발생했습니다.'); console.error(e); });
 }
 function showPwMsg(m) {
-  const el = document.getElementById('pwChangeMsg');
+  var el = document.getElementById('pwChangeMsg');
   el.textContent = m;
   el.style.display = 'block';
 }
@@ -946,52 +957,83 @@ function showPwMsg(m) {
 // ── 로그아웃 ──────────────────────────────────────────────────────
 function confirmLogout() {
   if (confirm('로그아웃 하시겠습니까?')) {
-    // 세션 만료 처리는 LogoutServlet으로 (DB 연동 후)
-    location.href = 'login.jsp';
+    var params = new URLSearchParams();
+    params.append('action', 'logout');
+    fetch('mypage', { method: 'POST', body: params })
+      .then(function() { location.href = 'login.jsp'; })
+      .catch(function() { location.href = 'login.jsp'; });
   }
 }
 
-// ── 통계 렌더링 ───────────────────────────────────────────────────
-const STATS = {
-  week:  { cases:3,  docs:4,  contra:1, proc:2 },
-  month: { cases:12, docs:18, contra:3, proc:7 },
-  all:   { cases:43, docs:28, contra:9, proc:22 }
-};
-const BAR_DATA = {
-  week:  [2,3,1,4,2,3,4],
-  month: [5,8,12,7,10,14,18],
-  all:   [15,22,18,25,30,28,35]
-};
-const BAR_LABELS = {
-  week:  ['월','화','수','목','금','토','일'],
-  month: ['10월','11월','12월','1월','2월','3월','이번달'],
-  all:   ['2023','상반기','하반기','1Q','2Q','3Q','현재']
-};
+// ── 내 조서 이력 로드 ─────────────────────────────────────────────
+function loadHistory() {
+  var container = document.getElementById('historyList');
+  container.innerHTML = '<p style="padding:20px; text-align:center; color:var(--text-muted); font-size:13px;">불러오는 중...</p>';
 
-function renderStats(period) {
-  const s = STATS[period];
+  fetch('mypage?action=history')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var list = data.history;
+      if (!list || list.length === 0) {
+        container.innerHTML = '<p style="padding:20px; text-align:center; color:var(--text-muted); font-size:13px;">조서 이력이 없습니다.</p>';
+        return;
+      }
+      var BADGE_MAP = {
+        '진행중':   'h-badge-ok',
+        '검토필요': 'h-badge-warn',
+        '모순탐지': 'h-badge-warn',
+        '완료':     'h-badge-done'
+      };
+      container.innerHTML = list.map(function(t) {
+        var date   = t.createdAt ? t.createdAt.substring(0, 10).replace(/-/g, '.') : '';
+        var badge  = BADGE_MAP[t.caseStatus] || 'h-badge-done';
+        return '<div class="history-item">' +
+          '<div>' +
+            '<div class="h-title">' + t.caseId + ' ' + (t.caseName || '') + '</div>' +
+            '<div class="h-meta">' + date + (t.stmtName ? ' · ' + t.stmtName + ' 진술' : '') + '</div>' +
+          '</div>' +
+          '<span class="h-badge ' + badge + '">' + (t.caseStatus || '') + '</span>' +
+        '</div>';
+      }).join('');
+    })
+    .catch(function(e) {
+      container.innerHTML = '<p style="padding:20px; text-align:center; color:var(--danger); font-size:13px;">불러오기에 실패했습니다.</p>';
+      console.error(e);
+    });
+}
+
+// ── 활동 통계 로드 ────────────────────────────────────────────────
+var _statsCache = null;
+
+function loadStats(period) {
+  if (_statsCache) { renderStats(_statsCache, period); return; }
+
+  fetch('mypage?action=stats')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      _statsCache = data;
+      renderStats(data, period);
+    })
+    .catch(function(e) { console.error('통계 로드 실패', e); });
+}
+
+function renderStats(data, period) {
+  // 기간 필터 없이 전체 집계값 표시 (서블릿에서 기간별 API 확장 가능)
   document.getElementById('statsGrid').innerHTML =
-    '<div class="stat-tile"><div class="tile-num">' + s.cases  + '</div><div class="tile-lbl">담당 사건</div></div>' +
-    '<div class="stat-tile"><div class="tile-num">' + s.docs   + '</div><div class="tile-lbl">조서 처리</div></div>' +
-    '<div class="stat-tile"><div class="tile-num">' + s.contra + '</div><div class="tile-lbl">모순 탐지</div></div>' +
-    '<div class="stat-tile"><div class="tile-num">' + s.proc   + '</div><div class="tile-lbl">관계망 등록</div></div>';
-  const data   = BAR_DATA[period];
-  const labels = BAR_LABELS[period];
-  const mx     = Math.max(...data);
-  document.getElementById('barChart').innerHTML = data.map(function(v,i) {
-    var cls = (i===data.length-1) ? 'cur' : '';
-    var h   = Math.round(v/mx*68);
-    return '<div class="bar-col"><div class="bar-fill ' + cls + '" style="height:' + h + 'px;"></div></div>';
-  }).join('');
-  document.getElementById('barLabels').innerHTML = labels.map(function(l) {
-    return '<div style="flex:1; font-size:9px; color:var(--text-muted); text-align:center;">' + l + '</div>';
-  }).join('');
+    '<div class="stat-tile"><div class="tile-num">' + (data.totalCases || 0)          + '</div><div class="tile-lbl">담당 사건</div></div>' +
+    '<div class="stat-tile"><div class="tile-num">' + (data.totalTranscripts || 0)     + '</div><div class="tile-lbl">조서 처리</div></div>' +
+    '<div class="stat-tile"><div class="tile-num">' + (data.contradictionCount || 0)   + '</div><div class="tile-lbl">모순 탐지</div></div>' +
+    '<div class="stat-tile"><div class="tile-num">' + (data.relationEdges || 0)        + '</div><div class="tile-lbl">관계망 등록</div></div>';
+
+  // 막대 차트: 데이터 없을 때 빈 상태 표시
+  document.getElementById('barChart').innerHTML  = '<div style="width:100%;text-align:center;color:var(--text-muted);font-size:11px;padding-top:24px;">기간별 데이터 준비 중</div>';
+  document.getElementById('barLabels').innerHTML = '';
 }
 
 function setPeriod(btn, period) {
-  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.period-btn').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
-  renderStats(period);
+  loadStats(period);
 }
 </script>
 

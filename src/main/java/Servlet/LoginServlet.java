@@ -35,22 +35,29 @@ public class LoginServlet extends HttpServlet {
         try {
             conn = mgr.getConnection();
 
-            String sql = "SELECT user_id, user_pw, user_name FROM USERS WHERE user_id = ?";
+            String sql = "SELECT user_id, user_pw, user_name, user_rank, user_org, user_phone FROM USERS WHERE user_id = ?";
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, userId.trim());
             rs = pstmt.executeQuery();
 
             if (rs.next()) {
-                String dbPw   = rs.getString("user_pw");
-                String dbName = rs.getString("user_name");
+                String dbPw    = rs.getString("user_pw");
+                String dbName  = rs.getString("user_name");
+                
+                // 2. DB에서 계급, 소속, 전화번호 추가로 읽어오기
+                String dbRank  = rs.getString("user_rank");
+                String dbOrg   = rs.getString("user_org");
+                String dbPhone = rs.getString("user_phone");
 
-                // 비밀번호 일치 확인 (현재: 평문 비교 / 나중에 BCrypt로 교체)
                 if (dbPw.equals(userPw)) {
-                    // ── 로그인 성공 → 세션 발급 ──────────────────
                     HttpSession session = request.getSession();
                     session.setAttribute("loginUser", userId.trim());
                     session.setAttribute("userName",  dbName);
-                    session.setMaxInactiveInterval(60 * 60); // 1시간
+                    session.setAttribute("userRank", dbRank);
+                    session.setAttribute("userOrg", dbOrg);
+                    session.setAttribute("userPhone", dbPhone);
+                    
+                    session.setMaxInactiveInterval(60 * 60); 
                     response.sendRedirect("main.jsp");
                 } else {
                     // 비밀번호 불일치
