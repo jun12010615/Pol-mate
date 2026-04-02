@@ -242,9 +242,10 @@ public class CaseServlet extends HttpServlet {
             // 해당 사건의 조서 목록
             ps = conn.prepareStatement(
                 "SELECT t.transcript_id, t.stmt_type, t.stmt_name, t.has_contradiction, " +
-                "       t.created_at, " +
+                "       t.created_at, t.user_id, u.user_name, u.user_rank, " +
                 "       CHAR_LENGTH(IFNULL(t.original_text,'')) AS text_len " +
                 "FROM transcripts t " +
+                "LEFT JOIN users u ON t.user_id = u.user_id " +
                 "WHERE t.case_id = ? " +
                 "ORDER BY t.created_at DESC");
             ps.setString(1, caseId);
@@ -258,6 +259,9 @@ public class CaseServlet extends HttpServlet {
                 d.put("name",         nvl(rs.getString("stmt_name"), "미입력"));
                 d.put("contradiction", rs.getBoolean("has_contradiction"));
                 d.put("textLen",      rs.getInt("text_len"));
+                d.put("writerId",     nvl(rs.getString("user_id"),   ""));
+                d.put("writerName",   nvl(rs.getString("user_name"), "알 수 없음"));
+                d.put("writerRank",   nvl(rs.getString("user_rank"), ""));
                 Timestamp dts = rs.getTimestamp("created_at");
                 d.put("date", dts != null ? DATE_FMT.format(dts) : "");
                 docs.put(d);

@@ -399,14 +399,14 @@ function setSort(val) {
 function sortedCases(list) {
   var arr = list.slice();
   if (currentSort === 'date_asc') {
-    arr.sort(function(a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    arr.sort(function(a, b){ return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
   } else if (currentSort === 'progress') {
-    arr.sort(function(a, b) {
-      if (a.progress !== b.progress) return a.progress - b.progress; // 진행도 낮은순
-      return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; // 동률이면 오래된순
+    arr.sort(function(a, b){
+      if (a.progress !== b.progress) return a.progress - b.progress; // 낮은 진행도 먼저
+      return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;        // 동률이면 오래된순
     });
   } else { // date_desc (기본)
-    arr.sort(function(a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
+    arr.sort(function(a, b){ return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
   }
   return arr;
 }
@@ -429,7 +429,6 @@ function loadCaseList() {
 }
 
 function renderCases(list) {
-  var sorted = sortedCases ? list : list; // list는 이미 정렬된 상태로 들어옴
   if(!list.length){
     document.getElementById('caseList').innerHTML='<div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><div class="empty-title">사건이 없습니다</div><div class="empty-desc">새 사건을 등록해 보세요</div></div>';
     return;
@@ -491,6 +490,10 @@ function renderDrawerDocs(docs) {
       '<div class="drawer-doc-info" onclick="event.stopPropagation();openTranscriptPopup('+i+')">' +
         '<div class="drawer-doc-title">'+escHtml(d.name)+' '+escHtml(d.type)+' 진술 조서</div>' +
         '<div class="drawer-doc-meta">'+escHtml(d.date)+'  ·  '+(d.textLen||0).toLocaleString()+'자</div>' +
+        '<div class="drawer-doc-meta" style="margin-top:2px;display:flex;align-items:center;gap:3px;">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:10px;height:10px;flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
+          escHtml((d.writerRank?d.writerRank+' ':'')+d.writerName) +
+        '</div>' +
       '</div>' +
       '<div class="drawer-doc-badge"><span class="badge '+bc+'">'+bt+'</span></div>' +
     '</div>';

@@ -74,9 +74,9 @@
   }
 
   .logo-subtitle{
-    font-size:10px;color:rgba(255,255,255,0.4);
-    letter-spacing:2px;font-weight:300;margin-top:12px;
-    text-transform:uppercase;
+    font-size:11px;color:rgba(255,255,255,0.5);
+    letter-spacing:0.5px;font-weight:400;margin-top:12px;
+    font-family:'Noto Sans KR',sans-serif;
   }
 
   .gov-badge{

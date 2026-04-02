@@ -74,9 +74,16 @@ public class NotificationServlet extends HttpServlet {
     // ═══════════════════════════════════════════════════════
     // 알림 목록 조회
     // - 비밀번호 만료 경고 알림을 실시간으로 앞에 붙여서 반환
+    // - 야간 방해금지 시간대에는 빈 배열 반환
     // ═══════════════════════════════════════════════════════
     private void handleList(HttpServletRequest req, HttpServletResponse res, String loginUser)
             throws IOException {
+
+        // 야간 방해금지 시간대 체크
+        if (isNightMode(loginUser) && isNightTime()) {
+            res.getWriter().write("[]");
+            return;
+        }
 
         String typeFilter = nvl(req.getParameter("type"), "all");
 
@@ -167,9 +174,18 @@ public class NotificationServlet extends HttpServlet {
     // ═══════════════════════════════════════════════════════
     // 미읽음 수 조회 (상단 뱃지)
     // 비밀번호 만료 경고도 포함해서 카운트
+    // 야간 방해금지 시간(22:00~07:00)에는 0 반환
     // ═══════════════════════════════════════════════════════
     private void handleUnreadCount(HttpServletResponse res, String loginUser)
             throws IOException {
+
+        // 야간 방해금지 시간대 체크
+        if (isNightMode(loginUser) && isNightTime()) {
+            JSONObject result = new JSONObject();
+            result.put("count", 0);
+            res.getWriter().write(result.toString());
+            return;
+        }
 
         DBConnectionMgr mgr = DBConnectionMgr.getInstance();
         Connection conn = null;
@@ -272,6 +288,36 @@ public class NotificationServlet extends HttpServlet {
         } finally {
             mgr.freeConnection(conn, ps);
         }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // 야간 방해금지 헬퍼
+    // ═══════════════════════════════════════════════════════
+
+    /** DB에서 해당 유저의 night_mode 설정 조회 */
+    private boolean isNightMode(String userId) {
+        DBConnectionMgr mgr = DBConnectionMgr.getInstance();
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            conn = mgr.getConnection();
+            ps = conn.prepareStatement("SELECT night_mode FROM users WHERE user_id = ?");
+            ps.setString(1, userId);
+            rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt("night_mode") == 1;
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            mgr.freeConnection(conn, ps, rs);
+        }
+        return false;
+    }
+
+    /** 현재 시각이 야간 방해금지 시간(22:00~07:00)인지 확인 */
+    private boolean isNightTime() {
+        int hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
+        return hour >= 22 || hour < 7;
     }
 
     // ═══════════════════════════════════════════════════════

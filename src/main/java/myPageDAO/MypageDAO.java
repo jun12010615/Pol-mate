@@ -28,8 +28,11 @@ public class MypageDAO {
         UserDTO dto = new UserDTO();
         try {
             conn = mgr.getConnection();
-            String sql = "SELECT user_id, user_name, user_phone, user_org, user_rank, user_dept, badge_num, created_at " +
-                         "FROM users WHERE user_id = ?";
+            String sql = "SELECT u.user_id, u.user_name, u.user_phone, u.user_org, u.user_rank, " +
+                         "       d.dept_name AS user_dept, u.badge_num, u.created_at " +
+                         "FROM users u " +
+                         "LEFT JOIN departments d ON u.dept_id = d.dept_id " +
+                         "WHERE u.user_id = ?";
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, userId);
             rs = pstmt.executeQuery();
@@ -116,8 +119,7 @@ public class MypageDAO {
         try {
             conn = mgr.getConnection();
             // ※ BCrypt 적용 시: newPw = BCrypt.hashpw(newPw, BCrypt.gensalt());
-            pstmt = conn.prepareStatement(
-                "UPDATE users SET user_pw = ?, password_changed_at = NOW() WHERE user_id = ?");
+            pstmt = conn.prepareStatement("UPDATE users SET user_pw = ? WHERE user_id = ?");
             pstmt.setString(1, newPw);
             pstmt.setString(2, userId);
             return pstmt.executeUpdate() > 0;
@@ -253,5 +255,64 @@ public class MypageDAO {
         }
 
         return stats;
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 6. 알림 설정 조회
+    // ════════════════════════════════════════════════════════════════
+
+    public java.util.Map<String, Boolean> getSettings(String userId) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        java.util.Map<String, Boolean> map = new java.util.HashMap<>();
+        map.put("notifContradiction", true);
+        map.put("notifRelation",      true);
+        map.put("nightMode",          false);
+
+        try {
+            conn = mgr.getConnection();
+            pstmt = conn.prepareStatement(
+                "SELECT notif_contradiction, notif_relation, night_mode " +
+                "FROM users WHERE user_id = ?");
+            pstmt.setString(1, userId);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                map.put("notifContradiction", rs.getInt("notif_contradiction") == 1);
+                map.put("notifRelation",      rs.getInt("notif_relation")      == 1);
+                map.put("nightMode",          rs.getInt("night_mode")          == 1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            mgr.freeConnection(conn, pstmt, rs);
+        }
+        return map;
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 7. 알림 설정 저장
+    // ════════════════════════════════════════════════════════════════
+
+    public boolean saveSettings(String userId, boolean notifContradiction,
+                                boolean notifRelation, boolean nightMode) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = mgr.getConnection();
+            pstmt = conn.prepareStatement(
+                "UPDATE users SET notif_contradiction = ?, notif_relation = ?, night_mode = ? " +
+                "WHERE user_id = ?");
+            pstmt.setInt(1, notifContradiction ? 1 : 0);
+            pstmt.setInt(2, notifRelation      ? 1 : 0);
+            pstmt.setInt(3, nightMode          ? 1 : 0);
+            pstmt.setString(4, userId);
+            return pstmt.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            mgr.freeConnection(conn, pstmt);
+        }
+        return false;
     }
 }
