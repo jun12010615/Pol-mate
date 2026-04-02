@@ -313,12 +313,12 @@
         <div class="greeting-name"><%= userName %> 수사관</div>
       </div>
       <div class="header-icons">
-        <button class="icon-btn" onclick="location.href='notifications.jsp'">
+        <button class="icon-btn" id="bellBtn" onclick="location.href='notifications.jsp'">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
             <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
           </svg>
-          <span class="notif-dot"></span>
+          <span class="notif-dot" id="bellDot" style="display:none;"></span>
         </button>
         <a href="mypage.jsp" class="avatar-btn">
           <svg width="28" height="28" viewBox="0 0 86 86" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -504,5 +504,17 @@
   </a>
 </nav>
 </div>
+<script>
+// ── 종 뱃지: 미읽음 알림이 있을 때만 빨간 점 표시 ──────────────
+(function() {
+  fetch('notifApi?action=unreadCount')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var dot = document.getElementById('bellDot');
+      if (dot) dot.style.display = (data.count > 0) ? '' : 'none';
+    })
+    .catch(function() {});
+})();
+</script>
 </body>
 </html>

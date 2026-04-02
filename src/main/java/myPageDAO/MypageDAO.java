@@ -414,4 +414,60 @@ public class MypageDAO {
             mgr.freeConnection(conn, pstmt);
         }
     }
+
+    // ════════════════════════════════════════════════════════════════
+    // 7. 알림 설정 조회
+    // ════════════════════════════════════════════════════════════════
+
+    public java.util.Map<String, Object> getSettings(String userId) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        java.util.Map<String, Object> settings = new java.util.HashMap<>();
+        // 기본값 (DB 조회 실패 시 안전한 기본값 유지)
+        settings.put("notifContradiction", true);
+        settings.put("notifRelation",      true);
+        settings.put("nightMode",          false);
+        try {
+            conn = mgr.getConnection();
+            pstmt = conn.prepareStatement(
+                "SELECT notif_contradiction, notif_relation, night_mode FROM users WHERE user_id = ?");
+            pstmt.setString(1, userId);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                settings.put("notifContradiction", rs.getInt("notif_contradiction") == 1);
+                settings.put("notifRelation",      rs.getInt("notif_relation")      == 1);
+                settings.put("nightMode",          rs.getInt("night_mode")          == 1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            mgr.freeConnection(conn, pstmt, rs);
+        }
+        return settings;
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 8. 알림 설정 저장
+    // ════════════════════════════════════════════════════════════════
+
+    public boolean saveSettings(String userId, boolean notifContradiction, boolean notifRelation, boolean nightMode) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = mgr.getConnection();
+            pstmt = conn.prepareStatement(
+                "UPDATE users SET notif_contradiction = ?, notif_relation = ?, night_mode = ? WHERE user_id = ?");
+            pstmt.setInt(1, notifContradiction ? 1 : 0);
+            pstmt.setInt(2, notifRelation      ? 1 : 0);
+            pstmt.setInt(3, nightMode          ? 1 : 0);
+            pstmt.setString(4, userId);
+            return pstmt.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            mgr.freeConnection(conn, pstmt);
+        }
+        return false;
+    }
 }

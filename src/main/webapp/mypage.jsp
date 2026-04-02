@@ -606,7 +606,7 @@
           </div>
           <div class="menu-right">
             <label class="toggle-wrap">
-              <input type="checkbox" class="toggle-input" checked>
+              <input type="checkbox" class="toggle-input" id="toggleContradiction" checked onchange="saveSettings()">
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -625,7 +625,7 @@
           </div>
           <div class="menu-right">
             <label class="toggle-wrap">
-              <input type="checkbox" class="toggle-input" checked>
+              <input type="checkbox" class="toggle-input" id="toggleRelation" checked onchange="saveSettings()">
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -639,12 +639,12 @@
             </svg>
           </div>
           <div class="menu-text">
-            <div class="menu-name">야간 방해금지</div>
-            <div class="menu-sub">22:00 ~ 07:00 알림 차단</div>
+            <div class="menu-name">방해금지 모드</div>
+            <div class="menu-sub">알림 표시 안 함</div>
           </div>
           <div class="menu-right">
             <label class="toggle-wrap">
-              <input type="checkbox" class="toggle-input">
+              <input type="checkbox" class="toggle-input" id="toggleNightMode" onchange="saveSettings()">
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -661,9 +661,9 @@
         <div class="app-ver">버전 1.0.0-beta · 2025.03</div>
         <div class="app-copy" style="margin-top:10px; color:var(--text-muted);">형사사법정보지원 시스템</div>
         <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border); display:flex; justify-content:center; gap:24px;">
-          <a href="#" style="font-size:11px; color:var(--accent); text-decoration:none;">이용약관</a>
-          <a href="#" style="font-size:11px; color:var(--accent); text-decoration:none;">개인정보처리방침</a>
-          <a href="#" style="font-size:11px; color:var(--accent); text-decoration:none;">오픈소스 라이선스</a>
+          <a href="#" onclick="openDrawer('termsDrawer');return false;" style="font-size:11px; color:var(--accent); text-decoration:none;">이용약관</a>
+          <a href="#" onclick="openDrawer('privacyDrawer');return false;" style="font-size:11px; color:var(--accent); text-decoration:none;">개인정보처리방침</a>
+          <a href="#" onclick="openDrawer('licenseDrawer');return false;" style="font-size:11px; color:var(--accent); text-decoration:none;">오픈소스 라이선스</a>
         </div>
       </div>
     </div>
@@ -913,6 +913,174 @@
     </div>
   </div>
 </div>
+
+<!-- ════════════════════════════════════ -->
+<!-- 드로어: 이용약관                      -->
+<!-- ════════════════════════════════════ -->
+<div class="overlay" id="termsDrawer" onclick="closeOnBg(event,'termsDrawer')">
+  <div class="drawer">
+    <div class="drawer-handle"></div>
+    <div class="drawer-title">이용약관</div>
+    <div class="drawer-body" style="font-size:13px; color:var(--text-secondary); line-height:1.8;">
+
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">제1조 (목적)</p>
+      <p style="margin-bottom:16px;">본 약관은 POL-MATE(이하 "서비스")의 이용에 관한 조건 및 절차, 기타 필요한 사항을 규정함을 목적으로 합니다.</p>
+
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">제2조 (정의)</p>
+      <p style="margin-bottom:16px;">① "서비스"란 형사사법정보 지원을 위해 제공되는 조서 작성·분석·관리 시스템을 의미합니다.<br>② "이용자"란 본 약관에 동의하고 서비스를 이용하는 수사 담당 공무원을 말합니다.</p>
+
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">제3조 (약관의 효력 및 변경)</p>
+      <p style="margin-bottom:16px;">① 본 약관은 서비스 내 공지 또는 이용자에게 통지하는 방법으로 효력이 발생합니다.<br>② 운영 기관은 관련 법령을 위반하지 않는 범위에서 약관을 개정할 수 있으며, 변경 시 사전 공지합니다.</p>
+
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">제4조 (서비스의 제공 및 중단)</p>
+      <p style="margin-bottom:16px;">① 서비스는 연중 24시간 제공을 원칙으로 합니다.<br>② 시스템 점검, 보안 업데이트, 불가항력적 사유 등으로 서비스가 일시 중단될 수 있습니다.</p>
+
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">제5조 (이용자의 의무)</p>
+      <p style="margin-bottom:16px;">① 이용자는 다음 행위를 하여서는 안 됩니다.<br>
+        &nbsp;&nbsp;1. 허가받지 않은 타인의 계정 이용<br>
+        &nbsp;&nbsp;2. 서비스로 취득한 정보의 무단 외부 유출<br>
+        &nbsp;&nbsp;3. 시스템의 정상적인 운영을 방해하는 행위<br>
+        &nbsp;&nbsp;4. 수사 목적 외 데이터 접근 및 활용<br>
+      ② 이용자는 관계 법령, 수사 규정 및 본 약관을 준수하여야 합니다.</p>
+
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">제6조 (책임의 한계)</p>
+      <p style="margin-bottom:16px;">AI 분석 결과는 참고 자료로만 활용하며, 수사·기소 등 법적 판단의 근거로 단독 사용할 수 없습니다. 최종 판단은 담당 수사관의 책임 하에 이루어져야 합니다.</p>
+
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">제7조 (준거법)</p>
+      <p style="margin-bottom:20px;">본 약관은 대한민국 법령에 따라 해석 및 적용됩니다.</p>
+
+      <p style="font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">시행일: 2025년 3월 1일</p>
+
+      <button class="d-btn-cancel" style="margin-top:16px;" onclick="closeDrawer('termsDrawer')">닫기</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════ -->
+<!-- 드로어: 개인정보처리방침               -->
+<!-- ════════════════════════════════════ -->
+<div class="overlay" id="privacyDrawer" onclick="closeOnBg(event,'privacyDrawer')">
+  <div class="drawer">
+    <div class="drawer-handle"></div>
+    <div class="drawer-title">개인정보처리방침</div>
+    <div class="drawer-body" style="font-size:13px; color:var(--text-secondary); line-height:1.8;">
+
+      <p style="margin-bottom:16px;">POL-MATE(이하 "서비스")는 「개인정보 보호법」에 따라 이용자의 개인정보를 보호하고 이와 관련한 고충을 신속하게 처리하기 위하여 다음과 같이 개인정보처리방침을 수립·공개합니다.</p>
+
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">1. 수집하는 개인정보 항목</p>
+      <p style="margin-bottom:16px;">
+        · <b>필수 항목:</b> 아이디, 비밀번호(암호화 저장), 이름, 계급, 소속 기관<br>
+        · <b>선택 항목:</b> 부서, 연락처<br>
+        · <b>자동 수집:</b> 접속 로그, 서비스 이용 기록
+      </p>
+
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">2. 개인정보 수집 목적</p>
+      <p style="margin-bottom:16px;">
+        · 이용자 식별 및 서비스 이용 자격 확인<br>
+        · 사건·조서 관리 및 수사 활동 지원<br>
+        · 불법·부정 이용 방지 및 보안 유지<br>
+        · 서비스 개선 및 통계 분석
+      </p>
+
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">3. 개인정보 보유 및 이용 기간</p>
+      <p style="margin-bottom:16px;">회원 탈퇴 또는 이용 목적 달성 시 즉시 파기합니다. 단, 관계 법령에 의거하여 보존이 필요한 경우 해당 기간 동안 보관합니다.</p>
+
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">4. 개인정보의 제3자 제공</p>
+      <p style="margin-bottom:16px;">수집된 개인정보는 원칙적으로 제3자에게 제공하지 않습니다. 다만, 수사 절차상 법령에 따른 요청이 있는 경우는 예외로 합니다.</p>
+
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">5. 개인정보의 안전성 확보</p>
+      <p style="margin-bottom:16px;">
+        · 비밀번호 단방향 암호화(bcrypt) 저장<br>
+        · 접근 권한 최소화 및 계정 이상 접근 감지<br>
+        · 보안 취약점 정기 점검
+      </p>
+
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">6. 이용자의 권리</p>
+      <p style="margin-bottom:16px;">이용자는 언제든지 자신의 개인정보를 조회·수정할 수 있으며, 회원탈퇴를 통해 개인정보 삭제를 요청할 수 있습니다.</p>
+
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">7. 개인정보 보호 담당</p>
+      <p style="margin-bottom:20px;">개인정보 처리 관련 문의는 서비스 운영 기관 정보보안 담당 부서로 연락하시기 바랍니다.</p>
+
+      <p style="font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">시행일: 2025년 3월 1일</p>
+
+      <button class="d-btn-cancel" style="margin-top:16px;" onclick="closeDrawer('privacyDrawer')">닫기</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════ -->
+<!-- 드로어: 오픈소스 라이선스              -->
+<!-- ════════════════════════════════════ -->
+<div class="overlay" id="licenseDrawer" onclick="closeOnBg(event,'licenseDrawer')">
+  <div class="drawer">
+    <div class="drawer-handle"></div>
+    <div class="drawer-title">오픈소스 라이선스</div>
+    <div class="drawer-body" style="font-size:13px; color:var(--text-secondary); line-height:1.8;">
+
+      <p style="margin-bottom:16px; color:var(--text-muted); font-size:12px;">POL-MATE는 아래 오픈소스 소프트웨어를 사용합니다.</p>
+
+      <!-- 항목 -->
+      <div style="border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:12px;">
+
+        <div style="padding:14px 16px; border-bottom:1px solid var(--border);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span style="font-weight:600; color:var(--text-primary);">Apache Tomcat</span>
+            <span style="font-size:10px; background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:20px;">Apache 2.0</span>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted);">Java Servlet 컨테이너 · Apache Software Foundation</div>
+        </div>
+
+        <div style="padding:14px 16px; border-bottom:1px solid var(--border);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span style="font-weight:600; color:var(--text-primary);">MySQL Connector/J</span>
+            <span style="font-size:10px; background:#f0fdf4; color:#15803d; padding:2px 8px; border-radius:20px;">GPL 2.0</span>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted);">Java-MySQL JDBC 드라이버 · Oracle Corporation</div>
+        </div>
+
+        <div style="padding:14px 16px; border-bottom:1px solid var(--border);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span style="font-weight:600; color:var(--text-primary);">Gson</span>
+            <span style="font-size:10px; background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:20px;">Apache 2.0</span>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted);">Java JSON 직렬화/역직렬화 라이브러리 · Google</div>
+        </div>
+
+        <div style="padding:14px 16px; border-bottom:1px solid var(--border);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span style="font-weight:600; color:var(--text-primary);">Noto Sans KR</span>
+            <span style="font-size:10px; background:#f5f3ff; color:#7c3aed; padding:2px 8px; border-radius:20px;">OFL 1.1</span>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted);">한국어 웹 폰트 · Google Fonts / Sandoll</div>
+        </div>
+
+        <div style="padding:14px 16px; border-bottom:1px solid var(--border);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span style="font-weight:600; color:var(--text-primary);">BCrypt</span>
+            <span style="font-size:10px; background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:20px;">ISC License</span>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted);">비밀번호 단방향 해시 암호화 라이브러리</div>
+        </div>
+
+        <div style="padding:14px 16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span style="font-weight:600; color:var(--text-primary);">D3.js</span>
+            <span style="font-size:10px; background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:20px;">ISC License</span>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted);">관계망 시각화 라이브러리 · Mike Bostock</div>
+        </div>
+
+      </div>
+
+      <p style="font-size:11px; color:var(--text-muted); line-height:1.6;">각 라이브러리의 전체 라이선스 텍스트는 해당 프로젝트 공식 저장소에서 확인할 수 있습니다.</p>
+
+      <button class="d-btn-cancel" style="margin-top:16px;" onclick="closeDrawer('licenseDrawer')">닫기</button>
+    </div>
+  </div>
+</div>
+
 
 <style>
   .period-btn {
@@ -1240,6 +1408,18 @@ function setPeriod(btn, period) {
   document.querySelectorAll('.period-btn').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
   loadStats(period);
+}
+
+// ── 설정 저장 (토글 변경 시 즉시 호출) ───────────────────────────
+function saveSettings() {
+  var params = new URLSearchParams();
+  params.append('action',             'saveSettings');
+  params.append('notifContradiction', document.getElementById('toggleContradiction').checked ? '1' : '0');
+  params.append('notifRelation',      document.getElementById('toggleRelation').checked      ? '1' : '0');
+  params.append('nightMode',          document.getElementById('toggleNightMode').checked     ? '1' : '0');
+
+  fetch('mypage', { method: 'POST', body: params })
+    .catch(function(e) { console.error('설정 저장 실패', e); });
 }
 </script>
 

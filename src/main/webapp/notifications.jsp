@@ -265,7 +265,7 @@ function getIconInfo(tag, isCritical) {
 function renderItem(n) {
   var icon = getIconInfo(n.tag, n.isCritical);
   return '<div class="notif-item' + (n.isUnread ? ' unread' : '') + (n.isCritical ? ' critical' : '') +
-    '" onclick="readItem(' + n.notifId + ',\'' + escUrl(n.link) + '\')">' +
+    '" data-id="' + n.notifId + '" onclick="readItem(' + n.notifId + ',\'' + escUrl(n.link) + '\')">' +
     (n.isUnread ? '<div class="unread-dot"></div>' : '') +
     '<div class="notif-icon ' + icon.cls + '">' + icon.svg + '</div>' +
     '<div class="notif-body">' +
@@ -279,17 +279,33 @@ function renderItem(n) {
 
 // ── 읽음 처리 ─────────────────────────────────────────────────────
 function readItem(id, link) {
-  // notifId == -1 은 비밀번호 경고 (DB 없음, 서버에서 무시)
+  // 1. 서버에 읽음 처리 요청
   var params = new URLSearchParams();
   params.append('action', 'markRead');
   params.append('notifId', id);
   fetch('notifApi', { method: 'POST', body: params });
 
+  // 2. NOTIFS 배열 업데이트
   var n = NOTIFS.find(function(x) { return x.notifId === id; });
   if (n) n.isUnread = false;
+
+  // 3. DOM 즉시 업데이트 (해당 아이템만)
+  var items = document.querySelectorAll('.notif-item');
+  items.forEach(function(el) {
+    if (el.getAttribute('data-id') === String(id)) {
+      el.classList.remove('unread');
+      var dot = el.querySelector('.unread-dot');
+      if (dot) dot.remove();
+      var title = el.querySelector('.notif-title');
+      if (title) title.style.fontWeight = '500';
+    }
+  });
+
+  // 4. 헤더 뱃지 갱신
   updateBadge();
 
-  if (link) location.href = link;
+  // 5. 링크 이동
+  if (link) setTimeout(function() { location.href = link; }, 120);
 }
 
 // ── 전체 읽음 ─────────────────────────────────────────────────────
