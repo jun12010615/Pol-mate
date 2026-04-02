@@ -151,6 +151,8 @@
   .mn-green {color:#166534;}
   .mn-amber {color:#92400e;}
   .mn-purple{color:#5b21b6;}
+  .mi-teal  {background:#f0fdfa;}
+  .mn-teal  {color:#0f766e;}
 
   /* ══ 통계 ══ */
   .stats-row{
@@ -417,6 +419,20 @@
             </div>
             <div class="menu-name mn-purple">사건 관리</div>
             <div class="menu-desc">이력 · 수정 · 사건별</div>
+          </a>
+
+          <a href="boardView.jsp" class="menu-card" style="animation-delay:0.2s;">
+            <div class="menu-icon-wrap mi-teal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round">
+                <circle cx="6"  cy="12" r="2.5"/>
+                <circle cx="18" cy="5"  r="2.5"/>
+                <circle cx="18" cy="19" r="2.5"/>
+                <line x1="8.4" y1="10.9" x2="15.6" y2="6.6"/>
+                <line x1="8.4" y1="13.1" x2="15.6" y2="17.4"/>
+              </svg>
+            </div>
+            <div class="menu-name mn-teal">보드 조회</div>
+            <div class="menu-desc">사건별 관계망 보드</div>
           </a>
 
         </div>
