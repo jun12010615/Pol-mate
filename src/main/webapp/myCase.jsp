@@ -451,7 +451,12 @@ function toggleDocCheck(docId,idx){
   if(pos===-1){checkedDocs.push(docId);document.getElementById('chk-'+docId).classList.add('on');document.getElementById('ddi-'+docId).classList.add('checked');}
   else{checkedDocs.splice(pos,1);document.getElementById('chk-'+docId).classList.remove('on');document.getElementById('ddi-'+docId).classList.remove('checked');}
   var btn=document.getElementById('contraBtn');
-  if(btn){var a=checkedDocs.length>=2;btn.classList.toggle('disabled',!a);btn.classList.toggle('contra-active',a);}
+  if(btn){
+    var a=checkedDocs.length>=2;
+    btn.classList.toggle('disabled',!a);
+    btn.classList.toggle('contra-active',a);
+    btn.style.cursor = a ? 'pointer' : 'not-allowed'; // ✅ 수정: 인라인 cursor 동기화
+  }
 }
 
 function renderDrawerActions(c){
@@ -485,7 +490,7 @@ function runContradiction(){
   if(checkedDocs.length<2) return;
   var titles=checkedDocs.map(function(id){var d=currentDocs.find(function(x){return x.id===id;});return d?d.name+' '+d.type+' 진술':'ID:'+id;});
   document.getElementById('contraPopupTitle').textContent='모순 분석 중...';
-  document.getElementById('contraPopupBody').innerHTML='<div class="contra-loading"><div style="font-size:24px;margin-bottom:10px;">🔍</div><div>AI가 '+checkedDocs.length+'개의 조서를 분석하고 있습니다...</div><div style="margin-top:6px;font-size:11px;color:var(--text-muted);">'+titles.join(', ')+'</div></div>';
+  document.getElementById('contraPopupBody').innerHTML='<div class="contra-loading"><div>AI가 '+checkedDocs.length+'개의 조서를 분석하고 있습니다...</div><div style="margin-top:6px;font-size:11px;color:var(--text-muted);">'+titles.join(', ')+'</div></div>';
   document.getElementById('contraPopup').classList.add('open');
   var fp=checkedDocs.map(function(id){var d=currentDocs.find(function(x){return x.id===id;});if(d&&d.originalText!==undefined)return Promise.resolve(d);return fetch('caseApi?action=transcriptText&transcriptId='+id).then(function(r){return r.json();}).then(function(res){if(d)d.originalText=res.text||'';return d;});});
   Promise.all(fp).then(function(docs){
