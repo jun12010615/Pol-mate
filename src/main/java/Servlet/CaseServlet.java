@@ -345,6 +345,28 @@ public class CaseServlet extends HttpServlet {
                 }
             }
 
+            // ── 같은 부서 팀원에게 새 사건 알림 INSERT ──
+            mgr.freeConnection(null, ps);
+            ps = conn.prepareStatement(
+                "SELECT u2.user_id FROM users u2 " +
+                "JOIN users me ON me.user_id = ? " +
+                "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL AND u2.user_id != ?");
+            ps.setString(1, loginUser);
+            ps.setString(2, loginUser);
+            rs = ps.executeQuery();
+            List<String> teammates = new ArrayList<>();
+            while (rs.next()) teammates.add(rs.getString("user_id"));
+            rs.close();
+            mgr.freeConnection(null, ps);
+
+            for (String teammate : teammates) {
+                NotificationServlet.insertNotification(conn,
+                    teammate, "case", "새 사건",
+                    "팀 새 사건 등록: " + caseName.trim(),
+                    "사건 " + caseId + "(" + caseName.trim() + ")이(가) 팀에 등록됐습니다.",
+                    "myCase.jsp", false);
+            }
+
             JSONObject result = new JSONObject();
             result.put("success",   true);
             result.put("caseId",    caseId);
@@ -655,6 +677,40 @@ public class CaseServlet extends HttpServlet {
             rs = ps.getGeneratedKeys();
             rs.next();
             int newId = rs.getInt(1);
+            rs.close();
+            mgr.freeConnection(null, ps);
+
+            // ── 같은 부서 팀원에게 조서 추가 알림 INSERT ──
+            // 사건명 조회
+            ps = conn.prepareStatement("SELECT case_name FROM cases WHERE case_id = ?");
+            ps.setString(1, caseId);
+            rs = ps.executeQuery();
+            String caseName2 = rs.next() ? rs.getString("case_name") : caseId;
+            rs.close();
+            mgr.freeConnection(null, ps);
+
+            // 팀원 목록 조회
+            ps = conn.prepareStatement(
+                "SELECT u2.user_id FROM users u2 " +
+                "JOIN users me ON me.user_id = ? " +
+                "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL AND u2.user_id != ?");
+            ps.setString(1, loginUser);
+            ps.setString(2, loginUser);
+            rs = ps.executeQuery();
+            List<String> tmates = new ArrayList<>();
+            while (rs.next()) tmates.add(rs.getString("user_id"));
+            rs.close();
+            mgr.freeConnection(null, ps);
+
+            String stmtLabel = (stmtName.isEmpty() ? "" : stmtName + " ") +
+                               (stmtType.isEmpty() ? "진술" : stmtType + " 진술");
+            for (String tm : tmates) {
+                NotificationServlet.insertNotification(conn,
+                    tm, "case", "조서",
+                    "팀 사건 조서 추가: " + caseName2,
+                    "사건 " + caseId + "(" + caseName2 + ")에 " + stmtLabel + " 조서가 추가됐습니다.",
+                    "myCase.jsp", false);
+            }
 
             JSONObject result = new JSONObject();
             result.put("success",      true);
