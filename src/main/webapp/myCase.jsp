@@ -191,6 +191,23 @@
   .popup-empty { color:var(--text-muted); font-size:12px; text-align:center; padding:24px 0; }
   .contra-result { font-size:13px; color:var(--text-primary); line-height:1.8; white-space:pre-wrap; }
   .contra-loading { text-align:center; padding:30px 0; color:var(--text-muted); font-size:13px; }
+  .contra-bubble-wrap { display:flex; justify-content:flex-start; width:100%; }
+  .contra-bubble {
+    max-width:100%; width:100%;
+    background:linear-gradient(165deg, #f0f4ff 0%, #f8fafc 100%);
+    border:1px solid #e2e8f0; border-radius:18px 18px 18px 6px;
+    padding:14px 16px 16px;
+    box-shadow:0 2px 8px rgba(26,39,68,0.06);
+    font-size:13px; color:var(--text-primary); line-height:1.75;
+    white-space:pre-wrap; word-break:break-word;
+  }
+  .contra-type-text { min-height:1.4em; }
+  .contra-bubble-caret {
+    display:inline-block; width:2px; height:14px; margin-left:2px;
+    background:var(--navy); border-radius:1px; vertical-align:-2px;
+    animation:contraCaretBlink 0.85s step-end infinite;
+  }
+  @keyframes contraCaretBlink { 50% { opacity:0; } }
 
   @keyframes fadeUp  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
   @keyframes slideUp { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
@@ -537,9 +554,79 @@ function openTranscriptPopup(idx){
 }
 function closeTranscriptPopup(e){if(!e||e.target===document.getElementById('transcriptPopup')||!e.target)document.getElementById('transcriptPopup').classList.remove('open');}
 
-var ANALYZE_URL='http://113.198.238.108:5001/analyze';
+var ANALYZE_STREAM_URL='http://113.198.238.108:5001/analyze/stream';
+var contraTypeSession=0;
+var contraStreamAbort=null;
+function removeContraCaret(caret){if(caret&&caret.parentNode)caret.parentNode.removeChild(caret);}
+function consumeAnalyzeStream(response,session){
+  return new Promise(function(resolve,reject){
+    if(!response.body||!response.body.getReader){
+      reject(new Error('스트림을 읽을 수 없습니다.'));
+      return;
+    }
+    var bodyEl=document.getElementById('contraPopupBody');
+    bodyEl.innerHTML='<div class="contra-bubble-wrap"><div class="contra-bubble"><span class="contra-type-text"></span><span class="contra-bubble-caret" aria-hidden="true"></span></div></div>';
+    var textSpan=bodyEl.querySelector('.contra-type-text');
+    var caret=bodyEl.querySelector('.contra-bubble-caret');
+    var reader=response.body.getReader();
+    var dec=new TextDecoder();
+    var buf='';
+    var finished=false;
+    function parseFrames(chunk){
+      var parts=chunk.split('\n\n');
+      for(var pi=0;pi<parts.length;pi++){
+        var frame=parts[pi].trim();
+        if(frame.indexOf('data:')!==0)continue;
+        var jsonStr=frame.slice(5).trim();
+        var ev;
+        try{ev=JSON.parse(jsonStr);}catch(e){continue;}
+        if(ev.event==='chunk'&&ev.text)textSpan.textContent+=ev.text;
+        else if(ev.event==='error'){
+          finished=true;
+          removeContraCaret(caret);
+          reject(new Error(ev.message||'분석 오류'));
+          return;
+        }else if(ev.event==='done'){finished=true;removeContraCaret(caret);resolve();return;}
+      }
+    }
+    function pump(){
+      reader.read().then(function(result){
+        if(session!==contraTypeSession){
+          reader.cancel().catch(function(){});
+          return;
+        }
+        if(result.done){
+          if(result.value&&result.value.byteLength)
+            buf+=dec.decode(result.value,{stream:false});
+          if(buf.trim())parseFrames(buf);
+          if(!finished){removeContraCaret(caret);resolve();}
+          return;
+        }
+        buf+=dec.decode(result.value,{stream:true});
+        var parts=buf.split('\n\n');
+        buf=parts.pop()||'';
+        for(var i=0;i<parts.length;i++){
+          if(session!==contraTypeSession){reader.cancel().catch(function(){});return;}
+          parseFrames(parts[i]);
+          if(finished){
+            reader.cancel().catch(function(){});
+            return;
+          }
+        }
+        if(finished)return;
+        pump();
+      }).catch(function(err){
+        removeContraCaret(caret);
+        if(err.name==='AbortError'){resolve();return;}
+        reject(err);
+      });
+    }
+    pump();
+  });
+}
 function runContradiction(){
   if(checkedDocs.length<2) return;
+  contraTypeSession++;
   var caseId=currentCaseData.id||'';
   var titles=checkedDocs.map(function(id){var d=currentDocs.find(function(x){return x.id===id;});return d?d.name+' '+d.type+' 진술':'ID:'+id;});
   document.getElementById('contraPopupTitle').textContent='모순 분석 중...';
@@ -554,23 +641,29 @@ function runContradiction(){
     });
     var missing=stmts.some(function(s){return !s.original_text;});
     if(missing) throw new Error('본문이 없는 조서가 있습니다. 텍스트를 저장한 뒤 다시 시도하세요.');
-    return fetch(ANALYZE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({caseNum:caseId,statements:stmts})});
+    if(contraStreamAbort)contraStreamAbort.abort();
+    contraStreamAbort=new AbortController();
+    return fetch(ANALYZE_STREAM_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({caseNum:caseId,statements:stmts}),signal:contraStreamAbort.signal});
   })
-  .then(function(r){if(!r.ok) throw new Error('HTTP '+r.status);return r.json();})
-  .then(function(data){
+  .then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status);
     document.getElementById('contraPopupTitle').textContent='모순 분석 결과';
-    var body='';
-    if(data.success===false&&data.error){body=escHtml(data.error);}
-    else if(data.structured_summary||data.final_review!=null){
-      body='【진술 구조 요약】\n'+escHtml(data.structured_summary||'')+'\n\n【최종 검토】\n'+escHtml(data.final_review||'')+'\n\n【추가 확인 사항】\n'+escHtml((data.further_checks&&data.further_checks.join)?data.further_checks.join('\n'):String(data.further_checks||''));
-      if(data.contradictions&&data.contradictions.length){body+='\n\n【모순 항목】\n';data.contradictions.forEach(function(c){body+='- '+escHtml((c.type||'')+': '+(c.reason||''))+'\n';});}
-    } else if(typeof data.response==='string'){body=escHtml(data.response);}
-    else{body=escHtml(JSON.stringify(data,null,2));}
-    document.getElementById('contraPopupBody').innerHTML='<div class="contra-result" style="white-space:pre-wrap;">'+body+'</div>';
+    var sess=contraTypeSession;
+    return consumeAnalyzeStream(r,sess);
   })
-  .catch(function(err){document.getElementById('contraPopupTitle').textContent='분석 실패';document.getElementById('contraPopupBody').innerHTML='<div class="popup-empty">'+(err&&err.message?escHtml(err.message):'연결 실패')+'<br><br>서버(<code>113.198.238.108:5001</code>) 상태·CORS를 확인해 주세요.</div>';});
+  .catch(function(err){
+    if(err.name==='AbortError')return;
+    document.getElementById('contraPopupTitle').textContent='분석 실패';
+    document.getElementById('contraPopupBody').innerHTML='<div class="popup-empty">'+(err&&err.message?escHtml(err.message):'연결 실패')+'<br><br>서버(<code>113.198.238.108:5001</code>) <code>/analyze/stream</code>·CORS를 확인해 주세요.</div>';
+  });
 }
-function closeContraPopup(e){if(!e||e.target===document.getElementById('contraPopup')||!e.target)document.getElementById('contraPopup').classList.remove('open');}
+function closeContraPopup(e){
+  if(!e||e.target===document.getElementById('contraPopup')||!e.target){
+    if(contraStreamAbort)contraStreamAbort.abort();
+    contraTypeSession++;
+    document.getElementById('contraPopup').classList.remove('open');
+  }
+}
 
 function openNewCaseDrawer(){
   document.getElementById('newCaseId').value=''; document.getElementById('newCaseName').value='';
