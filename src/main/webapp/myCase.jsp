@@ -191,6 +191,15 @@
   .popup-empty { color:var(--text-muted); font-size:12px; text-align:center; padding:24px 0; }
   .contra-result { font-size:13px; color:var(--text-primary); line-height:1.8; white-space:pre-wrap; }
   .contra-loading { text-align:center; padding:30px 0; color:var(--text-muted); font-size:13px; }
+  .contra-buffer-spinner {
+    width:36px; height:36px; margin:0 auto 14px;
+    border:3px solid var(--border); border-top-color:var(--navy); border-radius:50%;
+    animation:contraSpin 0.72s linear infinite;
+  }
+  @keyframes contraSpin { to { transform:rotate(360deg); } }
+  .contra-analyze-loading { text-align:center; padding:32px 16px 28px; color:var(--text-muted); font-size:13px; }
+  .contra-analyze-loading-title { font-size:14px; font-weight:600; color:var(--navy); margin-bottom:6px; }
+  .contra-analyze-loading-sub { font-size:11px; line-height:1.5; color:var(--text-muted); }
   .contra-bubble-wrap { display:flex; justify-content:flex-start; width:100%; }
   .contra-bubble {
     max-width:100%; width:100%;
@@ -565,9 +574,16 @@ function consumeAnalyzeStream(response,session){
       return;
     }
     var bodyEl=document.getElementById('contraPopupBody');
-    bodyEl.innerHTML='<div class="contra-bubble-wrap"><div class="contra-bubble"><span class="contra-type-text"></span><span class="contra-bubble-caret" aria-hidden="true"></span></div></div>';
-    var textSpan=bodyEl.querySelector('.contra-type-text');
-    var caret=bodyEl.querySelector('.contra-bubble-caret');
+    var textSpan=null;
+    var caret=null;
+    var outputStarted=false;
+    function ensureOutputPanel(){
+      if(outputStarted)return;
+      outputStarted=true;
+      bodyEl.innerHTML='<div class="contra-bubble-wrap"><div class="contra-bubble"><span class="contra-type-text"></span><span class="contra-bubble-caret" aria-hidden="true"></span></div></div>';
+      textSpan=bodyEl.querySelector('.contra-type-text');
+      caret=bodyEl.querySelector('.contra-bubble-caret');
+    }
     var reader=response.body.getReader();
     var dec=new TextDecoder();
     var buf='';
@@ -580,13 +596,20 @@ function consumeAnalyzeStream(response,session){
         var jsonStr=frame.slice(5).trim();
         var ev;
         try{ev=JSON.parse(jsonStr);}catch(e){continue;}
-        if(ev.event==='chunk'&&ev.text)textSpan.textContent+=ev.text;
-        else if(ev.event==='error'){
+        if(ev.event==='chunk'&&ev.text){
+          ensureOutputPanel();
+          textSpan.textContent+=ev.text;
+        }else if(ev.event==='error'){
           finished=true;
           removeContraCaret(caret);
           reject(new Error(ev.message||'분석 오류'));
           return;
-        }else if(ev.event==='done'){finished=true;removeContraCaret(caret);resolve();return;}
+        }else if(ev.event==='done'){
+          finished=true;
+          removeContraCaret(caret);
+          resolve();
+          return;
+        }
       }
     }
     function pump(){
@@ -599,7 +622,11 @@ function consumeAnalyzeStream(response,session){
           if(result.value&&result.value.byteLength)
             buf+=dec.decode(result.value,{stream:false});
           if(buf.trim())parseFrames(buf);
-          if(!finished){removeContraCaret(caret);resolve();}
+          if(!finished){
+            if(!outputStarted)ensureOutputPanel();
+            removeContraCaret(caret);
+            resolve();
+          }
           return;
         }
         buf+=dec.decode(result.value,{stream:true});
@@ -630,7 +657,7 @@ function runContradiction(){
   var caseId=currentCaseData.id||'';
   var titles=checkedDocs.map(function(id){var d=currentDocs.find(function(x){return x.id===id;});return d?d.name+' '+d.type+' 진술':'ID:'+id;});
   document.getElementById('contraPopupTitle').textContent='모순 분석 중...';
-  document.getElementById('contraPopupBody').innerHTML='<div class="contra-loading"><div style="font-size:13px;font-weight:500;margin-bottom:10px;color:var(--navy);">분석 서버(Exaone)로 전송 중</div><div>선택한 '+checkedDocs.length+'개 조서를 비교합니다.</div><div style="margin-top:6px;font-size:11px;color:var(--text-muted);">'+titles.join(', ')+'</div></div>';
+  document.getElementById('contraPopupBody').innerHTML='<div class="contra-loading"><div class="contra-buffer-spinner"></div><div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px;">조서를 불러오는 중</div><div style="font-size:12px;">선택한 '+checkedDocs.length+'개 조서를 준비합니다.</div><div style="margin-top:8px;font-size:11px;color:var(--text-muted);">'+titles.join(', ')+'</div></div>';
   document.getElementById('contraPopup').classList.add('open');
   var fp=checkedDocs.map(function(id){var d=currentDocs.find(function(x){return x.id===id;});if(d&&d.originalText!==undefined)return Promise.resolve(d);return fetch('caseApi?action=transcriptText&transcriptId='+id).then(function(r){return r.json();}).then(function(res){if(d)d.originalText=res.text||'';return d;});});
   Promise.all(fp).then(function(docs){
@@ -641,6 +668,7 @@ function runContradiction(){
     });
     var missing=stmts.some(function(s){return !s.original_text;});
     if(missing) throw new Error('본문이 없는 조서가 있습니다. 텍스트를 저장한 뒤 다시 시도하세요.');
+    document.getElementById('contraPopupBody').innerHTML='<div class="contra-analyze-loading"><div class="contra-buffer-spinner"></div><div class="contra-analyze-loading-title">조서 분석 중</div><div class="contra-analyze-loading-sub">결과가 스트리밍되기 시작하면 아래에 표시됩니다.</div></div>';
     if(contraStreamAbort)contraStreamAbort.abort();
     contraStreamAbort=new AbortController();
     return fetch(ANALYZE_STREAM_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({caseNum:caseId,statements:stmts}),signal:contraStreamAbort.signal});
