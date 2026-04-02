@@ -415,7 +415,7 @@
                 <line x1="16" y1="17" x2="8" y2="17"/>
               </svg>
             </div>
-            <div class="menu-name mn-purple">내 조서 관리</div>
+            <div class="menu-name mn-purple">사건 관리</div>
             <div class="menu-desc">이력 · 수정 · 사건별</div>
           </a>
 
@@ -477,7 +477,7 @@
   </a>
   <a href="myCase.jsp" class="nav-item">
     <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-    <span class="nav-label">조서</span>
+    <span class="nav-label">사건</span>
   </a>
   <a href="askAI" class="nav-item">
       <div class="nav-icon">

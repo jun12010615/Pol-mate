@@ -469,7 +469,7 @@
   <div class="top-header">
     <div class="header-row">
       <span class="header-title">마이페이지</span>
-      <button class="edit-btn" onclick="openDrawer('profileDrawer')">프로필 편집</button>
+      <button class="edit-btn" onclick="openProfileDrawer()">프로필 편집</button>
     </div>
   </div>
 
@@ -514,7 +514,7 @@
       <div class="section-label">계정 관리</div>
       <div class="menu-list">
 
-        <div class="menu-row" onclick="openDrawer('profileDrawer')">
+        <div class="menu-row" onclick="openDrawer('profileViewDrawer')">
           <div class="menu-icon-wrap bg-blue">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" class="stroke-blue">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
@@ -688,7 +688,7 @@
   </a>
   <a href="myCase.jsp" class="nav-item">
     <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-    <span class="nav-label">조서</span>
+    <span class="nav-label">사건</span>
   </a>
   <a href="askAI" class="nav-item">
       <div class="nav-icon">
@@ -721,6 +721,55 @@
 
 
 <!-- ════════════════════════════════════ -->
+<!-- 드로어: 프로필 정보 (읽기 전용)       -->
+<!-- ════════════════════════════════════ -->
+<div class="overlay" id="profileViewDrawer" onclick="closeOnBg(event,'profileViewDrawer')">
+  <div class="drawer">
+    <div class="drawer-handle"></div>
+    <div class="drawer-title">프로필 정보</div>
+    <div class="drawer-body">
+
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;">
+
+        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">이름</div>
+          <div style="font-size:14px;color:var(--text-primary);font-weight:500;"><%= userName %></div>
+        </div>
+
+        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">계급</div>
+          <div style="font-size:14px;color:var(--text-primary);font-weight:500;"><%= userRank != null ? userRank : "-" %></div>
+        </div>
+
+        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">소속 기관</div>
+          <div style="font-size:14px;color:var(--text-primary);font-weight:500;"><%= userOrg != null ? userOrg : "-" %></div>
+        </div>
+
+        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--border);" id="viewDeptRow">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">부서</div>
+          <div style="font-size:14px;color:var(--text-primary);font-weight:500;" id="viewDeptName">-</div>
+        </div>
+
+        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">연락처</div>
+          <div style="font-size:14px;color:var(--text-primary);font-weight:500;"><%= userPhone != null && !userPhone.isEmpty() ? userPhone : "-" %></div>
+        </div>
+
+        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">아이디</div>
+          <div style="font-size:14px;color:var(--text-primary);font-weight:500;"><%= userId %></div>
+        </div>
+
+      </div>
+
+      <button class="d-btn-cancel" onclick="closeDrawer('profileViewDrawer')">닫기</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════ -->
 <!-- 드로어: 프로필 편집                   -->
 <!-- ════════════════════════════════════ -->
 <div class="overlay" id="profileDrawer" onclick="closeOnBg(event,'profileDrawer')">
@@ -743,7 +792,25 @@
       </div>
       <div class="d-field">
         <label class="d-label">소속 기관</label>
-        <input type="text" class="d-input" id="editOrg" value="<%= userOrg %>">
+        <select class="d-input" id="editOrg" onchange="onOrgChange()">
+          <option value="">선택하세요</option>
+          <option <%= "서울경찰청".equals(userOrg) ? "selected" : "" %>>서울경찰청</option>
+          <option <%= "부산지방경찰청".equals(userOrg) ? "selected" : "" %>>부산지방경찰청</option>
+          <option <%= "인천지방경찰청".equals(userOrg) ? "selected" : "" %>>인천지방경찰청</option>
+          <option <%= "경기남부경찰청".equals(userOrg) ? "selected" : "" %>>경기남부경찰청</option>
+          <option <%= "경기북부경찰청".equals(userOrg) ? "selected" : "" %>>경기북부경찰청</option>
+          <option <%= "대구지방경찰청".equals(userOrg) ? "selected" : "" %>>대구지방경찰청</option>
+          <option <%= "광주지방경찰청".equals(userOrg) ? "selected" : "" %>>광주지방경찰청</option>
+          <option <%= "대전지방경찰청".equals(userOrg) ? "selected" : "" %>>대전지방경찰청</option>
+          <option <%= "울산지방경찰청".equals(userOrg) ? "selected" : "" %>>울산지방경찰청</option>
+          <option <%= "기타".equals(userOrg) ? "selected" : "" %>>기타</option>
+        </select>
+      </div>
+      <div class="d-field">
+        <label class="d-label">부서</label>
+        <select class="d-input" id="editDept" disabled>
+          <option value="">소속 기관을 먼저 선택하세요</option>
+        </select>
       </div>
       <div class="d-field">
         <label class="d-label">연락처</label>
@@ -866,8 +933,13 @@
 function openDrawer(id) {
   document.getElementById(id).classList.add('open');
   document.body.style.overflow = 'hidden';
-  if (id === 'statsDrawer')   loadStats('week');
-  if (id === 'historyDrawer') loadHistory();
+  if (id === 'statsDrawer')      loadStats('week');
+  if (id === 'historyDrawer')    loadHistory();
+  if (id === 'profileViewDrawer') {
+    // 부서명을 load 응답에서 받아온 값으로 표시
+    var el = document.getElementById('viewDeptName');
+    if (el) el.textContent = currentDeptName || '-';
+  }
 }
 function closeDrawer(id) {
   document.getElementById(id).classList.remove('open');
@@ -878,6 +950,8 @@ function closeOnBg(e, id) {
 }
 
 // ── 초기 로드: 프로필 통계 띠 ──────────────────────────────────────
+var currentDeptId   = null;
+var currentDeptName = null;
 document.addEventListener('DOMContentLoaded', function() {
   fetch('mypage?action=load')
     .then(function(r) { return r.json(); })
@@ -895,9 +969,79 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('toggleRelation').checked      = data.settings.notifRelation      !== false;
         document.getElementById('toggleNightMode').checked     = data.settings.nightMode          === true;
       }
+      // 현재 dept_id 저장 (프로필 드로어에서 부서 선택값 복원용)
+      if (data.user) {
+        currentDeptId   = data.user.deptId   || null;
+        currentDeptName = data.user.userDept  || null;
+      }
     })
     .catch(function(e) { console.error('초기 로드 실패', e); });
 });
+
+// ── 기관 변경 시 부서 동적 로드 ──────────────────────────────────
+function onOrgChange() {
+  var org = document.getElementById('editOrg').value;
+  var deptSel = document.getElementById('editDept');
+  deptSel.innerHTML = '<option value="">불러오는 중...</option>';
+  deptSel.disabled = true;
+
+  if (!org) {
+    deptSel.innerHTML = '<option value="">소속 기관을 먼저 선택하세요</option>';
+    return;
+  }
+
+  fetch('mypage?action=getDepts&org=' + encodeURIComponent(org))
+    .then(function(r) { return r.json(); })
+    .then(function(depts) {
+      deptSel.innerHTML = '<option value="">부서 선택 (선택)</option>';
+      if (!depts.length) {
+        deptSel.innerHTML = '<option value="">등록된 부서가 없습니다</option>';
+        return;
+      }
+      depts.forEach(function(d) {
+        var opt = document.createElement('option');
+        opt.value = d.dept_id;
+        opt.textContent = d.dept_name;
+        deptSel.appendChild(opt);
+      });
+      deptSel.disabled = false;
+    })
+    .catch(function() {
+      deptSel.innerHTML = '<option value="">불러오기 실패</option>';
+    });
+}
+
+// ── 프로필 드로어 열기 (기존 부서 선택값 복원) ───────────────────
+function openProfileDrawer() {
+  // 드로어 열기
+  openDrawer('profileDrawer');
+
+  // 현재 기관으로 부서 목록 로드 후 현재 dept_id 선택
+  var org = document.getElementById('editOrg').value;
+  if (!org) return;
+
+  var deptSel = document.getElementById('editDept');
+  deptSel.innerHTML = '<option value="">불러오는 중...</option>';
+  deptSel.disabled = true;
+
+  fetch('mypage?action=getDepts&org=' + encodeURIComponent(org))
+    .then(function(r) { return r.json(); })
+    .then(function(depts) {
+      deptSel.innerHTML = '<option value="">부서 선택 (선택)</option>';
+      depts.forEach(function(d) {
+        var opt = document.createElement('option');
+        opt.value = d.dept_id;
+        opt.textContent = d.dept_name;
+        // 현재 dept_id와 일치하면 선택
+        if (String(d.dept_id) === String(currentDeptId)) opt.selected = true;
+        deptSel.appendChild(opt);
+      });
+      deptSel.disabled = depts.length === 0;
+    })
+    .catch(function() {
+      deptSel.innerHTML = '<option value="">불러오기 실패</option>';
+    });
+}
 
 // ── 프로필 저장 ────────────────────────────────────────────────────
 function saveProfile() {
@@ -905,8 +1049,9 @@ function saveProfile() {
   params.append('action',    'updateProfile');
   params.append('userName',  document.getElementById('editName').value.trim());
   params.append('userRank',  document.getElementById('editRank').value);
-  params.append('userOrg',   document.getElementById('editOrg').value.trim());
+  params.append('userOrg',   document.getElementById('editOrg').value);
   params.append('userPhone', document.getElementById('editPhone').value.trim());
+  params.append('deptId',    document.getElementById('editDept').value || '');
 
   fetch('mypage', { method: 'POST', body: params })
     .then(function(r) { return r.json(); })

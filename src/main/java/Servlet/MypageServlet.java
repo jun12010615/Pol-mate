@@ -78,6 +78,42 @@ public class MypageServlet extends HttpServlet {
                 break;
             }
 
+            // ── 기관별 부서 목록 조회 ────────────────────────────
+            case "getDepts": {
+                String org = req.getParameter("org");
+                if (org == null || org.trim().isEmpty()) {
+                    resp.getWriter().print("[]");
+                    return;
+                }
+                DBConnectionMgr mgr2 = DBConnectionMgr.getInstance();
+                java.sql.Connection conn2 = null;
+                java.sql.PreparedStatement ps2 = null;
+                java.sql.ResultSet rs2 = null;
+                try {
+                    conn2 = mgr2.getConnection();
+                    ps2 = conn2.prepareStatement(
+                        "SELECT dept_id, dept_name FROM departments WHERE org_name = ? ORDER BY dept_name");
+                    ps2.setString(1, org.trim());
+                    rs2 = ps2.executeQuery();
+                    StringBuilder sb = new StringBuilder("[");
+                    boolean first = true;
+                    while (rs2.next()) {
+                        if (!first) sb.append(",");
+                        sb.append("{\"dept_id\":").append(rs2.getInt("dept_id"))
+                          .append(",\"dept_name\":\"").append(rs2.getString("dept_name").replace("\"","\\\"")).append("\"}");
+                        first = false;
+                    }
+                    sb.append("]");
+                    resp.getWriter().print(sb.toString());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    resp.getWriter().print("[]");
+                } finally {
+                    mgr2.freeConnection(conn2, ps2, rs2);
+                }
+                break;
+            }
+
             // ── 내 조서 이력 ─────────────────────────────────────
             case "history": {
                 List<TranscriptDTO> history = dao.getTranscriptHistory(userId, 20);
@@ -129,8 +165,8 @@ public class MypageServlet extends HttpServlet {
                 String userRank  = trim(req.getParameter("userRank"));
                 String userOrg   = trim(req.getParameter("userOrg"));
                 String userPhone = trim(req.getParameter("userPhone"));
+                String deptIdStr = trim(req.getParameter("deptId"));
 
-                // 입력값 검증
                 if (userName.isEmpty() || userRank.isEmpty() || userOrg.isEmpty()) {
                     sendError(resp, HttpServletResponse.SC_BAD_REQUEST, "이름, 계급, 소속은 필수 입력 항목입니다.");
                     return;
@@ -142,14 +178,18 @@ public class MypageServlet extends HttpServlet {
                 dto.setUserRank(userRank);
                 dto.setUserOrg(userOrg);
                 dto.setUserPhone(userPhone);
+                try {
+                    dto.setDeptId(deptIdStr.isEmpty() ? null : Integer.parseInt(deptIdStr));
+                } catch (NumberFormatException e) {
+                    dto.setDeptId(null);
+                }
 
                 boolean ok = dao.updateProfile(dto);
 
                 if (ok) {
-                    // 세션에 이름 업데이트 (상단 표시용)
                     session.setAttribute("userName", userName);
                     session.setAttribute("userRank", userRank);
-                    session.setAttribute("userOrg",   userOrg);
+                    session.setAttribute("userOrg",  userOrg);
                     session.setAttribute("userPhone", userPhone);
                     sendSuccess(resp, "프로필이 수정되었습니다.");
                 } else {
@@ -227,15 +267,15 @@ public class MypageServlet extends HttpServlet {
     // 공통 유틸
     // ════════════════════════════════════════════════════════════════
 
-    /** 비밀번호 등 민감 정보를 제외한 안전한 사용자 Map 반환 */
-    private Map<String, String> toSafeUserMap(UserDTO user) {
-        Map<String, String> map = new HashMap<>();
+    private Map<String, Object> toSafeUserMap(UserDTO user) {
+        Map<String, Object> map = new HashMap<>();
         map.put("userId",    user.getUserId());
         map.put("userName",  user.getUserName());
         map.put("userRank",  user.getUserRank());
         map.put("userOrg",   user.getUserOrg());
         map.put("userPhone", user.getUserPhone());
         map.put("userDept",  user.getUserDept());
+        map.put("deptId",    user.getDeptId());
         return map;
     }
 
