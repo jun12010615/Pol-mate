@@ -621,7 +621,7 @@ function saveTranscript() {
 
   var saveBtn = document.getElementById('saveBtn');
   saveBtn.disabled = true;
-  saveBtn.textContent = '저장 중...';
+  saveBtn.textContent = '저장...';
 
   var params = new URLSearchParams();
   params.append('action',       'transcriptSave');
@@ -650,6 +650,32 @@ function saveTranscript() {
         '진술 유형: <b>' + escHtml(stmtType) + '</b><br>' +
         '진술자: <b>' + (stmtName || '미입력') + '</b><br>' +
         '글자 수: <b>' + originalText.length.toLocaleString() + '자</b>';
+
+      // 요청 성공 즉시: 저장 완료 토스트 + 요약 요청 시작
+      showToast('조서가 저장되었습니다! 조서 요약중입니다.');
+      saveBtn.disabled = false;
+      saveBtn.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="width:18px;height:18px;stroke:#fff"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>저장';
+
+      // 요약 생성 (DB에 저장된 뒤 myCase.jsp에서 표시)
+      if (d.transcriptId) {
+        fetch('caseApi', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'action=transcriptSummarize&transcriptId=' + encodeURIComponent(d.transcriptId)
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          if (res && res.success) {
+            showToast('요약이 완료되었습니다.');
+          }
+        })
+        .catch(function() {
+          // 요약 실패는 저장 성공과 분리되어 동작하도록 함
+          showToast('요약 생성에 실패했습니다. (나중에 다시 시도해 주세요)');
+        });
+      }
+
       window.scrollTo(0, 0);
     } else {
       showToast(d.message || '저장 실패');

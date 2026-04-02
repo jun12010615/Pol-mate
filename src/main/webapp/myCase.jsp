@@ -188,6 +188,17 @@
   .popup-close { width:28px; height:28px; border-radius:50%; border:none; background:var(--bg); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
   .popup-close svg { width:14px; height:14px; stroke:var(--text-muted); }
   .popup-body { flex:1; overflow-y:auto; padding:14px 18px 18px; font-size:13px; color:var(--text-primary); line-height:1.8; white-space:pre-wrap; }
+  .popup-summary {
+    flex:0 0 auto;
+    max-height:170px;
+    overflow-y:auto;
+    border-top:1px solid var(--border);
+    background:var(--bg);
+    padding:12px 18px 16px;
+  }
+  .popup-summary-title { font-size:12px; font-weight:600; color:var(--navy); margin-bottom:6px; }
+  .popup-summary-text  { font-size:12px; color:var(--text-primary); line-height:1.8; white-space:pre-wrap; }
+  .popup-summary-empty { color:var(--text-muted); font-size:12px; }
   .popup-empty { color:var(--text-muted); font-size:12px; text-align:center; padding:24px 0; }
   .contra-result { font-size:13px; color:var(--text-primary); line-height:1.8; white-space:pre-wrap; }
   .contra-loading { text-align:center; padding:30px 0; color:var(--text-muted); font-size:13px; }
@@ -325,6 +336,10 @@
       <button class="popup-close" onclick="closeTranscriptPopup()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="popup-body" id="popupBody"></div>
+    <div class="popup-summary" id="popupSummary">
+      <div class="popup-summary-title">요약본</div>
+      <div class="popup-summary-text" id="popupSummaryText"></div>
+    </div>
   </div>
 </div>
 
@@ -552,16 +567,40 @@ function openTranscriptPopup(idx){
   document.getElementById('popupTitle').textContent=d.name+' '+d.type+' 진술 조서 ('+d.date+')';
   if(d.originalText!==undefined){
     document.getElementById('popupBody').innerHTML=d.originalText?'<span>'+escHtml(d.originalText)+'</span>':'<div class="popup-empty">저장된 진술 내용이 없습니다.</div>';
+    renderTranscriptSummary(d.summaryText||'');
   } else {
     document.getElementById('popupBody').innerHTML='<div class="popup-empty">불러오는 중...</div>';
+    // 요약은 DB 업데이트 완료 시점부터만 보이도록 숨김
+    var sumWrapLoading=document.getElementById('popupSummary');
+    if(sumWrapLoading) sumWrapLoading.style.display='none';
     fetch('caseApi?action=transcriptText&transcriptId='+d.id).then(function(r){return r.json();}).then(function(res){
       d.originalText=res.text||'';
+      d.summaryText=res.summary||'';
       document.getElementById('popupBody').innerHTML=d.originalText?'<span>'+escHtml(d.originalText)+'</span>':'<div class="popup-empty">저장된 진술 내용이 없습니다.</div>';
-    }).catch(function(){document.getElementById('popupBody').innerHTML='<div class="popup-empty">불러올 수 없습니다.</div>';});
+      renderTranscriptSummary(d.summaryText||'');
+    }).catch(function(){
+      document.getElementById('popupBody').innerHTML='<div class="popup-empty">불러올 수 없습니다.</div>';
+      var sumWrapErr=document.getElementById('popupSummary');
+      if(sumWrapErr) sumWrapErr.style.display='none';
+    });
   }
   document.getElementById('transcriptPopup').classList.add('open');
 }
 function closeTranscriptPopup(e){if(!e||e.target===document.getElementById('transcriptPopup')||!e.target)document.getElementById('transcriptPopup').classList.remove('open');}
+
+function renderTranscriptSummary(summary){
+  var wrap=document.getElementById('popupSummary');
+  var box=document.getElementById('popupSummaryText');
+  if(!box) return;
+  var s=summary||'';
+  if(s.trim()){
+    if(wrap) wrap.style.display='';
+    box.textContent=s;
+  } else {
+    if(wrap) wrap.style.display='none';
+    box.textContent='';
+  }
+}
 
 var ANALYZE_STREAM_URL='http://113.198.238.108:5001/analyze/stream';
 var contraTypeSession=0;
