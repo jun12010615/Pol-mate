@@ -17,16 +17,23 @@ import com.google.gson.JsonParser;
  */
 @WebServlet("/askAI")
 public class AiChatServlet extends HttpServlet {
+	
+	// ── 국가법령정보 API 설정 ─────────────────────────────────
+	 private static final String LAW_OC        = "PolmateAPI";
+     private static final String LAW_SEARCH    = "https://www.law.go.kr/DRF/lawSearch.do";
+     private static final String PREC_SEARCH   = "https://www.law.go.kr/DRF/precSearch.do";
+     private static final String LAW_SERVICE   = "https://www.law.go.kr/DRF/lawService.do";
+    // ─────────────────────────────────────────────────────────
 
     // ── 수사 보조 시스템 프롬프트 ─────────────────────────────────
     private static final String SYSTEM_PROMPT =
-        "당신은 대한민국 경찰청 형사사법정보 AI 보조 시스템(POL-MATE)입니다.\n" +
-        "현직 수사관의 질문에 다음 원칙으로 답변하세요:\n" +
-        "1. 형사소송법, 경찰관직무집행법, 헌법 등 관련 법령을 인용하여 답변\n" +
-        "2. 수사 실무에 즉시 적용 가능한 구체적인 내용 제공\n" +
-        "3. 피의자 인권 보호 및 적법 절차 준수 강조\n" +
-        "4. 반드시 한국어로 답변\n" +
-        "5. 답변은 명확하고 간결하게 (200자 내외 권장)\n\n";
+    		"당신은 대한민국 경찰청 형사사법정보 AI 보조 시스템(POL-MATE)입니다.\n" +
+    		        "현직 수사관의 질문에 다음 원칙으로 답변하세요:\n" +
+    		        "1. 형사소송법, 경찰관직무집행법, 헌법 등 관련 법령을 인용하여 답변\n" +
+    		        "2. 수사 실무에 즉시 적용 가능한 구체적인 내용 제공\n" +
+    		        "3. 피의자 인권 보호 및 적법 절차 준수 강조\n" +
+    		        "4. 반드시 한국어로 답변\n" +
+    		        "5. 답변은 명확하고 간결하게 (200자 내외 권장)\n\n";
     // ─────────────────────────────────────────────────────────────
 
     @Override
@@ -35,7 +42,7 @@ public class AiChatServlet extends HttpServlet {
 
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
-
+        
         String userMsg  = request.getParameter("userMsg");
         String category = request.getParameter("category"); // 질문 카테고리 (선택)
 
@@ -46,14 +53,21 @@ public class AiChatServlet extends HttpServlet {
             request.getRequestDispatcher("aiChat.jsp").forward(request, response);
             return;
         }
-
-        //dddd
         
         // 카테고리 프리픽스 추가
         String prompt = SYSTEM_PROMPT;
         if (category != null && !category.trim().isEmpty()) {
             prompt += "[질문 분류: " + category + "]\n\n";
         }
+        
+        // ── 법령/판례 검색 후 프롬프트에 추가 ──────────────────
+       String lawText  = searchLaw(userMsg.trim());
+       String precText = searchPrec(userMsg.trim());
+
+        if (!lawText.isEmpty())  prompt += "[관련 법령]\n" + lawText + "\n\n";
+        if (!precText.isEmpty()) prompt += "[관련 판례]\n" + precText + "\n\n";
+        // ────────────────────────────────────────────────────────
+        
         prompt += "수사관 질문: " + userMsg.trim();
 
         String aiResponse = "";
@@ -107,4 +121,152 @@ public class AiChatServlet extends HttpServlet {
             throws ServletException, IOException {
         request.getRequestDispatcher("aiChat.jsp").forward(request, response);
     }
+    
+ // ── 법령 검색 ────────────────────────────────────────────
+    private String searchLaw(String query) {
+        try {
+            String enc = URLEncoder.encode(query, "UTF-8");
+            String json = fetchUrl(LAW_SEARCH
+                + "?OC=" + LAW_OC
+                + "&target=law&type=JSON&display=3&query=" + enc);
+            if (json == null || json.isEmpty()) return "";
+
+            StringBuilder sb = new StringBuilder();
+            com.google.gson.JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+            com.google.gson.JsonArray items = null;
+            if (root.has("LawSearch")) {
+                com.google.gson.JsonObject ls = root.getAsJsonObject("LawSearch");
+                if (ls.has("law")) {
+                    com.google.gson.JsonElement lawEl = ls.get("law");
+                    if (lawEl.isJsonArray()) {
+                        items = lawEl.getAsJsonArray();
+                    } else {
+                        items = new com.google.gson.JsonArray();
+                        items.add(lawEl);
+                    }
+                }
+            }
+            if (items == null) return "";
+            for (int i = 0; i < items.size() && i < 3; i++) {
+                com.google.gson.JsonObject item = items.get(i).getAsJsonObject();
+                String lawName = item.has("법령명한글") ? item.get("법령명한글").getAsString() : "";
+                String lawId   = item.has("법령ID")    ? item.get("법령ID").getAsString()    : "";
+                if (!lawName.isEmpty()) {
+                    sb.append("▶ ").append(lawName).append("\n");
+                    String detail = fetchLawDetail(lawId);
+                    if (!detail.isEmpty()) sb.append(detail).append("\n");
+                }
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+
+    // ── 법령 본문 조회 ───────────────────────────────────────
+    private String fetchLawDetail(String lawId) {
+        try {
+            if (lawId == null || lawId.isEmpty()) return "";
+            String json = fetchUrl(LAW_SERVICE
+                    + "?OC=" + LAW_OC
+                    + "&target=law&type=JSON&MST=" + lawId);
+            if (json == null) return "";
+            com.google.gson.JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+            String content = "";
+            if (root.has("법령") && root.getAsJsonObject("법령").has("조문")) {
+                com.google.gson.JsonElement jo = root.getAsJsonObject("법령").get("조문");
+                if (jo.isJsonArray() && jo.getAsJsonArray().size() > 0) {
+                    com.google.gson.JsonObject first = jo.getAsJsonArray().get(0).getAsJsonObject();
+                    if (first.has("조문내용")) content = first.get("조문내용").getAsString();
+                }
+            }
+            if (content.length() > 500) content = content.substring(0, 500) + "...";
+            return content;
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    // ── 판례 검색 ────────────────────────────────────────────
+    private String searchPrec(String query) {
+        try {
+            String enc = URLEncoder.encode(query, "UTF-8");
+            String json = fetchUrl(PREC_SEARCH
+                + "?OC=" + LAW_OC
+                + "&target=prec&type=JSON&display=2&query=" + enc);
+            if (json == null || json.isEmpty()) return "";
+
+            StringBuilder sb = new StringBuilder();
+            com.google.gson.JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+            com.google.gson.JsonArray items = null;
+            if (root.has("PrecSearch")) {
+                com.google.gson.JsonObject ps = root.getAsJsonObject("PrecSearch");
+                if (ps.has("prec")) {
+                    com.google.gson.JsonElement precEl = ps.get("prec");
+                    if (precEl.isJsonArray()) {
+                        items = precEl.getAsJsonArray();
+                    } else {
+                        items = new com.google.gson.JsonArray();
+                        items.add(precEl);
+                    }
+                }
+            }
+            if (items == null) return "";
+            for (int i = 0; i < items.size() && i < 2; i++) {
+                com.google.gson.JsonObject item = items.get(i).getAsJsonObject();
+                String caseName = item.has("사건명")   ? item.get("사건명").getAsString()   : "";
+                String summary  = item.has("사건번호") ? item.get("사건번호").getAsString() : "";
+                if (!caseName.isEmpty()) {
+                    sb.append("▶ ").append(caseName).append("\n");
+                    if (!summary.isEmpty()) {
+                        if (summary.length() > 300) summary = summary.substring(0, 300) + "...";
+                        sb.append(summary).append("\n");
+                    }
+                }
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+
+    // ── URL 호출 헬퍼 ────────────────────────────────────────
+    private String fetchUrl(String urlStr) {
+        try {
+            HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(10000);
+            conn.setRequestProperty("Accept-Charset", "UTF-8");
+            if (conn.getResponseCode() != 200) return "";
+            BufferedReader br = new BufferedReader(
+                new InputStreamReader(conn.getInputStream(), "UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) sb.append(line);
+            br.close();
+            return sb.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+
+    // ── XML 태그 값 추출 헬퍼 ────────────────────────────────
+    private String extractTag(String xml, String tag) {
+        try {
+            String open  = "<"  + tag + ">";
+            String close = "</" + tag + ">";
+            int s = xml.indexOf(open);
+            int e = xml.indexOf(close);
+            if (s < 0 || e < 0) return "";
+            return xml.substring(s + open.length(), e).trim()
+                      .replaceAll("<[^>]+>", ""); // 내부 태그 제거
+        } catch (Exception ex) {
+            return "";
+        }
+    }
+
 }

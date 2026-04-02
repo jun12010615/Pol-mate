@@ -164,8 +164,9 @@
   /* ── 입력 영역 ── */
   .input-area {
     background:var(--card); border-top:1px solid var(--border);
-    padding:10px 12px calc(var(--bottom-nav-h) + 10px);
+    padding:10px 12px 10px;
     flex-shrink:0;
+    position:sticky; bottom:64px; z-index:50;
   }
   .input-row { display:flex; gap:8px; align-items:flex-end; }
   .input-box {
@@ -469,7 +470,9 @@ function autoResize(el) {
 function handleKeyDown(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
-    document.getElementById('chatForm').dispatchEvent(new Event('submit'));
+    if (handleSubmit()) {
+      document.getElementById('chatForm').submit();
+    }
   }
 }
 
