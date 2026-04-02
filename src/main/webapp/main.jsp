@@ -263,9 +263,9 @@
     if (rs2.next()) cntContradiction = rs2.getInt(1);
     rs2.close(); ps2.close();
 
-    // ── 내가 작성한 조서 수 ───────────────────────────────────
+    // ── 내가 작성한 조서 수  ─────────────────────────────
     java.sql.PreparedStatement ps3 = conn.prepareStatement(
-      "SELECT COUNT(*) FROM transcripts WHERE user_id = ?");
+      "SELECT COUNT(*) FROM transcripts t JOIN cases c ON t.case_id = c.case_id WHERE t.user_id = ?");
     ps3.setString(1, loginUser);
     java.sql.ResultSet rs3 = ps3.executeQuery();
     if (rs3.next()) cntTranscript = rs3.getInt(1);
