@@ -158,160 +158,172 @@
 <div class="toast" id="toast">모든 알림을 읽음 처리했습니다</div>
 
 <script>
-// ── 임시 알림 데이터 (DB 연동 후 서블릿으로 교체) ─────────────────
-var NOTIFS = [
-  {
-    id:1, type:'alert', unread:true, critical:true,
-    icon:'ni-red',
-    iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="1.8" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
-    tag:'모순 탐지',
-    title:'진술 모순 탐지 — 즉시 확인 필요',
-    desc:'사건 2024-0312(절도사건) 홍길동 진술에서 알리바이 불일치가 탐지되었습니다.',
-    time:'방금 전', link:'voiceTranscript.jsp'
-  },
-  {
-    id:2, type:'alert', unread:true, critical:true,
-    icon:'ni-amber',
-    iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="18" cy="19" r="2.5"/><line x1="8.4" y1="11.0" x2="15.6" y2="6.5"/><line x1="8.4" y1="13.0" x2="15.6" y2="17.5"/></svg>',
-    tag:'관계망',
-    title:'관계망 진술 불일치 감지',
-    desc:'사건 2024-0255(협박사건) 관계망에서 홍길동-이철수 진술 상태가 mismatch로 변경되었습니다.',
-    time:'12분 전', link:'caseRelationMap.jsp'
-  },
-  {
-    id:3, type:'case', unread:true, critical:false,
-    icon:'ni-blue',
-    iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
-    tag:'조서',
-    title:'조서 작성 완료 — 서명 필요',
-    desc:'사건 2024-0289(폭행사건) 1차 조서 작성이 완료되었습니다. 피의자 서명이 필요합니다.',
-    time:'1시간 전', link:'myCase.jsp'
-  },
-  {
-    id:4, type:'case', unread:true, critical:false,
-    icon:'ni-green',
-    iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="18" cy="19" r="2.5"/><line x1="8.4" y1="11.0" x2="15.6" y2="6.5"/><line x1="8.4" y1="13.0" x2="15.6" y2="17.5"/></svg>',
-    tag:'관계망',
-    title:'사건 2024-0271 관계망 업데이트',
-    desc:'사기사건 관계망에 신규 인물 2명이 추가되었습니다. 관계도를 확인해 주세요.',
-    time:'3시간 전', link:'caseRelationMap.jsp'
-  },
-  {
-    id:5, type:'sys', unread:false, critical:false,
-    icon:'ni-navy',
-    iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="#1a2744" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>',
-    tag:'시스템',
-    title:'AI 모델 업데이트 완료',
-    desc:'Ollama gemma3:1b 모델이 최신 버전으로 업데이트되었습니다. 응답 정확도가 향상되었습니다.',
-    time:'어제', link:'askAI'
-  },
-  {
-    id:6, type:'sys', unread:false, critical:false,
-    icon:'ni-gray',
-    iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
-    tag:'보안',
-    title:'로그인 보안 정책 안내',
-    desc:'비밀번호 정기 변경 권고 주기(90일)가 도래했습니다. 마이페이지에서 변경해 주세요.',
-    time:'2일 전', link:'mypage.jsp'
-  },
-  {
-    id:7, type:'case', unread:false, critical:false,
-    icon:'ni-blue',
-    iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
-    tag:'사건',
-    title:'사건 2024-0230 신규 배정',
-    desc:'마약사건이 담당 수사관으로 배정되었습니다. 초기 조사를 시작해 주세요.',
-    time:'3일 전', link:'caseList.jsp'
-  },
-  {
-    id:8, type:'sys', unread:false, critical:false,
-    icon:'ni-gray',
-    iconSvg:'<svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 1 0 4.93 19.07"/></svg>',
-    tag:'시스템',
-    title:'POL-MATE v1.0.0 출시',
-    desc:'형사사법정보지원 시스템 POL-MATE가 정식 출시되었습니다. 주요 기능을 확인해 보세요.',
-    time:'1주 전', link:'main.jsp'
-  }
-];
-
+// ── DB 연동 알림 ──────────────────────────────────────────────────
+var NOTIFS = [];
 var currentTab = 'all';
 
+// 탭 전환: all / case / sys
+// 헤더 탭 버튼 id: tabAll, tabAlert(=경고→sys), tabCase, tabSys
 function switchTab(tab) {
   currentTab = tab;
   ['all','alert','case','sys'].forEach(function(t) {
-    document.getElementById('tab' + (t==='all'?'All':t==='alert'?'Alert':t==='case'?'Case':'Sys')).classList.toggle('active', t===tab);
+    document.getElementById('tab'+(t==='all'?'All':t==='alert'?'Alert':t==='case'?'Case':'Sys'))
+      .classList.toggle('active', t===tab);
   });
-  render();
+  loadNotifs();
 }
 
-function render() {
-  var list = currentTab === 'all' ? NOTIFS : NOTIFS.filter(function(n){ return n.type===currentTab; });
+// ── 알림 목록 로드 ────────────────────────────────────────────────
+function loadNotifs() {
+  document.getElementById('contentArea').innerHTML =
+    '<div style="text-align:center;padding:48px 0;color:var(--text-muted);font-size:13px;">불러오는 중...</div>';
 
-  if (!list.length) {
+  // 탭 'alert'는 서버에서 sys 타입으로 처리 (보안 알림)
+  var typeParam = currentTab === 'alert' ? 'sys' : currentTab;
+
+  fetch('notifApi?action=list&type=' + typeParam)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) {
+        document.getElementById('contentArea').innerHTML =
+          '<div style="text-align:center;padding:48px 0;color:var(--danger);font-size:13px;">' + esc(data.error) + '</div>';
+        return;
+      }
+      NOTIFS = Array.isArray(data) ? data : [];
+      render();
+    })
+    .catch(function() {
+      document.getElementById('contentArea').innerHTML =
+        '<div style="text-align:center;padding:48px 0;color:var(--danger);font-size:13px;">알림을 불러오지 못했습니다.</div>';
+    });
+}
+
+// ── 렌더링 ────────────────────────────────────────────────────────
+function render() {
+  if (!NOTIFS.length) {
     document.getElementById('contentArea').innerHTML =
       '<div class="empty-state">' +
         '<div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>' +
         '<div class="empty-title">알림이 없습니다</div>' +
         '<div class="empty-desc">새로운 알림이 오면 여기에 표시됩니다</div>' +
       '</div>';
+    updateBadge();
     return;
   }
 
-  // 오늘 / 이전으로 그룹핑
-  var todayItems = list.filter(function(n){ return ['방금 전','12분 전','1시간 전','3시간 전'].includes(n.time); });
-  var pastItems  = list.filter(function(n){ return !['방금 전','12분 전','1시간 전','3시간 전'].includes(n.time); });
+  // 오늘(24시간 이내 timeLabel) / 이전 그룹 분리
+  var todayKeywords = ['방금 전', '분 전', '시간 전', '보안 알림'];
+  var todayItems = NOTIFS.filter(function(n) {
+    return todayKeywords.some(function(k) { return (n.timeLabel || '').indexOf(k) >= 0; });
+  });
+  var pastItems = NOTIFS.filter(function(n) {
+    return !todayKeywords.some(function(k) { return (n.timeLabel || '').indexOf(k) >= 0; });
+  });
 
   var html = '';
   if (todayItems.length) {
     html += '<div class="notif-group"><div class="group-label">오늘</div>';
-    todayItems.forEach(function(n){ html += renderItem(n); });
+    todayItems.forEach(function(n) { html += renderItem(n); });
     html += '</div>';
   }
   if (pastItems.length) {
     html += '<div class="notif-group"><div class="group-label">이전</div>';
-    pastItems.forEach(function(n){ html += renderItem(n); });
+    pastItems.forEach(function(n) { html += renderItem(n); });
     html += '</div>';
   }
+
   document.getElementById('contentArea').innerHTML = html;
   updateBadge();
 }
 
+// ── 아이템 HTML 생성 ──────────────────────────────────────────────
+function getIconInfo(tag, isCritical) {
+  switch (tag) {
+    case '보안':
+      return {
+        cls: isCritical ? 'ni-red' : 'ni-gray',
+        svg: '<svg viewBox="0 0 24 24" fill="none" stroke="'+(isCritical?'#dc2626':'#6b7280')+'" stroke-width="1.8" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'
+      };
+    case '새 사건':
+      return {
+        cls: 'ni-blue',
+        svg: '<svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'
+      };
+    case '조서':
+      return {
+        cls: 'ni-blue',
+        svg: '<svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'
+      };
+    default:
+      return {
+        cls: 'ni-navy',
+        svg: '<svg viewBox="0 0 24 24" fill="none" stroke="#1a2744" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+      };
+  }
+}
+
 function renderItem(n) {
-  return '<div class="notif-item' + (n.unread?' unread':'') + (n.critical?' critical':'') + '" onclick="readItem(' + n.id + ',\'' + n.link + '\')">' +
-    (n.unread ? '<div class="unread-dot"></div>' : '') +
-    '<div class="notif-icon ' + n.icon + '">' + n.iconSvg + '</div>' +
+  var icon = getIconInfo(n.tag, n.isCritical);
+  return '<div class="notif-item' + (n.isUnread ? ' unread' : '') + (n.isCritical ? ' critical' : '') +
+    '" onclick="readItem(' + n.notifId + ',\'' + escUrl(n.link) + '\')">' +
+    (n.isUnread ? '<div class="unread-dot"></div>' : '') +
+    '<div class="notif-icon ' + icon.cls + '">' + icon.svg + '</div>' +
     '<div class="notif-body">' +
-      '<div class="notif-tag">' + n.tag + '</div>' +
-      '<div class="notif-title">' + n.title + '</div>' +
-      '<div class="notif-desc">' + n.desc + '</div>' +
-      '<div class="notif-time">' + n.time + '</div>' +
+      '<div class="notif-tag">' + esc(n.tag) + '</div>' +
+      '<div class="notif-title">' + esc(n.title) + '</div>' +
+      '<div class="notif-desc">' + esc(n.description) + '</div>' +
+      '<div class="notif-time">' + esc(n.timeLabel) + '</div>' +
     '</div>' +
   '</div>';
 }
 
+// ── 읽음 처리 ─────────────────────────────────────────────────────
 function readItem(id, link) {
-  var n = NOTIFS.find(function(x){ return x.id===id; });
-  if (n) n.unread = false;
+  // notifId == -1 은 비밀번호 경고 (DB 없음, 서버에서 무시)
+  var params = new URLSearchParams();
+  params.append('action', 'markRead');
+  params.append('notifId', id);
+  fetch('notifApi', { method: 'POST', body: params });
+
+  var n = NOTIFS.find(function(x) { return x.notifId === id; });
+  if (n) n.isUnread = false;
   updateBadge();
-  location.href = link;
+
+  if (link) location.href = link;
 }
 
+// ── 전체 읽음 ─────────────────────────────────────────────────────
 function markAllRead() {
-  NOTIFS.forEach(function(n){ n.unread = false; });
+  var params = new URLSearchParams();
+  params.append('action', 'markAllRead');
+  fetch('notifApi', { method: 'POST', body: params });
+
+  NOTIFS.forEach(function(n) { n.isUnread = false; });
   render();
+
   var t = document.getElementById('toast');
   t.classList.add('show');
-  setTimeout(function(){ t.classList.remove('show'); }, 2000);
+  setTimeout(function() { t.classList.remove('show'); }, 2000);
 }
 
+// ── 뱃지 갱신 ────────────────────────────────────────────────────
 function updateBadge() {
-  var cnt = NOTIFS.filter(function(n){ return n.unread; }).length;
+  var cnt = NOTIFS.filter(function(n) { return n.isUnread; }).length;
   var el = document.getElementById('unreadBadge');
   el.textContent = cnt > 0 ? cnt : '';
   el.style.display = cnt > 0 ? '' : 'none';
 }
 
-render();
+// ── XSS 방지 유틸 ────────────────────────────────────────────────
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escUrl(s) {
+  return String(s || '').replace(/'/g, "\\'");
+}
+
+// ── 초기 로드 ────────────────────────────────────────────────────
+loadNotifs();
 </script>
 </body>
 </html>

@@ -659,15 +659,15 @@
         <div class="app-ver">버전 1.0.0-beta · 2025.03</div>
         <div class="app-copy" style="margin-top:10px; color:var(--text-muted);">형사사법정보지원 시스템</div>
         <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border); display:flex; justify-content:center; gap:24px;">
-          <a href="#" onclick="event.preventDefault();openDrawer('termsDrawer')" style="font-size:11px; color:var(--accent); text-decoration:none;">이용약관</a>
-          <a href="#" onclick="event.preventDefault();openDrawer('privacyDrawer')" style="font-size:11px; color:var(--accent); text-decoration:none;">개인정보처리방침</a>
-          <a href="#" onclick="event.preventDefault();openDrawer('opensourceDrawer')" style="font-size:11px; color:var(--accent); text-decoration:none;">오픈소스 라이선스</a>
+          <a href="#" style="font-size:11px; color:var(--accent); text-decoration:none;">이용약관</a>
+          <a href="#" style="font-size:11px; color:var(--accent); text-decoration:none;">개인정보처리방침</a>
+          <a href="#" style="font-size:11px; color:var(--accent); text-decoration:none;">오픈소스 라이선스</a>
         </div>
       </div>
     </div>
 
     <!-- 로그아웃 -->
-    <div style="padding:16px 0 8px;">
+    <div style="padding:16px 0 4px;">
       <button class="logout-btn" onclick="confirmLogout()">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -676,6 +676,11 @@
         </svg>
         로그아웃
       </button>
+    </div>
+
+    <!-- 회원탈퇴 -->
+    <div style="padding:0 0 20px; text-align:center;">
+      <button onclick="confirmWithdraw()" style="background:none;border:none;font-size:11px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">회원탈퇴</button>
     </div>
 
   </div><!-- /content -->
@@ -718,6 +723,30 @@
 
 
 </div><!-- /screen -->
+
+
+<!-- ════════════════════════════════════ -->
+<!-- 드로어: 회원탈퇴                      -->
+<!-- ════════════════════════════════════ -->
+<div class="overlay" id="withdrawDrawer" onclick="closeOnBg(event,'withdrawDrawer')">
+  <div class="drawer">
+    <div class="drawer-handle"></div>
+    <div class="drawer-title" style="color:var(--danger);">회원탈퇴</div>
+    <div class="drawer-body">
+      <div style="background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:12px;padding:14px 16px;margin-bottom:18px;display:flex;gap:10px;align-items:flex-start;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.8" stroke-linecap="round" style="width:18px;height:18px;flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div style="font-size:12px;color:#b91c1c;line-height:1.7;">탈퇴 시 모든 사건·조서·관계망 데이터가 <strong>영구 삭제</strong>되며 복구할 수 없습니다.</div>
+      </div>
+      <div class="d-field">
+        <label class="d-label">확인을 위해 비밀번호를 입력해 주세요</label>
+        <input type="password" class="d-input" id="withdrawPw" placeholder="현재 비밀번호">
+      </div>
+      <p id="withdrawMsg" style="font-size:11px;color:var(--danger);margin-bottom:10px;display:none;"></p>
+      <button onclick="submitWithdraw()" style="width:100%;background:var(--danger);color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:500;font-family:'Noto Sans KR',sans-serif;cursor:pointer;margin-top:4px;">탈퇴하기</button>
+      <button class="d-btn-cancel" onclick="closeDrawer('withdrawDrawer')">취소</button>
+    </div>
+  </div>
+</div>
 
 
 <!-- ════════════════════════════════════ -->
@@ -800,128 +829,6 @@
     </div>
     <div style="padding:16px 20px 0;">
       <button class="d-btn-cancel" onclick="closeDrawer('historyDrawer')">닫기</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- ════════════════════════════════════ -->
-<!-- 드로어: 이용약관                      -->
-<!-- ════════════════════════════════════ -->
-<div class="overlay" id="termsDrawer" onclick="closeOnBg(event,'termsDrawer')">
-  <div class="drawer">
-    <div class="drawer-handle"></div>
-    <div class="drawer-title">이용약관</div>
-    <div class="drawer-body" style="font-size:13px; color:var(--text-primary); line-height:1.8;">
-      <p style="font-size:11px; color:var(--text-muted); margin-bottom:16px;">최종 업데이트: 2025년 3월 1일</p>
-
-      <p style="font-weight:500; margin-bottom:6px;">제1조 (목적)</p>
-      <p style="color:var(--text-secondary); margin-bottom:14px;">본 약관은 POL-MATE(이하 "서비스")의 이용 조건 및 절차, 이용자와 운영자의 권리·의무 및 책임사항을 규정함을 목적으로 합니다.</p>
-
-      <p style="font-weight:500; margin-bottom:6px;">제2조 (이용 자격)</p>
-      <p style="color:var(--text-secondary); margin-bottom:14px;">본 서비스는 권한을 부여받은 수사 담당자에 한하여 사용이 허가됩니다. 허가받지 않은 자의 접근은 금지되며, 위반 시 관련 법령에 따라 처벌받을 수 있습니다.</p>
-
-      <p style="font-weight:500; margin-bottom:6px;">제3조 (서비스 이용)</p>
-      <p style="color:var(--text-secondary); margin-bottom:14px;">이용자는 서비스를 통해 취득한 정보를 수사 목적 외에 사용하거나 제3자에게 제공할 수 없습니다. 서비스 내 모든 데이터는 형사사법정보시스템 관련 법령의 적용을 받습니다.</p>
-
-      <p style="font-weight:500; margin-bottom:6px;">제4조 (책임의 한계)</p>
-      <p style="color:var(--text-secondary); margin-bottom:14px;">AI 모순 탐지 결과는 수사 보조 목적으로만 활용되어야 하며, 최종 판단은 수사 담당자가 직접 수행하여야 합니다. AI 분석 결과를 단독 근거로 활용하여 발생한 문제에 대해 운영자는 책임지지 않습니다.</p>
-
-      <p style="font-weight:500; margin-bottom:6px;">제5조 (약관 변경)</p>
-      <p style="color:var(--text-secondary); margin-bottom:20px;">본 약관은 관련 법령의 개정 또는 서비스 정책 변경에 따라 사전 공지 없이 변경될 수 있습니다. 변경된 약관은 서비스 내 공지 후 즉시 효력이 발생합니다.</p>
-
-      <button class="d-btn-cancel" onclick="closeDrawer('termsDrawer')">닫기</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- ════════════════════════════════════ -->
-<!-- 드로어: 개인정보처리방침              -->
-<!-- ════════════════════════════════════ -->
-<div class="overlay" id="privacyDrawer" onclick="closeOnBg(event,'privacyDrawer')">
-  <div class="drawer">
-    <div class="drawer-handle"></div>
-    <div class="drawer-title">개인정보처리방침</div>
-    <div class="drawer-body" style="font-size:13px; color:var(--text-primary); line-height:1.8;">
-      <p style="font-size:11px; color:var(--text-muted); margin-bottom:16px;">최종 업데이트: 2025년 3월 1일</p>
-
-      <p style="font-weight:500; margin-bottom:6px;">수집하는 개인정보 항목</p>
-      <p style="color:var(--text-secondary); margin-bottom:14px;">서비스 이용 시 아이디, 이름, 계급, 소속 기관, 연락처 등의 정보가 수집됩니다. 수사 관련 데이터는 별도의 보안 저장소에 암호화하여 보관됩니다.</p>
-
-      <p style="font-weight:500; margin-bottom:6px;">개인정보의 이용 목적</p>
-      <p style="color:var(--text-secondary); margin-bottom:14px;">수집된 정보는 서비스 제공, 사용자 인증, 수사 업무 지원 이외의 목적으로 사용되지 않습니다. 법령에 따른 수사기관의 요청이 있는 경우를 제외하고 제3자에게 제공되지 않습니다.</p>
-
-      <p style="font-weight:500; margin-bottom:6px;">보유 및 이용 기간</p>
-      <p style="color:var(--text-secondary); margin-bottom:14px;">개인정보는 서비스 탈퇴 또는 이용 목적 달성 시까지 보유하며, 관련 법령에서 정한 기간이 있는 경우 해당 기간 동안 보관합니다.</p>
-
-      <p style="font-weight:500; margin-bottom:6px;">정보 주체의 권리</p>
-      <p style="color:var(--text-secondary); margin-bottom:14px;">이용자는 언제든지 본인의 개인정보 열람, 수정, 삭제를 요청할 수 있습니다. 요청은 시스템 관리자를 통해 처리됩니다.</p>
-
-      <p style="font-weight:500; margin-bottom:6px;">보안 조치</p>
-      <p style="color:var(--text-secondary); margin-bottom:20px;">서비스는 개인정보 보호를 위해 비밀번호 암호화, 접근 권한 관리, 내부 감사 로그 등의 기술적·관리적 보호 조치를 시행하고 있습니다.</p>
-
-      <button class="d-btn-cancel" onclick="closeDrawer('privacyDrawer')">닫기</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- ════════════════════════════════════ -->
-<!-- 드로어: 오픈소스 라이선스             -->
-<!-- ════════════════════════════════════ -->
-<div class="overlay" id="opensourceDrawer" onclick="closeOnBg(event,'opensourceDrawer')">
-  <div class="drawer">
-    <div class="drawer-handle"></div>
-    <div class="drawer-title">오픈소스 라이선스</div>
-    <div class="drawer-body" style="font-size:13px; color:var(--text-primary); line-height:1.8;">
-      <p style="font-size:11px; color:var(--text-muted); margin-bottom:16px;">본 서비스에 사용된 오픈소스 라이브러리 목록입니다.</p>
-
-      <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;">
-
-        <div style="background:var(--bg); border-radius:10px; padding:14px; border:1px solid var(--border);">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-weight:500; font-size:13px;">Noto Sans KR</span>
-            <span style="font-size:10px; color:var(--accent); background:#eff6ff; padding:2px 8px; border-radius:20px;">Apache 2.0</span>
-          </div>
-          <div style="font-size:11px; color:var(--text-muted);">Google Fonts · 한국어 웹폰트</div>
-        </div>
-
-        <div style="background:var(--bg); border-radius:10px; padding:14px; border:1px solid var(--border);">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-weight:500; font-size:13px;">Ollama</span>
-            <span style="font-size:10px; color:var(--accent); background:#eff6ff; padding:2px 8px; border-radius:20px;">MIT</span>
-          </div>
-          <div style="font-size:11px; color:var(--text-muted);">로컬 LLM 실행 엔진 · AI 모순 탐지 기반</div>
-        </div>
-
-        <div style="background:var(--bg); border-radius:10px; padding:14px; border:1px solid var(--border);">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-weight:500; font-size:13px;">Apache Tomcat</span>
-            <span style="font-size:10px; color:var(--accent); background:#eff6ff; padding:2px 8px; border-radius:20px;">Apache 2.0</span>
-          </div>
-          <div style="font-size:11px; color:var(--text-muted);">Java 서블릿 컨테이너 · 서버 런타임</div>
-        </div>
-
-        <div style="background:var(--bg); border-radius:10px; padding:14px; border:1px solid var(--border);">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-weight:500; font-size:13px;">MySQL Connector JDBC</span>
-            <span style="font-size:10px; color:var(--text-secondary); background:#f3f4f6; padding:2px 8px; border-radius:20px;">GPL 2.0</span>
-          </div>
-          <div style="font-size:11px; color:var(--text-muted);">MySQL JDBC 드라이버 · 데이터베이스 연결</div>
-        </div>
-
-        <div style="background:var(--bg); border-radius:10px; padding:14px; border:1px solid var(--border);">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-weight:500; font-size:13px;">JSON.simple</span>
-            <span style="font-size:10px; color:var(--accent); background:#eff6ff; padding:2px 8px; border-radius:20px;">Apache 2.0</span>
-          </div>
-          <div style="font-size:11px; color:var(--text-muted);">Java JSON 파싱 라이브러리</div>
-        </div>
-
-      </div>
-
-      <button class="d-btn-cancel" onclick="closeDrawer('opensourceDrawer')">닫기</button>
     </div>
   </div>
 </div>
@@ -1076,7 +983,44 @@ function showPwMsg(m) {
   el.style.display = 'block';
 }
 
-// ── 로그아웃 ──────────────────────────────────────────────────────
+// ── 회원탈퇴 ──────────────────────────────────────────────────────
+function confirmWithdraw() {
+  document.getElementById('withdrawPw').value = '';
+  document.getElementById('withdrawMsg').style.display = 'none';
+  openDrawer('withdrawDrawer');
+}
+
+function submitWithdraw() {
+  var pw  = document.getElementById('withdrawPw').value;
+  var msg = document.getElementById('withdrawMsg');
+  msg.style.display = 'none';
+
+  if (!pw) {
+    msg.textContent = '비밀번호를 입력해 주세요.';
+    msg.style.display = 'block';
+    return;
+  }
+
+  var params = new URLSearchParams();
+  params.append('action', 'withdraw');
+  params.append('password', pw);
+
+  fetch('mypage', { method: 'POST', body: params })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        location.href = 'login.jsp';
+      } else {
+        msg.textContent = data.message || '탈퇴 처리에 실패했습니다.';
+        msg.style.display = 'block';
+      }
+    })
+    .catch(function() {
+      msg.textContent = '오류가 발생했습니다. 다시 시도해 주세요.';
+      msg.style.display = 'block';
+    });
+}
+
 function confirmLogout() {
   if (confirm('로그아웃 하시겠습니까?')) {
     var params = new URLSearchParams();

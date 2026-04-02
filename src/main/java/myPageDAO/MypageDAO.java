@@ -116,7 +116,8 @@ public class MypageDAO {
         try {
             conn = mgr.getConnection();
             // ※ BCrypt 적용 시: newPw = BCrypt.hashpw(newPw, BCrypt.gensalt());
-            pstmt = conn.prepareStatement("UPDATE users SET user_pw = ? WHERE user_id = ?");
+            pstmt = conn.prepareStatement(
+                "UPDATE users SET user_pw = ?, password_changed_at = NOW() WHERE user_id = ?");
             pstmt.setString(1, newPw);
             pstmt.setString(2, userId);
             return pstmt.executeUpdate() > 0;
