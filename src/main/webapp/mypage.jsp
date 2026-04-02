@@ -22,6 +22,8 @@
     --border: #e5e7eb;
     --success: #16a34a;
     --success-bg: #f0fdf4;
+    --danger-bg: #fef2f2;
+    --danger-border: #fecaca;
     --bottom-nav-h: 64px;
   }
 
@@ -721,6 +723,30 @@
 
 
 <!-- ════════════════════════════════════ -->
+<!-- 드로어: 회원탈퇴                      -->
+<!-- ════════════════════════════════════ -->
+<div class="overlay" id="withdrawDrawer" onclick="closeOnBg(event,'withdrawDrawer')">
+  <div class="drawer">
+    <div class="drawer-handle"></div>
+    <div class="drawer-title" style="color:var(--danger);">회원탈퇴</div>
+    <div class="drawer-body">
+      <div style="background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:12px;padding:14px 16px;margin-bottom:18px;display:flex;gap:10px;align-items:flex-start;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.8" stroke-linecap="round" style="width:18px;height:18px;flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div style="font-size:12px;color:#b91c1c;line-height:1.7;">탈퇴 시 모든 사건·조서·관계망 데이터가 <strong>영구 삭제</strong>되며 복구할 수 없습니다.</div>
+      </div>
+      <div class="d-field">
+        <label class="d-label">확인을 위해 비밀번호를 입력해 주세요</label>
+        <input type="password" class="d-input" id="withdrawPw" placeholder="현재 비밀번호">
+      </div>
+      <p id="withdrawMsg" style="font-size:11px;color:var(--danger);margin-bottom:10px;display:none;"></p>
+      <button id="withdrawBtn" onclick="submitWithdraw()" style="width:100%;background:var(--danger);color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:500;font-family:'Noto Sans KR',sans-serif;cursor:pointer;margin-top:4px;">탈퇴하기</button>
+      <button class="d-btn-cancel" onclick="closeDrawer('withdrawDrawer')">취소</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════ -->
 <!-- 드로어: 프로필 편집                   -->
 <!-- ════════════════════════════════════ -->
 <div class="overlay" id="profileDrawer" onclick="closeOnBg(event,'profileDrawer')">
@@ -961,8 +987,29 @@ function showPwMsg(m) {
   el.style.display = 'block';
 }
 
-// ── 알림 설정 저장 ────────────────────────────────────────────────
-function saveSettings() {
+// ── 회원탈퇴 ──────────────────────────────────────────────────────
+function confirmWithdraw() {
+  document.getElementById('withdrawPw').value = '';
+  document.getElementById('withdrawMsg').style.display = 'none';
+  openDrawer('withdrawDrawer');
+}
+
+function submitWithdraw() {
+  var pw  = document.getElementById('withdrawPw').value;
+  var msg = document.getElementById('withdrawMsg');
+  var btn = document.getElementById('withdrawBtn');
+  msg.style.display = 'none';
+
+  if (!pw) {
+    msg.textContent = '비밀번호를 입력해 주세요.';
+    msg.style.display = 'block';
+    return;
+  }
+
+  // 중복 클릭 방지
+  btn.disabled = true;
+  btn.textContent = '처리 중...';
+
   var params = new URLSearchParams();
   params.append('action',              'saveSettings');
   params.append('notifContradiction',  document.getElementById('toggleContradiction').checked);
@@ -972,9 +1019,22 @@ function saveSettings() {
   fetch('mypage', { method: 'POST', body: params })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      if (!data.success) alert(data.message || '설정 저장에 실패했습니다.');
+      if (data.success) {
+        alert('탈퇴가 완료되었습니다.');
+        location.href = 'login.jsp';
+      } else {
+        msg.textContent = data.message || '탈퇴 처리에 실패했습니다.';
+        msg.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = '탈퇴하기';
+      }
     })
-    .catch(function() { alert('오류가 발생했습니다.'); });
+    .catch(function() {
+      msg.textContent = '오류가 발생했습니다. 다시 시도해 주세요.';
+      msg.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = '탈퇴하기';
+    });
 }
 
 // ── 로그아웃 ──────────────────────────────────────────────────────
