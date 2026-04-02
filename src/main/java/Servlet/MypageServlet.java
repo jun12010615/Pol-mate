@@ -71,8 +71,9 @@ public class MypageServlet extends HttpServlet {
                 }
 
                 Map<String, Object> result = new HashMap<>();
-                result.put("user",  toSafeUserMap(user));
-                result.put("stats", stats);
+                result.put("user",     toSafeUserMap(user));
+                result.put("stats",    stats);
+                result.put("settings", dao.getSettings(userId));
                 sendJson(resp, result);
                 break;
             }

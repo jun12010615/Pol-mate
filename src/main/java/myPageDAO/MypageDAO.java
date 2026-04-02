@@ -28,8 +28,11 @@ public class MypageDAO {
         UserDTO dto = new UserDTO();
         try {
             conn = mgr.getConnection();
-            String sql = "SELECT user_id, user_name, user_phone, user_org, user_rank, user_dept, badge_num, created_at " +
-                         "FROM users WHERE user_id = ?";
+            String sql = "SELECT u.user_id, u.user_name, u.user_phone, u.user_org, u.user_rank, " +
+                         "       d.dept_name AS user_dept, u.badge_num, u.created_at " +
+                         "FROM users u " +
+                         "LEFT JOIN departments d ON u.dept_id = d.dept_id " +
+                         "WHERE u.user_id = ?";
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, userId);
             rs = pstmt.executeQuery();
@@ -116,8 +119,7 @@ public class MypageDAO {
         try {
             conn = mgr.getConnection();
             // ※ BCrypt 적용 시: newPw = BCrypt.hashpw(newPw, BCrypt.gensalt());
-            pstmt = conn.prepareStatement(
-                "UPDATE users SET user_pw = ?, password_changed_at = NOW() WHERE user_id = ?");
+            pstmt = conn.prepareStatement("UPDATE users SET user_pw = ? WHERE user_id = ?");
             pstmt.setString(1, newPw);
             pstmt.setString(2, userId);
             return pstmt.executeUpdate() > 0;

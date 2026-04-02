@@ -100,7 +100,7 @@ public class CaseServlet extends HttpServlet {
 
             StringBuilder sql = new StringBuilder(
                 "SELECT c.case_id, c.case_name, c.suspect, c.charge, c.status, " +
-                "       c.progress, c.updated_at, c.user_id, " +
+                "       c.progress, c.created_at, c.user_id, " +
                 "       u.user_name, u.user_rank, " +
                 "       (SELECT COUNT(*) FROM transcripts t WHERE t.case_id = c.case_id) AS doc_count, " +
                 "       (SELECT COUNT(*) FROM transcripts t WHERE t.case_id = c.case_id AND t.has_contradiction = 1) AS contradiction_count " +
@@ -154,7 +154,7 @@ public class CaseServlet extends HttpServlet {
                 c.put("urgent",         rs.getInt("contradiction_count") > 0);
                 c.put("isMine",         loginUser.equals(rs.getString("user_id")));
 
-                Timestamp ts = rs.getTimestamp("updated_at");
+                Timestamp ts = rs.getTimestamp("created_at");
                 c.put("date", ts != null ? DATE_FMT.format(ts) : "");
 
                 arr.put(c);
@@ -191,7 +191,7 @@ public class CaseServlet extends HttpServlet {
             // 사건 기본 정보 + 접근 권한 확인
             ps = conn.prepareStatement(
                 "SELECT c.case_id, c.case_name, c.suspect, c.charge, c.status, " +
-                "       c.progress, c.updated_at, c.user_id, " +
+                "       c.progress, c.created_at, c.user_id, " +
                 "       u.user_name, u.user_rank, " +
                 "       d.dept_name, d.org_name " +
                 "FROM cases c " +
@@ -235,16 +235,17 @@ public class CaseServlet extends HttpServlet {
                 detail.put("deptName", "미배정");
             }
 
-            Timestamp ts = rs.getTimestamp("updated_at");
+            Timestamp ts = rs.getTimestamp("created_at");
             detail.put("date", ts != null ? DATE_FMT.format(ts) : "");
             mgr.freeConnection(null, ps, rs);
 
             // 해당 사건의 조서 목록
             ps = conn.prepareStatement(
                 "SELECT t.transcript_id, t.stmt_type, t.stmt_name, t.has_contradiction, " +
-                "       t.created_at, " +
+                "       t.created_at, t.user_id, u.user_name, u.user_rank, " +
                 "       CHAR_LENGTH(IFNULL(t.original_text,'')) AS text_len " +
                 "FROM transcripts t " +
+                "LEFT JOIN users u ON t.user_id = u.user_id " +
                 "WHERE t.case_id = ? " +
                 "ORDER BY t.created_at DESC");
             ps.setString(1, caseId);
@@ -258,6 +259,9 @@ public class CaseServlet extends HttpServlet {
                 d.put("name",         nvl(rs.getString("stmt_name"), "미입력"));
                 d.put("contradiction", rs.getBoolean("has_contradiction"));
                 d.put("textLen",      rs.getInt("text_len"));
+                d.put("writerId",     nvl(rs.getString("user_id"),   ""));
+                d.put("writerName",   nvl(rs.getString("user_name"), "알 수 없음"));
+                d.put("writerRank",   nvl(rs.getString("user_rank"), ""));
                 Timestamp dts = rs.getTimestamp("created_at");
                 d.put("date", dts != null ? DATE_FMT.format(dts) : "");
                 docs.put(d);
@@ -343,28 +347,6 @@ public class CaseServlet extends HttpServlet {
                 if (dn != null && !dn.isEmpty()) {
                     deptLabel = on != null && !on.isEmpty() ? dn + " (" + on + ")" : dn;
                 }
-            }
-
-            // ── 같은 부서 팀원에게 새 사건 알림 INSERT ──
-            mgr.freeConnection(null, ps);
-            ps = conn.prepareStatement(
-                "SELECT u2.user_id FROM users u2 " +
-                "JOIN users me ON me.user_id = ? " +
-                "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL AND u2.user_id != ?");
-            ps.setString(1, loginUser);
-            ps.setString(2, loginUser);
-            rs = ps.executeQuery();
-            List<String> teammates = new ArrayList<>();
-            while (rs.next()) teammates.add(rs.getString("user_id"));
-            rs.close();
-            mgr.freeConnection(null, ps);
-
-            for (String teammate : teammates) {
-                NotificationServlet.insertNotification(conn,
-                    teammate, "case", "새 사건",
-                    "팀 새 사건 등록: " + caseName.trim(),
-                    "사건 " + caseId + "(" + caseName.trim() + ")이(가) 팀에 등록됐습니다.",
-                    "myCase.jsp", false);
             }
 
             JSONObject result = new JSONObject();
@@ -677,40 +659,6 @@ public class CaseServlet extends HttpServlet {
             rs = ps.getGeneratedKeys();
             rs.next();
             int newId = rs.getInt(1);
-            rs.close();
-            mgr.freeConnection(null, ps);
-
-            // ── 같은 부서 팀원에게 조서 추가 알림 INSERT ──
-            // 사건명 조회
-            ps = conn.prepareStatement("SELECT case_name FROM cases WHERE case_id = ?");
-            ps.setString(1, caseId);
-            rs = ps.executeQuery();
-            String caseName2 = rs.next() ? rs.getString("case_name") : caseId;
-            rs.close();
-            mgr.freeConnection(null, ps);
-
-            // 팀원 목록 조회
-            ps = conn.prepareStatement(
-                "SELECT u2.user_id FROM users u2 " +
-                "JOIN users me ON me.user_id = ? " +
-                "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL AND u2.user_id != ?");
-            ps.setString(1, loginUser);
-            ps.setString(2, loginUser);
-            rs = ps.executeQuery();
-            List<String> tmates = new ArrayList<>();
-            while (rs.next()) tmates.add(rs.getString("user_id"));
-            rs.close();
-            mgr.freeConnection(null, ps);
-
-            String stmtLabel = (stmtName.isEmpty() ? "" : stmtName + " ") +
-                               (stmtType.isEmpty() ? "진술" : stmtType + " 진술");
-            for (String tm : tmates) {
-                NotificationServlet.insertNotification(conn,
-                    tm, "case", "조서",
-                    "팀 사건 조서 추가: " + caseName2,
-                    "사건 " + caseId + "(" + caseName2 + ")에 " + stmtLabel + " 조서가 추가됐습니다.",
-                    "myCase.jsp", false);
-            }
 
             JSONObject result = new JSONObject();
             result.put("success",      true);
