@@ -22,6 +22,8 @@
     --border: #e5e7eb;
     --success: #16a34a;
     --success-bg: #f0fdf4;
+    --danger-bg: #fef2f2;
+    --danger-border: #fecaca;
     --bottom-nav-h: 64px;
   }
 
@@ -742,7 +744,7 @@
         <input type="password" class="d-input" id="withdrawPw" placeholder="현재 비밀번호">
       </div>
       <p id="withdrawMsg" style="font-size:11px;color:var(--danger);margin-bottom:10px;display:none;"></p>
-      <button onclick="submitWithdraw()" style="width:100%;background:var(--danger);color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:500;font-family:'Noto Sans KR',sans-serif;cursor:pointer;margin-top:4px;">탈퇴하기</button>
+      <button id="withdrawBtn" onclick="submitWithdraw()" style="width:100%;background:var(--danger);color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:500;font-family:'Noto Sans KR',sans-serif;cursor:pointer;margin-top:4px;">탈퇴하기</button>
       <button class="d-btn-cancel" onclick="closeDrawer('withdrawDrawer')">취소</button>
     </div>
   </div>
@@ -993,6 +995,7 @@ function confirmWithdraw() {
 function submitWithdraw() {
   var pw  = document.getElementById('withdrawPw').value;
   var msg = document.getElementById('withdrawMsg');
+  var btn = document.getElementById('withdrawBtn');
   msg.style.display = 'none';
 
   if (!pw) {
@@ -1000,6 +1003,10 @@ function submitWithdraw() {
     msg.style.display = 'block';
     return;
   }
+
+  // 중복 클릭 방지
+  btn.disabled = true;
+  btn.textContent = '처리 중...';
 
   var params = new URLSearchParams();
   params.append('action', 'withdraw');
@@ -1009,15 +1016,20 @@ function submitWithdraw() {
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (data.success) {
+        alert('탈퇴가 완료되었습니다.');
         location.href = 'login.jsp';
       } else {
         msg.textContent = data.message || '탈퇴 처리에 실패했습니다.';
         msg.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = '탈퇴하기';
       }
     })
     .catch(function() {
       msg.textContent = '오류가 발생했습니다. 다시 시도해 주세요.';
       msg.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = '탈퇴하기';
     });
 }
 

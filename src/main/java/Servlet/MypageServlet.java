@@ -193,6 +193,33 @@ public class MypageServlet extends HttpServlet {
                 break;
             }
 
+            // ── 회원탈퇴 ─────────────────────────────────────────
+            case "withdraw": {
+                String password = req.getParameter("password");
+
+                // 입력값 검증
+                if (isBlank(password)) {
+                    sendError(resp, HttpServletResponse.SC_BAD_REQUEST, "비밀번호를 입력해 주세요.");
+                    return;
+                }
+
+                // 현재 비밀번호 확인
+                if (!dao.checkPassword(userId, password)) {
+                    sendError(resp, HttpServletResponse.SC_BAD_REQUEST, "비밀번호가 올바르지 않습니다.");
+                    return;
+                }
+
+                // 탈퇴 처리 (트랜잭션으로 관련 데이터 일괄 삭제)
+                boolean ok = dao.withdrawUser(userId);
+                if (ok) {
+                    session.invalidate(); // 세션 무효화
+                    sendSuccess(resp, "회원탈퇴가 완료되었습니다.");
+                } else {
+                    sendError(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "탈퇴 처리 중 오류가 발생했습니다.");
+                }
+                break;
+            }
+
             // ── 로그아웃 ─────────────────────────────────────────
             case "logout": {
                 session.invalidate();

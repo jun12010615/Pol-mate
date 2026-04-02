@@ -254,4 +254,153 @@ public class MypageDAO {
 
         return stats;
     }
+
+    // ════════════════════════════════════════════════════════════════
+    // 6. 회원탈퇴 (관련 데이터 연쇄 삭제 후 계정 삭제)
+    // ════════════════════════════════════════════════════════════════
+
+    public boolean withdrawUser(String userId) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+
+        try {
+            conn = mgr.getConnection();
+            conn.setAutoCommit(false); // 트랜잭션 시작
+
+            // ① 알림 삭제 (수신·발신 모두)
+            pstmt = conn.prepareStatement("DELETE FROM notifications WHERE user_id = ?");
+            pstmt.setString(1, userId);
+            pstmt.executeUpdate();
+            pstmt.close();
+
+            // ② 관계망 편집 이력 삭제
+            pstmt = conn.prepareStatement("DELETE FROM relation_history WHERE user_id = ?");
+            pstmt.setString(1, userId);
+            pstmt.executeUpdate();
+            pstmt.close();
+
+            // ③ 내가 작성한 조서 전체 삭제 (내 사건 + 팀원 사건에 작성한 것 포함)
+            pstmt = conn.prepareStatement("DELETE FROM transcripts WHERE user_id = ?");
+            pstmt.setString(1, userId);
+            pstmt.executeUpdate();
+            pstmt.close();
+
+            // ④ 내 사건에 팀원이 작성한 조서 삭제
+            //    (cases 삭제 전에 FK 제약 해소)
+            pstmt = conn.prepareStatement(
+                "DELETE FROM transcripts " +
+                "WHERE case_id IN (SELECT case_id FROM cases WHERE user_id = ?)");
+            pstmt.setString(1, userId);
+            pstmt.executeUpdate();
+            pstmt.close();
+
+            // ⑤ 내 사건 삭제
+            pstmt = conn.prepareStatement("DELETE FROM cases WHERE user_id = ?");
+            pstmt.setString(1, userId);
+            pstmt.executeUpdate();
+            pstmt.close();
+
+            // ⑥ 게시판 — 내가 누른 게시글 좋아요의 like_count 캐시 재집계
+            //    (board_likes 삭제 전에 먼저 실행해야 정확히 반영됨)
+            pstmt = conn.prepareStatement(
+                "UPDATE board_posts p " +
+                "SET p.like_count = (" +
+                "  SELECT COUNT(*) FROM board_likes l " +
+                "  WHERE l.target_type = 'post' AND l.target_id = p.post_id" +
+                ") - 1 " +
+                "WHERE p.post_id IN (" +
+                "  SELECT target_id FROM board_likes " +
+                "  WHERE user_id = ? AND target_type = 'post'" +
+                ")");
+            pstmt.setString(1, userId);
+            pstmt.executeUpdate();
+            pstmt.close();
+
+            // ⑥-b 내가 누른 좋아요 전체 삭제 (post + comment)
+            pstmt = conn.prepareStatement(
+                "DELETE FROM board_likes WHERE user_id = ?");
+            pstmt.setString(1, userId);
+            pstmt.executeUpdate();
+            pstmt.close();
+
+            // ⑦ 게시판 — 내 게시글의 댓글에 달린 좋아요 삭제
+            pstmt = conn.prepareStatement(
+                "DELETE FROM board_likes " +
+                "WHERE target_type = 'comment' AND target_id IN (" +
+                "  SELECT comment_id FROM board_comments " +
+                "  WHERE post_id IN (SELECT post_id FROM board_posts WHERE user_id = ?)" +
+                ")");
+            pstmt.setString(1, userId);
+            pstmt.executeUpdate();
+            pstmt.close();
+
+            // ⑧ 게시판 — 내 게시글에 달린 좋아요 삭제
+            pstmt = conn.prepareStatement(
+                "DELETE FROM board_likes " +
+                "WHERE target_type = 'post' AND target_id IN (" +
+                "  SELECT post_id FROM board_posts WHERE user_id = ?" +
+                ")");
+            pstmt.setString(1, userId);
+            pstmt.executeUpdate();
+            pstmt.close();
+
+            // ⑨ 게시판 — 내 댓글 삭제 (다른 사람 게시글에 단 것 포함)
+            pstmt = conn.prepareStatement(
+                "DELETE FROM board_comments WHERE user_id = ?");
+            pstmt.setString(1, userId);
+            pstmt.executeUpdate();
+            pstmt.close();
+
+            // ⑩ 게시판 — 내 게시글의 남은 댓글 삭제
+            pstmt = conn.prepareStatement(
+                "DELETE FROM board_comments " +
+                "WHERE post_id IN (SELECT post_id FROM board_posts WHERE user_id = ?)");
+            pstmt.setString(1, userId);
+            pstmt.executeUpdate();
+            pstmt.close();
+
+            // ⑪ 게시판 — 내 게시글의 태그·링크 삭제
+            pstmt = conn.prepareStatement(
+                "DELETE FROM board_tags " +
+                "WHERE post_id IN (SELECT post_id FROM board_posts WHERE user_id = ?)");
+            pstmt.setString(1, userId);
+            pstmt.executeUpdate();
+            pstmt.close();
+
+            pstmt = conn.prepareStatement(
+                "DELETE FROM board_links " +
+                "WHERE post_id IN (SELECT post_id FROM board_posts WHERE user_id = ?)");
+            pstmt.setString(1, userId);
+            pstmt.executeUpdate();
+            pstmt.close();
+
+            // ⑫ 게시판 — 내 게시글 삭제
+            pstmt = conn.prepareStatement(
+                "DELETE FROM board_posts WHERE user_id = ?");
+            pstmt.setString(1, userId);
+            pstmt.executeUpdate();
+            pstmt.close();
+
+            // ⑬ 사용자 계정 삭제 (마지막)
+            pstmt = conn.prepareStatement("DELETE FROM users WHERE user_id = ?");
+            pstmt.setString(1, userId);
+            int affected = pstmt.executeUpdate();
+
+            if (affected > 0) {
+                conn.commit();
+                return true;
+            } else {
+                conn.rollback();
+                return false;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            try { if (conn != null) conn.rollback(); } catch (Exception ignored) {}
+            return false;
+        } finally {
+            try { if (conn != null) conn.setAutoCommit(true); } catch (Exception ignored) {}
+            mgr.freeConnection(conn, pstmt);
+        }
+    }
 }
