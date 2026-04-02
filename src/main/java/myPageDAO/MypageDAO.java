@@ -28,8 +28,11 @@ public class MypageDAO {
         UserDTO dto = new UserDTO();
         try {
             conn = mgr.getConnection();
-            String sql = "SELECT user_id, user_name, user_phone, user_org, user_rank, user_dept, badge_num, created_at " +
-                         "FROM users WHERE user_id = ?";
+            String sql = "SELECT u.user_id, u.user_name, u.user_phone, u.user_org, u.user_rank, " +
+                         "       d.dept_name AS user_dept, u.badge_num, u.created_at, u.dept_id " +
+                         "FROM users u " +
+                         "LEFT JOIN departments d ON u.dept_id = d.dept_id " +
+                         "WHERE u.user_id = ?";
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, userId);
             rs = pstmt.executeQuery();
@@ -43,6 +46,8 @@ public class MypageDAO {
                 dto.setUserDept(rs.getString("user_dept"));
                 dto.setBadgeNum(rs.getString("badge_num"));
                 dto.setCreatedAt(rs.getTimestamp("created_at"));
+                int deptId = rs.getInt("dept_id");
+                dto.setDeptId(rs.wasNull() ? null : deptId);
                 return dto;
             }
         } catch (Exception e) {
@@ -63,14 +68,20 @@ public class MypageDAO {
 
         try {
             conn = mgr.getConnection();
-            String sql = "UPDATE users SET user_name = ?, user_rank = ?, user_org = ?, user_phone = ? " +
+            String sql = "UPDATE users SET user_name = ?, user_rank = ?, user_org = ?, user_phone = ?, dept_id = ? " +
                          "WHERE user_id = ?";
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, dto.getUserName());
             pstmt.setString(2, dto.getUserRank());
             pstmt.setString(3, dto.getUserOrg());
             pstmt.setString(4, dto.getUserPhone());
-            pstmt.setString(5, dto.getUserId());
+            // dept_id: 0 이하면 NULL (미배정)
+            if (dto.getDeptId() != null && dto.getDeptId() > 0) {
+                pstmt.setInt(5, dto.getDeptId());
+            } else {
+                pstmt.setNull(5, java.sql.Types.INTEGER);
+            }
+            pstmt.setString(6, dto.getUserId());
             return pstmt.executeUpdate() > 0;
 
         } catch (Exception e) {

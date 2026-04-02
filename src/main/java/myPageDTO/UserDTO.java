@@ -17,6 +17,7 @@ public class UserDTO {
     private String userDept;    // 부서명
     private String badgeNum;    // 공무원증 번호
     private Timestamp createdAt; // 가입 일시
+    private Integer deptId;     // 부서 ID (FK)
 
     public UserDTO() {}
 
@@ -44,6 +45,7 @@ public class UserDTO {
     public String getUserDept()    { return userDept; }
     public String getBadgeNum()    { return badgeNum; }
     public Timestamp getCreatedAt(){ return createdAt; }
+    public Integer getDeptId()     { return deptId; }
 
     // ── Setters ───────────────────────────────────────────
     public void setUserId(String userId)           { this.userId    = userId; }
@@ -55,6 +57,7 @@ public class UserDTO {
     public void setUserDept(String userDept)       { this.userDept  = userDept; }
     public void setBadgeNum(String badgeNum)       { this.badgeNum  = badgeNum; }
     public void setCreatedAt(Timestamp createdAt)  { this.createdAt = createdAt; }
+    public void setDeptId(Integer deptId)          { this.deptId    = deptId; }
 
     @Override
     public String toString() {

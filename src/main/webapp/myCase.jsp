@@ -9,7 +9,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>POL-MATE | 내 사건 관리</title>
+<title>POL-MATE | 사건 관리</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -202,7 +202,7 @@
 
   <div class="top-header">
     <div class="header-row">
-      <span class="header-title">내 사건 관리</span>
+      <span class="header-title">사건 관리</span>
       <button class="btn-new" onclick="openNewCaseDrawer()">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         새 사건
@@ -248,7 +248,7 @@
   </a>
   <a href="myCase.jsp" class="nav-item active">
     <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-    <span class="nav-label">조서</span>
+    <span class="nav-label">사건</span>
   </a>
   <a href="askAI" class="nav-item">
       <div class="nav-icon">
