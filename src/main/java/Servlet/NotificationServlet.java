@@ -19,6 +19,10 @@ import org.json.JSONObject;
  *   unreadCount - 미읽음 알림 수 조회 (GET)  ← 상단 뱃지용
  *   markRead    - 특정 알림 읽음 처리 (POST)
  *   markAllRead - 전체 읽음 처리 (POST)
+ *
+ * ※ 방해금지 모드(night_mode=1): 알림은 정상 저장·표시되며,
+ *   unreadCount만 0을 반환해 메인화면 빨간 점을 숨깁니다.
+ *   시간대와 무관합니다.
  */
 @WebServlet("/notifApi")
 public class NotificationServlet extends HttpServlet {
@@ -74,16 +78,10 @@ public class NotificationServlet extends HttpServlet {
     // ═══════════════════════════════════════════════════════
     // 알림 목록 조회
     // - 비밀번호 만료 경고 알림을 실시간으로 앞에 붙여서 반환
-    // - 야간 방해금지 시간대에는 빈 배열 반환
+    // ※ 방해금지 모드 여부와 무관하게 항상 전체 알림 반환
     // ═══════════════════════════════════════════════════════
     private void handleList(HttpServletRequest req, HttpServletResponse res, String loginUser)
             throws IOException {
-
-        // 야간 방해금지 시간대 체크
-        if (isNightMode(loginUser) && isNightTime()) {
-            res.getWriter().write("[]");
-            return;
-        }
 
         String typeFilter = nvl(req.getParameter("type"), "all");
 
@@ -108,14 +106,14 @@ public class NotificationServlet extends HttpServlet {
                     int daysSince = rs.getInt("days_since");
                     if (daysSince >= PW_WARN_DAYS) {
                         JSONObject pw = new JSONObject();
-                        pw.put("notifId",     -1);              // 가상 ID (DB 없음)
+                        pw.put("notifId",     -1);
                         pw.put("type",        "sys");
                         pw.put("tag",         "보안");
                         pw.put("title",       "비밀번호 변경 권고");
                         pw.put("description", "마지막 비밀번호 변경 후 " + daysSince + "일이 경과했습니다. 보안을 위해 비밀번호를 변경해 주세요.");
                         pw.put("link",        "mypage.jsp");
                         pw.put("isUnread",    true);
-                        pw.put("isCritical",  daysSince >= 180);  // 180일 이상이면 긴급
+                        pw.put("isCritical",  daysSince >= 180);
                         pw.put("timeLabel",   "보안 알림");
                         arr.put(pw);
                     }
@@ -172,15 +170,15 @@ public class NotificationServlet extends HttpServlet {
     }
 
     // ═══════════════════════════════════════════════════════
-    // 미읽음 수 조회 (상단 뱃지)
-    // 비밀번호 만료 경고도 포함해서 카운트
-    // 야간 방해금지 시간(22:00~07:00)에는 0 반환
+    // 미읽음 수 조회 (상단 뱃지 = 빨간 점)
+    // ※ 방해금지 모드 ON이면 0 반환 → 빨간 점만 숨김 (시간대 무관)
+    //   알림 자체는 정상 저장·표시됨
     // ═══════════════════════════════════════════════════════
     private void handleUnreadCount(HttpServletResponse res, String loginUser)
             throws IOException {
 
-        // 야간 방해금지 시간대 체크
-        if (isNightMode(loginUser) && isNightTime()) {
+        // 방해금지 모드 ON → 빨간 점 숨김 (시간대 무관)
+        if (isDoNotDisturb(loginUser)) {
             JSONObject result = new JSONObject();
             result.put("count", 0);
             res.getWriter().write(result.toString());
@@ -291,11 +289,11 @@ public class NotificationServlet extends HttpServlet {
     }
 
     // ═══════════════════════════════════════════════════════
-    // 야간 방해금지 헬퍼
+    // 방해금지 모드 헬퍼
     // ═══════════════════════════════════════════════════════
 
-    /** DB에서 해당 유저의 night_mode 설정 조회 */
-    private boolean isNightMode(String userId) {
+    /** DB에서 해당 유저의 방해금지 모드(night_mode) 설정 조회 */
+    private boolean isDoNotDisturb(String userId) {
         DBConnectionMgr mgr = DBConnectionMgr.getInstance();
         Connection conn = null;
         PreparedStatement ps = null;
@@ -312,12 +310,6 @@ public class NotificationServlet extends HttpServlet {
             mgr.freeConnection(conn, ps, rs);
         }
         return false;
-    }
-
-    /** 현재 시각이 야간 방해금지 시간(22:00~07:00)인지 확인 */
-    private boolean isNightTime() {
-        int hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
-        return hour >= 22 || hour < 7;
     }
 
     // ═══════════════════════════════════════════════════════

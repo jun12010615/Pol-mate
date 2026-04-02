@@ -62,7 +62,7 @@ public class MypageServlet extends HttpServlet {
 
             // ── 초기 로드: 프로필 + 통계 ────────────────────────
             case "load": {
-                UserDTO       user  = dao.getUserById(userId);
+                UserDTO        user  = dao.getUserById(userId);
                 MypageStatsDTO stats = dao.getStats(userId);
 
                 if (user == null) {
@@ -70,9 +70,13 @@ public class MypageServlet extends HttpServlet {
                     return;
                 }
 
+                // 설정값 조회
+                Map<String, Object> settings = dao.getSettings(userId);
+
                 Map<String, Object> result = new HashMap<>();
-                result.put("user",  toSafeUserMap(user));
-                result.put("stats", stats);
+                result.put("user",     toSafeUserMap(user));
+                result.put("stats",    stats);
+                result.put("settings", settings);
                 sendJson(resp, result);
                 break;
             }
@@ -157,6 +161,21 @@ public class MypageServlet extends HttpServlet {
         if (action == null) action = "";
 
         switch (action) {
+
+            // ── 설정 저장 ────────────────────────────────────────
+            case "saveSettings": {
+                boolean notifContradiction = "1".equals(req.getParameter("notifContradiction"));
+                boolean notifRelation      = "1".equals(req.getParameter("notifRelation"));
+                boolean nightMode          = "1".equals(req.getParameter("nightMode"));
+
+                boolean ok = dao.saveSettings(userId, notifContradiction, notifRelation, nightMode);
+                if (ok) {
+                    sendSuccess(resp, "설정이 저장되었습니다.");
+                } else {
+                    sendError(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "설정 저장에 실패했습니다.");
+                }
+                break;
+            }
 
             // ── 프로필 수정 ──────────────────────────────────────
             case "updateProfile": {

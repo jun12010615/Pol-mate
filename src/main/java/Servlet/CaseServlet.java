@@ -349,6 +349,30 @@ public class CaseServlet extends HttpServlet {
                 }
             }
 
+            // ── 같은 부서 팀원(본인 제외)에게 알림 발송 ──────────
+            mgr.freeConnection(null, ps);
+            ps = conn.prepareStatement(
+                "SELECT u2.user_id FROM users u2 " +
+                "JOIN users me ON me.user_id = ? " +
+                "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL AND u2.user_id != ?");
+            ps.setString(1, loginUser);
+            ps.setString(2, loginUser);
+            ResultSet rsTeam = ps.executeQuery();
+            List<String> teammates = new ArrayList<>();
+            while (rsTeam.next()) teammates.add(rsTeam.getString("user_id"));
+            rsTeam.close();
+            mgr.freeConnection(null, ps);
+
+            String notifTitle = "팀 새 사건 등록: " + caseName.trim();
+            String notifDesc  = "사건 " + caseId + "(" + caseName.trim() + ")이(가) 팀에 등록됐습니다.";
+            for (String teammate : teammates) {
+                try {
+                    NotificationServlet.insertNotification(
+                        conn, teammate, "case", "새 사건", notifTitle, notifDesc,
+                        "myCase.jsp", false);
+                } catch (Exception ignored) {}
+            }
+
             JSONObject result = new JSONObject();
             result.put("success",   true);
             result.put("caseId",    caseId);
@@ -466,6 +490,47 @@ public class CaseServlet extends HttpServlet {
             ps = conn.prepareStatement(sql.toString());
             for (int i = 0; i < params.size(); i++) ps.setObject(i + 1, params.get(i));
             ps.executeUpdate();
+
+            // ── 상태 변경 시 팀원에게 알림 발송 ─────────────────
+            if (!isEmpty(status)) {
+                mgr.freeConnection(null, ps);
+                ps = conn.prepareStatement(
+                    "SELECT u2.user_id FROM users u2 " +
+                    "JOIN users me ON me.user_id = ? " +
+                    "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL AND u2.user_id != ?");
+                ps.setString(1, loginUser);
+                ps.setString(2, loginUser);
+                ResultSet rsTeam = ps.executeQuery();
+                List<String> teammates = new ArrayList<>();
+                while (rsTeam.next()) teammates.add(rsTeam.getString("user_id"));
+                rsTeam.close();
+                mgr.freeConnection(null, ps);
+
+                boolean isCritical = "모순탐지".equals(status);
+                boolean isDone     = "완료".equals(status);
+                String notifTitle, notifDesc, tag;
+                if (isDone) {
+                    tag        = "조서";
+                    notifTitle = "사건 완료 처리: " + caseId;
+                    notifDesc  = "사건 " + caseId + "이(가) 완료 처리됐습니다. 최종 조서를 확인해 주세요.";
+                } else if (isCritical) {
+                    tag        = "경고";
+                    notifTitle = "모순 탐지 사건: " + caseId;
+                    notifDesc  = "사건 " + caseId + "에서 진술 모순이 탐지됐습니다. 즉시 검토가 필요합니다.";
+                } else {
+                    tag        = "새 사건";
+                    notifTitle = "사건 상태 변경: " + caseId;
+                    notifDesc  = "사건 " + caseId + "의 상태가 [" + status + "](으)로 변경됐습니다.";
+                }
+                for (String teammate : teammates) {
+                    try {
+                        NotificationServlet.insertNotification(
+                            conn, teammate, "case", tag,
+                            notifTitle, notifDesc,
+                            "myCase.jsp", isCritical);
+                    } catch (Exception ignored) {}
+                }
+            }
 
             writeResult(res, true, "수정됐습니다.");
 
@@ -659,6 +724,33 @@ public class CaseServlet extends HttpServlet {
             rs = ps.getGeneratedKeys();
             rs.next();
             int newId = rs.getInt(1);
+
+            // ── 같은 부서 팀원(본인 제외)에게 알림 발송 ──────────
+            mgr.freeConnection(null, ps);
+            ps = conn.prepareStatement(
+                "SELECT u2.user_id FROM users u2 " +
+                "JOIN users me ON me.user_id = ? " +
+                "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL AND u2.user_id != ?");
+            ps.setString(1, loginUser);
+            ps.setString(2, loginUser);
+            ResultSet rsTeam = ps.executeQuery();
+            List<String> teammates = new ArrayList<>();
+            while (rsTeam.next()) teammates.add(rsTeam.getString("user_id"));
+            rsTeam.close();
+            mgr.freeConnection(null, ps);
+
+            String who    = stmtName.isEmpty() ? "" : stmtName + " ";
+            String typeStr = stmtType.isEmpty()  ? "" : stmtType + " ";
+            String tTitle  = "조서 완성: " + caseId;
+            String tDesc   = "사건 " + caseId + "에 " + who + typeStr + "조서가 완성됐습니다.";
+            for (String teammate : teammates) {
+                try {
+                    NotificationServlet.insertNotification(
+                        conn, teammate, "case", "조서",
+                        tTitle, tDesc,
+                        "myCase.jsp", false);
+                } catch (Exception ignored) {}
+            }
 
             JSONObject result = new JSONObject();
             result.put("success",      true);
