@@ -668,7 +668,7 @@ function runContradiction(){
     });
     var missing=stmts.some(function(s){return !s.original_text;});
     if(missing) throw new Error('본문이 없는 조서가 있습니다. 텍스트를 저장한 뒤 다시 시도하세요.');
-    document.getElementById('contraPopupBody').innerHTML='<div class="contra-analyze-loading"><div class="contra-buffer-spinner"></div><div class="contra-analyze-loading-title">조서 분석 중</div><div class="contra-analyze-loading-sub">결과가 스트리밍되기 시작하면 아래에 표시됩니다.</div></div>';
+    document.getElementById('contraPopupBody').innerHTML='<div class="contra-analyze-loading"><div class="contra-buffer-spinner"></div><div class="contra-analyze-loading-title">조서 분석 중</div><div class="contra-analyze-loading-sub">결과가 표시될때까지 기다려주세요.</div></div>';
     if(contraStreamAbort)contraStreamAbort.abort();
     contraStreamAbort=new AbortController();
     return fetch(ANALYZE_STREAM_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({caseNum:caseId,statements:stmts}),signal:contraStreamAbort.signal});

@@ -615,10 +615,12 @@ function saveTranscript() {
   var caseId       = document.getElementById('caseId').value.trim();
   var stmtType     = document.getElementById('stmtType').value;
   var stmtName     = document.getElementById('stmtName').value.trim();
-  var originalText = document.getElementById('stmtText').value.trim();
+  // textarea에서 Enter로 만든 줄바꿈(`\n`)까지 보존하기 위해 trim()은 저장값에서 제거합니다.
+  // 단, "공백만 입력" 같은 검사는 trim()으로 판정합니다.
+  var originalText = document.getElementById('stmtText').value;
 
   if (!caseId)       { showToast('담당 사건을 선택해 주세요.');    return; }
-  if (!originalText) { showToast('진술 내용을 입력해 주세요.');    return; }
+  if (!originalText || !originalText.trim()) { showToast('진술 내용을 입력해 주세요.');    return; }
 
   var saveBtn = document.getElementById('saveBtn');
   saveBtn.disabled = true;
