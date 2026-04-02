@@ -219,6 +219,16 @@
   @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
   @keyframes spin   { to{transform:rotate(360deg)} }
   @media(min-width:421px){ .screen{box-shadow:0 0 40px rgba(0,0,0,0.1);} }
+
+  .case-detail-box {
+    margin-top:12px; padding:12px 14px; background:var(--bg); border-radius:10px;
+    border:1px solid var(--border); font-size:12px; display:none;
+  }
+  .case-detail-box.show { display:block; }
+  .case-detail-row { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; }
+  .case-detail-row:last-child { margin-bottom:0; }
+  .case-detail-key { color:var(--text-muted); flex-shrink:0; font-size:11px; }
+  .case-detail-val { color:var(--text-primary); text-align:right; word-break:break-word; flex:1; }
 </style>
 </head>
 <body>
@@ -273,6 +283,7 @@
             <%= caseOptions.toString() %>
           </select>
         </div>
+        <div id="caseDetailBox" class="case-detail-box" aria-live="polite"></div>
 
         <div class="field-row">
           <div class="field-half">
@@ -424,6 +435,94 @@
 
 <script>
 /* ══════════════════════════════════════════════════════
+   담당 사건 상세 (caseApi caseDetail)
+══════════════════════════════════════════════════════ */
+var lastCaseDetail = null;
+
+function clearCaseDetailSummary() {
+  lastCaseDetail = null;
+  var box = document.getElementById('caseDetailBox');
+  box.classList.remove('show');
+  box.innerHTML = '';
+}
+
+function renderCaseDetailSummary(c) {
+  lastCaseDetail = c;
+  var box = document.getElementById('caseDetailBox');
+  var rows =
+    '<div class="case-detail-row"><span class="case-detail-key">사건명</span><span class="case-detail-val">' + escHtml(c.name) + '</span></div>' +
+    '<div class="case-detail-row"><span class="case-detail-key">피의자</span><span class="case-detail-val">' + escHtml(c.suspect || '미입력') + '</span></div>' +
+    '<div class="case-detail-row"><span class="case-detail-key">적용 법조</span><span class="case-detail-val">' + escHtml(c.charge || '미입력') + '</span></div>' +
+    '<div class="case-detail-row"><span class="case-detail-key">상태</span><span class="case-detail-val">' + escHtml(c.status || '') + '</span></div>' +
+    '<div class="case-detail-row"><span class="case-detail-key">진행률</span><span class="case-detail-val">' + (c.progress != null ? c.progress : 0) + '%</span></div>' +
+    '<div class="case-detail-row"><span class="case-detail-key">등록 조서</span><span class="case-detail-val">' + (c.docCount != null ? c.docCount : 0) + '건</span></div>' +
+    '<div class="case-detail-row"><span class="case-detail-key">담당</span><span class="case-detail-val">' + escHtml((c.detective || '') + (c.rank ? ' (' + c.rank + ')' : '')) + '</span></div>' +
+    '<div class="case-detail-row"><span class="case-detail-key">부서</span><span class="case-detail-val">' + escHtml(c.deptName || '미배정') + '</span></div>' +
+    '<div class="case-detail-row"><span class="case-detail-key">최종 수정</span><span class="case-detail-val">' + escHtml(c.date || '') + '</span></div>';
+  box.innerHTML = rows;
+  box.classList.add('show');
+}
+
+function loadCaseDetailForSelect() {
+  var id = document.getElementById('caseId').value.trim();
+  if (!id) {
+    clearCaseDetailSummary();
+    return;
+  }
+  var box = document.getElementById('caseDetailBox');
+  box.classList.add('show');
+  box.innerHTML = '<div style="color:var(--text-muted);font-size:11px;">사건 정보를 불러오는 중...</div>';
+  fetch('caseApi?action=caseDetail&caseId=' + encodeURIComponent(id))
+    .then(function(r) { return r.json(); })
+    .then(function(c) {
+      if (c.error) {
+        clearCaseDetailSummary();
+        showToast(c.error);
+        return;
+      }
+      renderCaseDetailSummary(c);
+    })
+    .catch(function() {
+      clearCaseDetailSummary();
+      showToast('사건 정보 조회에 실패했습니다.');
+    });
+}
+
+function initCaseFromUrl() {
+  var pre = new URLSearchParams(window.location.search).get('caseId');
+  if (!pre) return;
+  var sel = document.getElementById('caseId');
+  var hasOpt = Array.prototype.some.call(sel.options, function(o) { return o.value === pre; });
+  if (hasOpt) {
+    sel.value = pre;
+    loadCaseDetailForSelect();
+    return;
+  }
+  fetch('caseApi?action=caseDetail&caseId=' + encodeURIComponent(pre))
+    .then(function(r) { return r.json(); })
+    .then(function(c) {
+      if (c.error) {
+        showToast(c.error || '사건을 불러올 수 없습니다.');
+        return;
+      }
+      var opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.id + ' · ' + (c.name || '');
+      sel.appendChild(opt);
+      sel.value = c.id;
+      renderCaseDetailSummary(c);
+    })
+    .catch(function() {
+      showToast('사건 정보를 불러오지 못했습니다.');
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('caseId').addEventListener('change', loadCaseDetailForSelect);
+  initCaseFromUrl();
+});
+
+/* ══════════════════════════════════════════════════════
    파일 처리
 ══════════════════════════════════════════════════════ */
 function handleFile(input) {
@@ -543,8 +642,12 @@ function saveTranscript() {
       setStep(3);
       document.getElementById('inputSection').style.display = 'none';
       document.getElementById('doneSection').style.display  = 'block';
+      var caseLine = '사건: <b>' + escHtml(caseId) + '</b>';
+      if (lastCaseDetail && lastCaseDetail.name) {
+        caseLine += ' · <b>' + escHtml(lastCaseDetail.name) + '</b>';
+      }
       document.getElementById('doneSummary').innerHTML =
-        '사건: <b>' + escHtml(caseId) + '</b><br>' +
+        caseLine + '<br>' +
         '진술 유형: <b>' + escHtml(stmtType) + '</b><br>' +
         '진술자: <b>' + (stmtName || '미입력') + '</b><br>' +
         '글자 수: <b>' + originalText.length.toLocaleString() + '자</b>';
@@ -570,6 +673,7 @@ function saveTranscript() {
 function resetAll() {
   document.getElementById('inputSection').style.display = 'block';
   document.getElementById('doneSection').style.display  = 'none';
+  clearCaseDetailSummary();
   document.getElementById('caseId').value               = '';
   document.getElementById('stmtName').value             = '';
   document.getElementById('stmtText').value             = '';
