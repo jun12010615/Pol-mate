@@ -1,6 +1,8 @@
 package Servlet;
 
 import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -75,6 +77,7 @@ public class CaseServlet extends HttpServlet {
             case "caseDelete":     handleCaseDelete(req, res, loginUser);     break;
             case "caseStatus":     handleCaseStatus(req, res, loginUser);     break;
             case "transcriptSave": handleTranscriptSave(req, res, loginUser); break;
+            case "transcriptSummarize": handleTranscriptSummarize(req, res, loginUser); break;
             default:               writeError(res, "알 수 없는 action");
         }
     }
@@ -788,8 +791,17 @@ public class CaseServlet extends HttpServlet {
         try {
             conn = mgr.getConnection();
 
-            ps = conn.prepareStatement(
-                "SELECT t.transcript_id, t.original_text, t.stmt_type, t.stmt_name " +
+            String summaryCol = hasColumn(conn, "transcripts", "result_summary")
+                    ? "result_summary"
+                    : (hasColumn(conn, "transcripts", "ai_result") ? "ai_result" : null);
+
+            String sqlBase =
+                "SELECT t.transcript_id, t.original_text, t.stmt_type, t.stmt_name ";
+            if (summaryCol != null) {
+                sqlBase += ", t." + summaryCol + " AS summary ";
+            }
+            String sql =
+                sqlBase +
                 "FROM transcripts t " +
                 "JOIN cases c ON t.case_id = c.case_id " +
                 "WHERE t.transcript_id = ? " +
@@ -798,7 +810,9 @@ public class CaseServlet extends HttpServlet {
                 "       SELECT u2.user_id FROM users u2 " +
                 "       JOIN users me ON me.user_id = ? " +
                 "       WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
-                "   ))");
+                "   ))";
+
+            ps = conn.prepareStatement(sql);
             ps.setInt(1, transcriptId);
             ps.setString(2, loginUser);
             ps.setString(3, loginUser);
@@ -814,11 +828,100 @@ public class CaseServlet extends HttpServlet {
             result.put("text", nvl(rs.getString("original_text"), ""));
             result.put("type", nvl(rs.getString("stmt_type"),     ""));
             result.put("name", nvl(rs.getString("stmt_name"),     ""));
+            if (summaryCol != null) {
+                result.put("summary", nvl(rs.getString("summary"), ""));
+            } else {
+                result.put("summary", "");
+            }
             res.getWriter().write(result.toString());
 
         } catch (Exception e) {
             e.printStackTrace();
             writeError(res, "조서 원문 조회 중 오류가 발생했습니다.");
+        } finally {
+            mgr.freeConnection(conn, ps, rs);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // 조서 요약 생성 (transcripts.result_summary / ai_result 저장)
+    // - transcriptSave에서는 저장만 수행하고, 이 엔드포인트로 비동기 처리
+    // ═══════════════════════════════════════════════════════
+    private void handleTranscriptSummarize(HttpServletRequest req, HttpServletResponse res, String loginUser)
+            throws IOException {
+
+        String idStr = req.getParameter("transcriptId");
+        if (isEmpty(idStr)) { writeError(res, "transcriptId가 필요합니다."); return; }
+
+        int transcriptId;
+        try { transcriptId = Integer.parseInt(idStr); }
+        catch (NumberFormatException e) { writeError(res, "잘못된 transcriptId"); return; }
+
+        DBConnectionMgr mgr = DBConnectionMgr.getInstance();
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+            conn = mgr.getConnection();
+
+            // 접근 권한: 내 사건 또는 같은 부서 팀원 사건
+            ps = conn.prepareStatement(
+                "SELECT t.transcript_id, t.original_text, t.stmt_type, t.stmt_name, t.case_id " +
+                "FROM transcripts t " +
+                "JOIN cases c ON t.case_id = c.case_id " +
+                "WHERE t.transcript_id = ? " +
+                "AND (c.user_id = ? " +
+                "   OR c.user_id IN ( " +
+                "       SELECT u2.user_id FROM users u2 " +
+                "       JOIN users me ON me.user_id = ? " +
+                "       WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
+                "   ))"
+            );
+            ps.setInt(1, transcriptId);
+            ps.setString(2, loginUser);
+            ps.setString(3, loginUser);
+            rs = ps.executeQuery();
+
+            if (!rs.next()) {
+                writeError(res, "조서를 찾을 수 없거나 접근 권한이 없습니다.");
+                return;
+            }
+
+            String caseId      = nvl(rs.getString("case_id"), "");
+            String original    = nvl(rs.getString("original_text"), "");
+            String stmtType    = nvl(rs.getString("stmt_type"), "");
+            String stmtName    = nvl(rs.getString("stmt_name"), "");
+
+            if (isEmpty(caseId) || isEmpty(original)) {
+                writeError(res, "요약에 필요한 원문이 없습니다.");
+                return;
+            }
+
+            // Python 요약 요청
+            String structuredSummary = requestTranscriptStructuredSummary(
+                caseId, stmtType, stmtName, original);
+
+            if (structuredSummary == null || structuredSummary.trim().isEmpty()) {
+                // 요약 실패는 서버 에러로 올리지 않고 실패 응답으로만 처리
+                res.getWriter().write(new JSONObject()
+                    .put("success", false)
+                    .put("message", "요약 생성에 실패했습니다.")
+                    .toString());
+                return;
+            }
+
+            storeTranscriptSummaryIfColumnExists(conn, transcriptId, structuredSummary);
+
+            res.getWriter().write(new JSONObject()
+                .put("success", true)
+                .put("transcriptId", transcriptId)
+                .put("message", "요약이 생성되었습니다.")
+                .toString());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            writeError(res, "요약 생성 중 오류가 발생했습니다: " + e.getMessage());
         } finally {
             mgr.freeConnection(conn, ps, rs);
         }
@@ -890,6 +993,114 @@ public class CaseServlet extends HttpServlet {
         j.put("success", ok);
         j.put("message", msg);
         res.getWriter().write(j.toString());
+    }
+
+    private boolean hasColumn(Connection conn, String tableName, String columnName) {
+        try {
+            DatabaseMetaData md = conn.getMetaData();
+            if (md == null) return false;
+            String[] tables = new String[] {
+                tableName,
+                tableName == null ? null : tableName.toLowerCase(),
+                tableName == null ? null : tableName.toUpperCase()
+            };
+            String[] cols = new String[] {
+                columnName,
+                columnName == null ? null : columnName.toLowerCase(),
+                columnName == null ? null : columnName.toUpperCase()
+            };
+
+            for (String t : tables) {
+                if (t == null) continue;
+                for (String c : cols) {
+                    if (c == null) continue;
+                    try (ResultSet rs = md.getColumns(null, null, t, c)) {
+                        if (rs != null && rs.next()) return true;
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
+    private void storeTranscriptSummaryIfColumnExists(Connection conn, int transcriptId, String structuredSummary) {
+        String col = null;
+        if (hasColumn(conn, "transcripts", "result_summary")) col = "result_summary";
+        else if (hasColumn(conn, "transcripts", "ai_result")) col = "ai_result";
+        if (col == null) return;
+
+        PreparedStatement ps = null;
+        try {
+            ps = conn.prepareStatement(
+                "UPDATE transcripts SET " + col + " = ? WHERE transcript_id = ?");
+            ps.setString(1, structuredSummary);
+            ps.setInt(2, transcriptId);
+            ps.executeUpdate();
+        } catch (SQLException ignored) {
+        } finally {
+            if (ps != null) try { ps.close(); } catch (Exception ignored) {}
+        }
+    }
+
+    private String requestTranscriptStructuredSummary(
+        String caseId, String stmtType, String stmtName, String originalText) {
+
+        // Python 분석 서버 주소를 환경에 따라 1차/2차로 나눠 시도
+        List<String> urls = Arrays.asList(
+            "http://113.198.238.108:5001/summarize",
+            "http://localhost:5001/summarize"
+        );
+
+        JSONObject payload = new JSONObject();
+        payload.put("caseNum", caseId);
+        JSONArray stmts = new JSONArray();
+        JSONObject s = new JSONObject();
+        s.put("stmt_type", stmtType);
+        s.put("stmt_name", stmtName);
+        s.put("original_text", originalText);
+        stmts.put(s);
+        payload.put("statements", stmts);
+
+        for (String urlStr : urls) {
+            HttpURLConnection conn = null;
+            try {
+                URL url = new URL(urlStr);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+                conn.setRequestProperty("Accept", "application/json");
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(120000);
+                conn.setDoOutput(true);
+
+                byte[] out = payload.toString().getBytes("UTF-8");
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(out);
+                }
+
+                int code = conn.getResponseCode();
+                if (code != 200) continue;
+
+                InputStream is = conn.getInputStream();
+                StringBuilder sb = new StringBuilder();
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"))) {
+                    String line;
+                    while ((line = br.readLine()) != null) sb.append(line);
+                }
+
+                JSONObject res = new JSONObject(sb.toString());
+                if (!res.optBoolean("success", false)) continue;
+
+                String structured = res.optString("structured_summary", null);
+                if (structured == null || structured.trim().isEmpty()) continue;
+                return structured;
+            } catch (Exception ignored) {
+            } finally {
+                if (conn != null) conn.disconnect();
+            }
+        }
+
+        return null;
     }
 
     private String nvl(String s, String def) { return (s == null || s.trim().isEmpty()) ? def : s.trim(); }
