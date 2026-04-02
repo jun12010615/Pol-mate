@@ -71,8 +71,9 @@ public class MypageServlet extends HttpServlet {
                 }
 
                 Map<String, Object> result = new HashMap<>();
-                result.put("user",  toSafeUserMap(user));
-                result.put("stats", stats);
+                result.put("user",     toSafeUserMap(user));
+                result.put("stats",    stats);
+                result.put("settings", dao.getSettings(userId));
                 sendJson(resp, result);
                 break;
             }
@@ -189,6 +190,23 @@ public class MypageServlet extends HttpServlet {
                     sendSuccess(resp, "비밀번호가 변경되었습니다.");
                 } else {
                     sendError(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "비밀번호 변경에 실패했습니다.");
+                }
+                break;
+            }
+
+            // ── 알림 설정 저장 ───────────────────────────────────
+            case "saveSettings": {
+                boolean notifContradiction = "true".equals(req.getParameter("notifContradiction"));
+                boolean notifRelation      = "true".equals(req.getParameter("notifRelation"));
+                boolean nightMode          = "true".equals(req.getParameter("nightMode"));
+
+                boolean ok = dao.saveSettings(userId, notifContradiction, notifRelation, nightMode);
+                if (ok) {
+                    // 세션에도 야간모드 저장 (NotificationServlet에서 참조)
+                    session.setAttribute("nightMode", nightMode);
+                    sendSuccess(resp, "설정이 저장되었습니다.");
+                } else {
+                    sendError(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "설정 저장에 실패했습니다.");
                 }
                 break;
             }
