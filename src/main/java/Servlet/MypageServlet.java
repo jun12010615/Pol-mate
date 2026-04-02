@@ -71,9 +71,8 @@ public class MypageServlet extends HttpServlet {
                 }
 
                 Map<String, Object> result = new HashMap<>();
-                result.put("user",     toSafeUserMap(user));
-                result.put("stats",    stats);
-                result.put("settings", dao.getSettings(userId));
+                result.put("user",  toSafeUserMap(user));
+                result.put("stats", stats);
                 sendJson(resp, result);
                 break;
             }
@@ -234,19 +233,29 @@ public class MypageServlet extends HttpServlet {
                 break;
             }
 
-            // ── 알림 설정 저장 ───────────────────────────────────
-            case "saveSettings": {
-                boolean notifContradiction = "true".equals(req.getParameter("notifContradiction"));
-                boolean notifRelation      = "true".equals(req.getParameter("notifRelation"));
-                boolean nightMode          = "true".equals(req.getParameter("nightMode"));
+            // ── 회원탈퇴 ─────────────────────────────────────────
+            case "withdraw": {
+                String password = req.getParameter("password");
 
-                boolean ok = dao.saveSettings(userId, notifContradiction, notifRelation, nightMode);
+                // 입력값 검증
+                if (isBlank(password)) {
+                    sendError(resp, HttpServletResponse.SC_BAD_REQUEST, "비밀번호를 입력해 주세요.");
+                    return;
+                }
+
+                // 현재 비밀번호 확인
+                if (!dao.checkPassword(userId, password)) {
+                    sendError(resp, HttpServletResponse.SC_BAD_REQUEST, "비밀번호가 올바르지 않습니다.");
+                    return;
+                }
+
+                // 탈퇴 처리 (트랜잭션으로 관련 데이터 일괄 삭제)
+                boolean ok = dao.withdrawUser(userId);
                 if (ok) {
-                    // 세션에도 야간모드 저장 (NotificationServlet에서 참조)
-                    session.setAttribute("nightMode", nightMode);
-                    sendSuccess(resp, "설정이 저장되었습니다.");
+                    session.invalidate(); // 세션 무효화
+                    sendSuccess(resp, "회원탈퇴가 완료되었습니다.");
                 } else {
-                    sendError(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "설정 저장에 실패했습니다.");
+                    sendError(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "탈퇴 처리 중 오류가 발생했습니다.");
                 }
                 break;
             }

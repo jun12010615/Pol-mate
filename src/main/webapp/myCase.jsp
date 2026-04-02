@@ -174,6 +174,7 @@
   .drawer-doc-meta  { font-size:10px; color:var(--text-muted); margin-top:2px; }
   .drawer-doc-badge { flex-shrink:0; }
   .action-btn.disabled { opacity:0.38; cursor:not-allowed; pointer-events:none; }
+  #contraBtn:not(.disabled) { cursor:pointer; pointer-events:auto; opacity:1; }
   .action-btn.contra-active { background:var(--danger-bg); border-color:var(--danger); }
   .action-btn.contra-active svg { stroke:var(--danger) !important; }
   .action-btn.contra-active span { color:var(--danger) !important; }
@@ -512,10 +513,10 @@ function toggleDocCheck(docId,idx){
 function renderDrawerActions(c){
   var del=c.isMine?'<button class="action-btn" onclick="confirmDeleteCase(\''+escStr(c.id)+'\')" style="border:none;cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.8" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg><span style="color:var(--danger)">삭제</span></button>':'';
   document.getElementById('drawerActions').innerHTML=
-    '<a href="writeTranscript.jsp" class="action-btn primary"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg><span>조서 추가</span></a>' +
+    '<a href="writeTranscript.jsp?caseId='+encodeURIComponent(c.id)+'" class="action-btn primary"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg><span>조서 추가</span></a>' +
     '<button class="action-btn" onclick="openEditDrawer(\''+escStr(c.id)+'\',\''+escStr(c.status)+'\','+c.progress+')" style="border:1px solid var(--border);cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.8" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><span>상태 수정</span></button>' +
     '<a href="caseRelationMap.jsp" class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="18" cy="19" r="2.5"/><line x1="8.4" y1="11.0" x2="15.6" y2="6.5"/><line x1="8.4" y1="13.0" x2="15.6" y2="17.5"/></svg><span>관계망</span></a>' +
-    '<button class="action-btn disabled" id="contraBtn" onclick="runContradiction()" style="border:1px solid var(--border);cursor:not-allowed;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>모순탐지</span></button>' +
+    '<button type="button" class="action-btn disabled" id="contraBtn" onclick="runContradiction()" style="border:1px solid var(--border);"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>모순탐지</span></button>' +
     del +
     '<button class="action-btn" onclick="closeDrawer(\'caseDrawer\')" style="border:none;cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>닫기</span></button>';
 }
@@ -536,21 +537,38 @@ function openTranscriptPopup(idx){
 }
 function closeTranscriptPopup(e){if(!e||e.target===document.getElementById('transcriptPopup')||!e.target)document.getElementById('transcriptPopup').classList.remove('open');}
 
+var ANALYZE_URL='http://113.198.238.108:5001/analyze';
 function runContradiction(){
   if(checkedDocs.length<2) return;
+  var caseId=currentCaseData.id||'';
   var titles=checkedDocs.map(function(id){var d=currentDocs.find(function(x){return x.id===id;});return d?d.name+' '+d.type+' 진술':'ID:'+id;});
   document.getElementById('contraPopupTitle').textContent='모순 분석 중...';
-  document.getElementById('contraPopupBody').innerHTML='<div class="contra-loading"><div style="font-size:24px;margin-bottom:10px;">🔍</div><div>AI가 '+checkedDocs.length+'개의 조서를 분석하고 있습니다...</div><div style="margin-top:6px;font-size:11px;color:var(--text-muted);">'+titles.join(', ')+'</div></div>';
+  document.getElementById('contraPopupBody').innerHTML='<div class="contra-loading"><div style="font-size:13px;font-weight:500;margin-bottom:10px;color:var(--navy);">분석 서버(Exaone)로 전송 중</div><div>선택한 '+checkedDocs.length+'개 조서를 비교합니다.</div><div style="margin-top:6px;font-size:11px;color:var(--text-muted);">'+titles.join(', ')+'</div></div>';
   document.getElementById('contraPopup').classList.add('open');
   var fp=checkedDocs.map(function(id){var d=currentDocs.find(function(x){return x.id===id;});if(d&&d.originalText!==undefined)return Promise.resolve(d);return fetch('caseApi?action=transcriptText&transcriptId='+id).then(function(r){return r.json();}).then(function(res){if(d)d.originalText=res.text||'';return d;});});
   Promise.all(fp).then(function(docs){
-    var pp=docs.map(function(d,i){return '【조서'+(i+1)+': '+(d?d.name+' '+d.type+' 진술':'알 수 없음')+'】\n'+(d&&d.originalText?d.originalText:'(내용 없음)');});
-    var prompt='당신은 대한민국 경찰청 수사 AI 보조 시스템입니다.\n아래 '+docs.length+'개의 진술 조서를 비교하여 모순점을 분석해 주세요.\n\n'+pp.join('\n\n')+'\n\n【분석 요청】\n1. 각 조서 간 날짜·시간·장소·행동에서 불일치하는 항목을 구체적으로 나열하세요.\n2. 모순이 없으면 "모순 없음"이라고 명시하세요.\n3. 수사관이 추가로 확인해야 할 사항을 제안하세요.\n한국어로 간결하게 답변하세요.';
-    return fetch('http://localhost:11434/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'gemma3:1b',prompt:prompt,stream:false})});
+    var ordered=checkedDocs.map(function(id){return docs.find(function(x){return x&&x.id===id;});}).filter(Boolean);
+    if(ordered.length<2) throw new Error('조서를 불러오지 못했습니다.');
+    var stmts=ordered.map(function(d){
+      return{transcript_id:d.id,stmt_type:d.type||'진술',stmt_name:d.name||'미입력',original_text:String(d.originalText||'').trim()};
+    });
+    var missing=stmts.some(function(s){return !s.original_text;});
+    if(missing) throw new Error('본문이 없는 조서가 있습니다. 텍스트를 저장한 뒤 다시 시도하세요.');
+    return fetch(ANALYZE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({caseNum:caseId,statements:stmts})});
   })
-  .then(function(r){return r.json();})
-  .then(function(data){document.getElementById('contraPopupTitle').textContent='모순 분석 결과';document.getElementById('contraPopupBody').innerHTML='<div class="contra-result">'+escHtml(data.response||'분석 결과를 받지 못했습니다.')+'</div>';})
-  .catch(function(){document.getElementById('contraPopupTitle').textContent='분석 실패';document.getElementById('contraPopupBody').innerHTML='<div class="popup-empty">Ollama 서버에 연결할 수 없습니다.<br>로컬에서 <b>ollama run gemma3:1b</b>를 실행해 주세요.</div>';});
+  .then(function(r){if(!r.ok) throw new Error('HTTP '+r.status);return r.json();})
+  .then(function(data){
+    document.getElementById('contraPopupTitle').textContent='모순 분석 결과';
+    var body='';
+    if(data.success===false&&data.error){body=escHtml(data.error);}
+    else if(data.structured_summary||data.final_review!=null){
+      body='【진술 구조 요약】\n'+escHtml(data.structured_summary||'')+'\n\n【최종 검토】\n'+escHtml(data.final_review||'')+'\n\n【추가 확인 사항】\n'+escHtml((data.further_checks&&data.further_checks.join)?data.further_checks.join('\n'):String(data.further_checks||''));
+      if(data.contradictions&&data.contradictions.length){body+='\n\n【모순 항목】\n';data.contradictions.forEach(function(c){body+='- '+escHtml((c.type||'')+': '+(c.reason||''))+'\n';});}
+    } else if(typeof data.response==='string'){body=escHtml(data.response);}
+    else{body=escHtml(JSON.stringify(data,null,2));}
+    document.getElementById('contraPopupBody').innerHTML='<div class="contra-result" style="white-space:pre-wrap;">'+body+'</div>';
+  })
+  .catch(function(err){document.getElementById('contraPopupTitle').textContent='분석 실패';document.getElementById('contraPopupBody').innerHTML='<div class="popup-empty">'+(err&&err.message?escHtml(err.message):'연결 실패')+'<br><br>서버(<code>113.198.238.108:5001</code>) 상태·CORS를 확인해 주세요.</div>';});
 }
 function closeContraPopup(e){if(!e||e.target===document.getElementById('contraPopup')||!e.target)document.getElementById('contraPopup').classList.remove('open');}
 

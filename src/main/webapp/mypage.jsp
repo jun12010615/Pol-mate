@@ -22,6 +22,8 @@
     --border: #e5e7eb;
     --success: #16a34a;
     --success-bg: #f0fdf4;
+    --danger-bg: #fef2f2;
+    --danger-border: #fecaca;
     --bottom-nav-h: 64px;
   }
 
@@ -604,7 +606,7 @@
           </div>
           <div class="menu-right">
             <label class="toggle-wrap">
-              <input type="checkbox" class="toggle-input" id="toggleContradiction" onchange="saveSettings()">
+              <input type="checkbox" class="toggle-input" checked>
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -623,7 +625,7 @@
           </div>
           <div class="menu-right">
             <label class="toggle-wrap">
-              <input type="checkbox" class="toggle-input" id="toggleRelation" onchange="saveSettings()">
+              <input type="checkbox" class="toggle-input" checked>
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -642,7 +644,7 @@
           </div>
           <div class="menu-right">
             <label class="toggle-wrap">
-              <input type="checkbox" class="toggle-input" id="toggleNightMode" onchange="saveSettings()">
+              <input type="checkbox" class="toggle-input">
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -667,7 +669,7 @@
     </div>
 
     <!-- 로그아웃 -->
-    <div style="padding:16px 0 8px;">
+    <div style="padding:16px 0 4px;">
       <button class="logout-btn" onclick="confirmLogout()">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -676,6 +678,11 @@
         </svg>
         로그아웃
       </button>
+    </div>
+
+    <!-- 회원탈퇴 -->
+    <div style="padding:0 0 20px; text-align:center;">
+      <button onclick="confirmWithdraw()" style="background:none;border:none;font-size:11px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">회원탈퇴</button>
     </div>
 
   </div><!-- /content -->
@@ -1106,23 +1113,54 @@ function showPwMsg(m) {
   el.style.display = 'block';
 }
 
-// ── 알림 설정 저장 ────────────────────────────────────────────────
-function saveSettings() {
+// ── 회원탈퇴 ──────────────────────────────────────────────────────
+function confirmWithdraw() {
+  document.getElementById('withdrawPw').value = '';
+  document.getElementById('withdrawMsg').style.display = 'none';
+  openDrawer('withdrawDrawer');
+}
+
+function submitWithdraw() {
+  var pw  = document.getElementById('withdrawPw').value;
+  var msg = document.getElementById('withdrawMsg');
+  var btn = document.getElementById('withdrawBtn');
+  msg.style.display = 'none';
+
+  if (!pw) {
+    msg.textContent = '비밀번호를 입력해 주세요.';
+    msg.style.display = 'block';
+    return;
+  }
+
+  // 중복 클릭 방지
+  btn.disabled = true;
+  btn.textContent = '처리 중...';
+
   var params = new URLSearchParams();
-  params.append('action',              'saveSettings');
-  params.append('notifContradiction',  document.getElementById('toggleContradiction').checked);
-  params.append('notifRelation',       document.getElementById('toggleRelation').checked);
-  params.append('nightMode',           document.getElementById('toggleNightMode').checked);
+  params.append('action', 'withdraw');
+  params.append('password', pw);
 
   fetch('mypage', { method: 'POST', body: params })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      if (!data.success) alert(data.message || '설정 저장에 실패했습니다.');
+      if (data.success) {
+        alert('탈퇴가 완료되었습니다.');
+        location.href = 'login.jsp';
+      } else {
+        msg.textContent = data.message || '탈퇴 처리에 실패했습니다.';
+        msg.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = '탈퇴하기';
+      }
     })
-    .catch(function() { alert('오류가 발생했습니다.'); });
+    .catch(function() {
+      msg.textContent = '오류가 발생했습니다. 다시 시도해 주세요.';
+      msg.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = '탈퇴하기';
+    });
 }
 
-// ── 로그아웃 ──────────────────────────────────────────────────────
 function confirmLogout() {
   if (confirm('로그아웃 하시겠습니까?')) {
     var params = new URLSearchParams();
