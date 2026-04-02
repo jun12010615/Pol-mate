@@ -606,7 +606,7 @@
           </div>
           <div class="menu-right">
             <label class="toggle-wrap">
-              <input type="checkbox" class="toggle-input" id="toggleContradiction" onchange="saveSettings()">
+              <input type="checkbox" class="toggle-input" checked>
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -625,7 +625,7 @@
           </div>
           <div class="menu-right">
             <label class="toggle-wrap">
-              <input type="checkbox" class="toggle-input" id="toggleRelation" onchange="saveSettings()">
+              <input type="checkbox" class="toggle-input" checked>
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -644,7 +644,7 @@
           </div>
           <div class="menu-right">
             <label class="toggle-wrap">
-              <input type="checkbox" class="toggle-input" id="toggleNightMode" onchange="saveSettings()">
+              <input type="checkbox" class="toggle-input">
               <span class="toggle-slider"></span>
             </label>
           </div>
@@ -669,7 +669,7 @@
     </div>
 
     <!-- 로그아웃 -->
-    <div style="padding:16px 0 8px;">
+    <div style="padding:16px 0 4px;">
       <button class="logout-btn" onclick="confirmLogout()">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -678,6 +678,11 @@
         </svg>
         로그아웃
       </button>
+    </div>
+
+    <!-- 회원탈퇴 -->
+    <div style="padding:0 0 20px; text-align:center;">
+      <button onclick="confirmWithdraw()" style="background:none;border:none;font-size:11px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">회원탈퇴</button>
     </div>
 
   </div><!-- /content -->
@@ -914,13 +919,6 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('statContradiction').textContent = s.contradictionCount;
       document.getElementById('statCompleted').textContent    = s.totalTranscripts;
       document.getElementById('menuHistoryCount').textContent = s.totalTranscripts + '건';
-
-      // 설정값 토글에 반영
-      if (data.settings) {
-        document.getElementById('toggleContradiction').checked = data.settings.notifContradiction !== false;
-        document.getElementById('toggleRelation').checked      = data.settings.notifRelation      !== false;
-        document.getElementById('toggleNightMode').checked     = data.settings.nightMode          === true;
-      }
     })
     .catch(function(e) { console.error('초기 로드 실패', e); });
 });
@@ -1011,10 +1009,8 @@ function submitWithdraw() {
   btn.textContent = '처리 중...';
 
   var params = new URLSearchParams();
-  params.append('action',              'saveSettings');
-  params.append('notifContradiction',  document.getElementById('toggleContradiction').checked);
-  params.append('notifRelation',       document.getElementById('toggleRelation').checked);
-  params.append('nightMode',           document.getElementById('toggleNightMode').checked);
+  params.append('action', 'withdraw');
+  params.append('password', pw);
 
   fetch('mypage', { method: 'POST', body: params })
     .then(function(r) { return r.json(); })
@@ -1037,7 +1033,6 @@ function submitWithdraw() {
     });
 }
 
-// ── 로그아웃 ──────────────────────────────────────────────────────
 function confirmLogout() {
   if (confirm('로그아웃 하시겠습니까?')) {
     var params = new URLSearchParams();
