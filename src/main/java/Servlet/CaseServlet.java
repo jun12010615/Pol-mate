@@ -29,7 +29,10 @@ import org.json.JSONObject;
 @WebServlet("/caseApi")
 public class CaseServlet extends HttpServlet {
 
-    private static final SimpleDateFormat DATE_FMT = new SimpleDateFormat("yyyy.MM.dd");
+    private static final SimpleDateFormat DATE_FMT = new SimpleDateFormat("yyyy-MM-dd");
+    static {
+        DATE_FMT.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
+    }
 
     // ═══════════════════════════════════════════════════════
     // GET
@@ -103,7 +106,7 @@ public class CaseServlet extends HttpServlet {
 
             StringBuilder sql = new StringBuilder(
                 "SELECT c.case_id, c.case_name, c.suspect, c.charge, c.status, " +
-                "       c.progress, c.created_at, c.user_id, " +
+                "       c.progress, DATE_FORMAT(c.created_at,'%Y-%m-%d') AS created_date, c.user_id, " +
                 "       u.user_name, u.user_rank, " +
                 "       (SELECT COUNT(*) FROM transcripts t WHERE t.case_id = c.case_id) AS doc_count, " +
                 "       (SELECT COUNT(*) FROM transcripts t WHERE t.case_id = c.case_id AND t.has_contradiction = 1) AS contradiction_count " +
@@ -157,8 +160,8 @@ public class CaseServlet extends HttpServlet {
                 c.put("urgent",         rs.getInt("contradiction_count") > 0);
                 c.put("isMine",         loginUser.equals(rs.getString("user_id")));
 
-                Timestamp ts = rs.getTimestamp("created_at");
-                c.put("date", ts != null ? DATE_FMT.format(ts) : "");
+                c.put("date",      nvl(rs.getString("created_date"), ""));
+                c.put("createdAt", nvl(rs.getString("created_date"), ""));
 
                 arr.put(c);
             }
@@ -194,7 +197,7 @@ public class CaseServlet extends HttpServlet {
             // 사건 기본 정보 + 접근 권한 확인
             ps = conn.prepareStatement(
                 "SELECT c.case_id, c.case_name, c.suspect, c.charge, c.status, " +
-                "       c.progress, c.created_at, c.user_id, " +
+                "       c.progress, DATE_FORMAT(c.created_at,'%Y-%m-%d') AS created_date, c.user_id, " +
                 "       u.user_name, u.user_rank, " +
                 "       d.dept_name, d.org_name " +
                 "FROM cases c " +
@@ -238,14 +241,14 @@ public class CaseServlet extends HttpServlet {
                 detail.put("deptName", "미배정");
             }
 
-            Timestamp ts = rs.getTimestamp("created_at");
-            detail.put("date", ts != null ? DATE_FMT.format(ts) : "");
+            detail.put("date",      nvl(rs.getString("created_date"), ""));
+            detail.put("createdAt", nvl(rs.getString("created_date"), ""));
             mgr.freeConnection(null, ps, rs);
 
             // 해당 사건의 조서 목록
             ps = conn.prepareStatement(
                 "SELECT t.transcript_id, t.stmt_type, t.stmt_name, t.has_contradiction, " +
-                "       t.created_at, t.user_id, u.user_name, u.user_rank, " +
+                "       DATE_FORMAT(t.created_at,'%Y-%m-%d') AS created_date, t.user_id, u.user_name, u.user_rank, " +
                 "       CHAR_LENGTH(IFNULL(t.original_text,'')) AS text_len " +
                 "FROM transcripts t " +
                 "LEFT JOIN users u ON t.user_id = u.user_id " +
@@ -265,8 +268,9 @@ public class CaseServlet extends HttpServlet {
                 d.put("writerId",     nvl(rs.getString("user_id"),   ""));
                 d.put("writerName",   nvl(rs.getString("user_name"), "알 수 없음"));
                 d.put("writerRank",   nvl(rs.getString("user_rank"), ""));
-                Timestamp dts = rs.getTimestamp("created_at");
-                d.put("date", dts != null ? DATE_FMT.format(dts) : "");
+                String createdAt = nvl(rs.getString("created_date"), "");
+                d.put("date", createdAt);       // 기존 호환용
+                d.put("createdAt", createdAt); // 프론트 표시용
                 docs.put(d);
             }
             detail.put("docs",     docs);
@@ -563,7 +567,7 @@ public class CaseServlet extends HttpServlet {
 
             StringBuilder sql = new StringBuilder(
                 "SELECT t.transcript_id, t.case_id, t.stmt_type, t.stmt_name, " +
-                "       t.has_contradiction, t.created_at, " +
+                "       t.has_contradiction, DATE_FORMAT(t.created_at,'%Y-%m-%d') AS created_date, " +
                 "       CHAR_LENGTH(IFNULL(t.original_text,'')) AS text_len, " +
                 "       c.case_name " +
                 "FROM transcripts t " +
@@ -605,8 +609,9 @@ public class CaseServlet extends HttpServlet {
                 d.put("words",        rs.getInt("text_len"));
                 d.put("contradiction", hasCont);
 
-                Timestamp ts = rs.getTimestamp("created_at");
-                d.put("date", ts != null ? DATE_FMT.format(ts) : "");
+                String createdAt = nvl(rs.getString("created_date"), "");
+                d.put("date", createdAt);        // 기존 호환용
+                d.put("createdAt", createdAt);  // 프론트 표시용
 
                 arr.put(d);
             }

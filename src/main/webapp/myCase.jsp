@@ -531,7 +531,7 @@ function renderDrawerDocs(docs) {
       '<div class="drawer-doc-icon" style="background:'+bg+'"><svg viewBox="0 0 24 24" fill="none" stroke="'+st+'" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>' +
       '<div class="drawer-doc-info" onclick="event.stopPropagation();openTranscriptPopup('+i+')">' +
         '<div class="drawer-doc-title">'+escHtml(d.name)+' '+escHtml(d.type)+' 진술 조서</div>' +
-        '<div class="drawer-doc-meta">'+escHtml(d.date)+'  ·  '+(d.textLen||0).toLocaleString()+'자</div>' +
+        '<div class="drawer-doc-meta">'+escHtml(d.createdAt||d.date)+'  ·  '+(d.textLen||0).toLocaleString()+'자</div>' +
         '<div class="drawer-doc-meta" style="margin-top:2px;display:flex;align-items:center;gap:3px;">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:10px;height:10px;flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
           escHtml((d.writerRank?d.writerRank+' ':'')+d.writerName) +
@@ -564,7 +564,7 @@ function renderDrawerActions(c){
 
 function openTranscriptPopup(idx){
   var d=currentDocs[idx]; if(!d) return;
-  document.getElementById('popupTitle').textContent=d.name+' '+d.type+' 진술 조서 ('+d.date+')';
+  document.getElementById('popupTitle').textContent=d.name+' '+d.type+' 진술 조서 ('+(d.createdAt||d.date)+')';
   if(d.originalText!==undefined){
     document.getElementById('popupBody').innerHTML=d.originalText?'<span>'+escHtml(d.originalText)+'</span>':'<div class="popup-empty">저장된 진술 내용이 없습니다.</div>';
     renderTranscriptSummary(d.summaryText||'');
