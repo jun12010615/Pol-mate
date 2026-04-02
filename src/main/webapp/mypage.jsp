@@ -22,6 +22,8 @@
     --border: #e5e7eb;
     --success: #16a34a;
     --success-bg: #f0fdf4;
+    --danger-bg: #fef2f2;
+    --danger-border: #fecaca;
     --bottom-nav-h: 64px;
   }
 
@@ -421,28 +423,18 @@
   .app-copy { font-size: 10px; color: var(--text-muted); }
 
   /* ── 하단 네비 ── */
-  .bottom-nav {
-    position: fixed;
-    bottom: 0; left: 50%;
-    transform: translateX(-50%);
-    width: 100%; max-width: 420px;
-    height: var(--bottom-nav-h);
-    background: var(--card);
-    border-top: 1px solid var(--border);
-    display: flex; justify-content: space-around; align-items: center;
-    padding: 0 8px; z-index: 100;
-  }
-  .nav-item {
-    display: flex; flex-direction: column; align-items: center; gap: 3px;
-    flex: 1; cursor: pointer; text-decoration: none; padding: 6px 0;
-  }
-  .nav-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
-  .nav-icon svg { width: 22px; height: 22px; }
-  .nav-label { font-size: 9px; }
-  .nav-item.active .nav-icon svg { stroke: var(--navy); }
-  .nav-item.active .nav-label    { color: var(--navy); font-weight: 500; }
-  .nav-item:not(.active) .nav-icon svg { stroke: var(--text-muted); }
-  .nav-item:not(.active) .nav-label    { color: var(--text-muted); }
+  .bottom-nav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:420px;height:64px;
+  background:#ffffff;border-top:1px solid #e2e5ee;
+  display:flex;z-index:100;
+}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:#9ca3af;cursor:pointer;border:none;background:none;font-family:'Noto Sans KR',sans-serif;}
+.nav-item.active{color:#0d1a33;}
+.nav-item.active .nav-label{font-weight:600;}
+.nav-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
+.nav-icon svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;}
+.nav-label{font-size:10px;}
 
   @keyframes slideUp {
     from { transform: translateY(100%); opacity: 0; }
@@ -462,16 +454,15 @@
 <body>
 
 <%
-  // 세션 체크 (DB 연동 후 활성화)
-  // HttpSession sess = request.getSession(false);
-  // if (sess == null || sess.getAttribute("loginUser") == null) {
-  //     response.sendRedirect("login.jsp"); return;
-  // }
-  String userName  = "김민준";   // 임시
-  String userRank  = "경위";
-  String userOrg   = "서울지방경찰청 형사과";
-  String userPhone = "010-1234-5678";
-  String userId    = "test";
+  HttpSession sess = request.getSession(false);
+  if (sess == null || sess.getAttribute("loginUser") == null) {
+      response.sendRedirect("login.jsp"); return;
+  }
+  String userId    = (String) sess.getAttribute("loginUser");
+  String userName  = (String) sess.getAttribute("userName");
+  String userRank  = (String) sess.getAttribute("userRank");
+  String userOrg   = (String) sess.getAttribute("userOrg");
+  String userPhone = (String) sess.getAttribute("userPhone");
 %>
 
 <div class="screen">
@@ -480,7 +471,7 @@
   <div class="top-header">
     <div class="header-row">
       <span class="header-title">마이페이지</span>
-      <button class="edit-btn" onclick="openDrawer('profileDrawer')">프로필 편집</button>
+      <button class="edit-btn" onclick="openProfileDrawer()">프로필 편집</button>
     </div>
   </div>
 
@@ -503,16 +494,16 @@
   <div class="stats-band">
     <div class="stats-strip">
       <div class="stat-col">
-        <div class="stat-num">12</div>
+        <div class="stat-num" id="statActiveCases">-</div>
         <div class="stat-lbl">진행 사건</div>
       </div>
       <div class="stat-col">
-        <div class="stat-num">3</div>
+        <div class="stat-num" id="statContradiction" style="color:#dc2626;">-</div>
         <div class="stat-lbl">모순 탐지</div>
       </div>
       <div class="stat-col">
-        <div class="stat-num">28</div>
-        <div class="stat-lbl">완료 조서</div>
+        <div class="stat-num" id="statCompleted">-</div>
+        <div class="stat-lbl">작성 조서</div>
       </div>
     </div>
   </div>
@@ -525,7 +516,7 @@
       <div class="section-label">계정 관리</div>
       <div class="menu-list">
 
-        <div class="menu-row" onclick="openDrawer('profileDrawer')">
+        <div class="menu-row" onclick="openDrawer('profileViewDrawer')">
           <div class="menu-icon-wrap bg-blue">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" class="stroke-blue">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
@@ -575,7 +566,7 @@
             <div class="menu-sub">작성 · 수정 · 완료 기록</div>
           </div>
           <div class="menu-right">
-            <span class="menu-value">28건</span>
+            <span class="menu-value" id="menuHistoryCount">-</span>
             <div class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>
           </div>
         </div>
@@ -678,7 +669,7 @@
     </div>
 
     <!-- 로그아웃 -->
-    <div style="padding:16px 0 8px;">
+    <div style="padding:16px 0 4px;">
       <button class="logout-btn" onclick="confirmLogout()">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -689,33 +680,100 @@
       </button>
     </div>
 
+    <!-- 회원탈퇴 -->
+    <div style="padding:0 0 20px; text-align:center;">
+      <button onclick="confirmWithdraw()" style="background:none;border:none;font-size:11px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">회원탈퇴</button>
+    </div>
+
   </div><!-- /content -->
 
   <!-- ── 하단 네비 ── -->
-  <nav class="bottom-nav">
-    <a href="main.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-      <span class="nav-label">홈</span>
-    </a>
-    <a href="myCase.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-      <span class="nav-label">조서</span>
-    </a>
-    <a href="askAI" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+    <nav class="bottom-nav">
+  <a href="main.jsp" class="nav-item">
+    <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+    <span class="nav-label">홈</span>
+  </a>
+  <a href="myCase.jsp" class="nav-item">
+    <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+    <span class="nav-label">사건</span>
+  </a>
+  <a href="askAI" class="nav-item">
+      <div class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 86 86" fill="none">
+          <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="currentColor" stroke-width="5"/>
+          <circle cx="43" cy="40" r="11" fill="none" stroke="currentColor" stroke-width="3"/>
+          <circle cx="43" cy="40" r="5" fill="currentColor"/>
+          <circle cx="43" cy="40" r="2.5" fill="white"/>
+          <circle cx="43" cy="22" r="2.8" fill="currentColor"/>
+          <circle cx="43" cy="58" r="2.8" fill="currentColor"/>
+          <circle cx="28" cy="40" r="2.8" fill="currentColor"/>
+          <circle cx="58" cy="40" r="2.8" fill="currentColor"/>
+        </svg>
+      </div>
       <span class="nav-label">AI</span>
     </a>
-    <a href="board.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-      <span class="nav-label">커뮤니티</span>
-    </a>
-    <a href="mypage.jsp" class="nav-item active">
-      <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-      <span class="nav-label">마이페이지</span>
-    </a>
-  </nav>
+  <a href="board.jsp" class="nav-item">
+    <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+    <span class="nav-label">커뮤니티</span>
+  </a>
+  <a href="mypage.jsp" class="nav-item active">
+    <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+    <span class="nav-label">마이페이지</span>
+  </a>
+</nav>
+</div>
+
 
 </div><!-- /screen -->
+
+
+<!-- ════════════════════════════════════ -->
+<!-- 드로어: 프로필 정보 (읽기 전용)       -->
+<!-- ════════════════════════════════════ -->
+<div class="overlay" id="profileViewDrawer" onclick="closeOnBg(event,'profileViewDrawer')">
+  <div class="drawer">
+    <div class="drawer-handle"></div>
+    <div class="drawer-title">프로필 정보</div>
+    <div class="drawer-body">
+
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;">
+
+        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">이름</div>
+          <div style="font-size:14px;color:var(--text-primary);font-weight:500;"><%= userName %></div>
+        </div>
+
+        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">계급</div>
+          <div style="font-size:14px;color:var(--text-primary);font-weight:500;"><%= userRank != null ? userRank : "-" %></div>
+        </div>
+
+        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">소속 기관</div>
+          <div style="font-size:14px;color:var(--text-primary);font-weight:500;"><%= userOrg != null ? userOrg : "-" %></div>
+        </div>
+
+        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--border);" id="viewDeptRow">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">부서</div>
+          <div style="font-size:14px;color:var(--text-primary);font-weight:500;" id="viewDeptName">-</div>
+        </div>
+
+        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">연락처</div>
+          <div style="font-size:14px;color:var(--text-primary);font-weight:500;"><%= userPhone != null && !userPhone.isEmpty() ? userPhone : "-" %></div>
+        </div>
+
+        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">아이디</div>
+          <div style="font-size:14px;color:var(--text-primary);font-weight:500;"><%= userId %></div>
+        </div>
+
+      </div>
+
+      <button class="d-btn-cancel" onclick="closeDrawer('profileViewDrawer')">닫기</button>
+    </div>
+  </div>
+</div>
 
 
 <!-- ════════════════════════════════════ -->
@@ -741,7 +799,25 @@
       </div>
       <div class="d-field">
         <label class="d-label">소속 기관</label>
-        <input type="text" class="d-input" id="editOrg" value="<%= userOrg %>">
+        <select class="d-input" id="editOrg" onchange="onOrgChange()">
+          <option value="">선택하세요</option>
+          <option <%= "서울경찰청".equals(userOrg) ? "selected" : "" %>>서울경찰청</option>
+          <option <%= "부산지방경찰청".equals(userOrg) ? "selected" : "" %>>부산지방경찰청</option>
+          <option <%= "인천지방경찰청".equals(userOrg) ? "selected" : "" %>>인천지방경찰청</option>
+          <option <%= "경기남부경찰청".equals(userOrg) ? "selected" : "" %>>경기남부경찰청</option>
+          <option <%= "경기북부경찰청".equals(userOrg) ? "selected" : "" %>>경기북부경찰청</option>
+          <option <%= "대구지방경찰청".equals(userOrg) ? "selected" : "" %>>대구지방경찰청</option>
+          <option <%= "광주지방경찰청".equals(userOrg) ? "selected" : "" %>>광주지방경찰청</option>
+          <option <%= "대전지방경찰청".equals(userOrg) ? "selected" : "" %>>대전지방경찰청</option>
+          <option <%= "울산지방경찰청".equals(userOrg) ? "selected" : "" %>>울산지방경찰청</option>
+          <option <%= "기타".equals(userOrg) ? "selected" : "" %>>기타</option>
+        </select>
+      </div>
+      <div class="d-field">
+        <label class="d-label">부서</label>
+        <select class="d-input" id="editDept" disabled>
+          <option value="">소속 기관을 먼저 선택하세요</option>
+        </select>
       </div>
       <div class="d-field">
         <label class="d-label">연락처</label>
@@ -793,42 +869,8 @@
   <div class="drawer">
     <div class="drawer-handle"></div>
     <div class="drawer-title">내 조서 이력</div>
-    <div class="history-list">
-      <div class="history-item">
-        <div>
-          <div class="h-title">2024-0312 절도사건</div>
-          <div class="h-meta">2025.03.24 · 진술 분석 완료</div>
-        </div>
-        <span class="h-badge h-badge-warn">검토필요</span>
-      </div>
-      <div class="history-item">
-        <div>
-          <div class="h-title">2024-0289 폭행사건</div>
-          <div class="h-meta">2025.03.21 · 조서 작성 중</div>
-        </div>
-        <span class="h-badge h-badge-ok">진행중</span>
-      </div>
-      <div class="history-item">
-        <div>
-          <div class="h-title">2024-0271 사기사건</div>
-          <div class="h-meta">2025.03.18 · 관계망 업데이트</div>
-        </div>
-        <span class="h-badge h-badge-done">완료</span>
-      </div>
-      <div class="history-item">
-        <div>
-          <div class="h-title">2024-0244 협박사건</div>
-          <div class="h-meta">2025.03.10 · 조서 최종 제출</div>
-        </div>
-        <span class="h-badge h-badge-done">완료</span>
-      </div>
-      <div class="history-item">
-        <div>
-          <div class="h-title">2024-0201 강도사건</div>
-          <div class="h-meta">2025.02.28 · 조서 최종 제출</div>
-        </div>
-        <span class="h-badge h-badge-done">완료</span>
-      </div>
+    <div class="history-list" id="historyList">
+      <!-- JS로 채움 (MypageServlet action=history) -->
     </div>
     <div style="padding:16px 20px 0;">
       <button class="d-btn-cancel" onclick="closeDrawer('historyDrawer')">닫기</button>
@@ -898,7 +940,13 @@
 function openDrawer(id) {
   document.getElementById(id).classList.add('open');
   document.body.style.overflow = 'hidden';
-  if (id === 'statsDrawer') renderStats('week');
+  if (id === 'statsDrawer')      loadStats('week');
+  if (id === 'historyDrawer')    loadHistory();
+  if (id === 'profileViewDrawer') {
+    // 부서명을 load 응답에서 받아온 값으로 표시
+    var el = document.getElementById('viewDeptName');
+    if (el) el.textContent = currentDeptName || '-';
+  }
 }
 function closeDrawer(id) {
   document.getElementById(id).classList.remove('open');
@@ -908,87 +956,290 @@ function closeOnBg(e, id) {
   if (e.target === document.getElementById(id)) closeDrawer(id);
 }
 
-// ── 프로필 저장 (임시: alert만 띄움) ──────────────────────────────
+// ── 초기 로드: 프로필 통계 띠 ──────────────────────────────────────
+var currentDeptId   = null;
+var currentDeptName = null;
+document.addEventListener('DOMContentLoaded', function() {
+  fetch('mypage?action=load')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.user) return;
+      var s = data.stats;
+      document.getElementById('statActiveCases').textContent  = s.activeCases;
+      document.getElementById('statContradiction').textContent = s.contradictionCount;
+      document.getElementById('statCompleted').textContent    = s.totalTranscripts;
+      document.getElementById('menuHistoryCount').textContent = s.totalTranscripts + '건';
+
+      // 설정값 토글에 반영
+      if (data.settings) {
+        document.getElementById('toggleContradiction').checked = data.settings.notifContradiction !== false;
+        document.getElementById('toggleRelation').checked      = data.settings.notifRelation      !== false;
+        document.getElementById('toggleNightMode').checked     = data.settings.nightMode          === true;
+      }
+      // 현재 dept_id 저장 (프로필 드로어에서 부서 선택값 복원용)
+      if (data.user) {
+        currentDeptId   = data.user.deptId   || null;
+        currentDeptName = data.user.userDept  || null;
+      }
+    })
+    .catch(function(e) { console.error('초기 로드 실패', e); });
+});
+
+// ── 기관 변경 시 부서 동적 로드 ──────────────────────────────────
+function onOrgChange() {
+  var org = document.getElementById('editOrg').value;
+  var deptSel = document.getElementById('editDept');
+  deptSel.innerHTML = '<option value="">불러오는 중...</option>';
+  deptSel.disabled = true;
+
+  if (!org) {
+    deptSel.innerHTML = '<option value="">소속 기관을 먼저 선택하세요</option>';
+    return;
+  }
+
+  fetch('mypage?action=getDepts&org=' + encodeURIComponent(org))
+    .then(function(r) { return r.json(); })
+    .then(function(depts) {
+      deptSel.innerHTML = '<option value="">부서 선택 (선택)</option>';
+      if (!depts.length) {
+        deptSel.innerHTML = '<option value="">등록된 부서가 없습니다</option>';
+        return;
+      }
+      depts.forEach(function(d) {
+        var opt = document.createElement('option');
+        opt.value = d.dept_id;
+        opt.textContent = d.dept_name;
+        deptSel.appendChild(opt);
+      });
+      deptSel.disabled = false;
+    })
+    .catch(function() {
+      deptSel.innerHTML = '<option value="">불러오기 실패</option>';
+    });
+}
+
+// ── 프로필 드로어 열기 (기존 부서 선택값 복원) ───────────────────
+function openProfileDrawer() {
+  // 드로어 열기
+  openDrawer('profileDrawer');
+
+  // 현재 기관으로 부서 목록 로드 후 현재 dept_id 선택
+  var org = document.getElementById('editOrg').value;
+  if (!org) return;
+
+  var deptSel = document.getElementById('editDept');
+  deptSel.innerHTML = '<option value="">불러오는 중...</option>';
+  deptSel.disabled = true;
+
+  fetch('mypage?action=getDepts&org=' + encodeURIComponent(org))
+    .then(function(r) { return r.json(); })
+    .then(function(depts) {
+      deptSel.innerHTML = '<option value="">부서 선택 (선택)</option>';
+      depts.forEach(function(d) {
+        var opt = document.createElement('option');
+        opt.value = d.dept_id;
+        opt.textContent = d.dept_name;
+        // 현재 dept_id와 일치하면 선택
+        if (String(d.dept_id) === String(currentDeptId)) opt.selected = true;
+        deptSel.appendChild(opt);
+      });
+      deptSel.disabled = depts.length === 0;
+    })
+    .catch(function() {
+      deptSel.innerHTML = '<option value="">불러오기 실패</option>';
+    });
+}
+
+// ── 프로필 저장 ────────────────────────────────────────────────────
 function saveProfile() {
-  alert('저장되었습니다.\n(DB 미연동 상태 — 실제 반영은 DB 연동 후 가능합니다.)');
-  closeDrawer('profileDrawer');
+  var params = new URLSearchParams();
+  params.append('action',    'updateProfile');
+  params.append('userName',  document.getElementById('editName').value.trim());
+  params.append('userRank',  document.getElementById('editRank').value);
+  params.append('userOrg',   document.getElementById('editOrg').value);
+  params.append('userPhone', document.getElementById('editPhone').value.trim());
+  params.append('deptId',    document.getElementById('editDept').value || '');
+
+  fetch('mypage', { method: 'POST', body: params })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        alert('프로필이 저장되었습니다.');
+        closeDrawer('profileDrawer');
+        location.reload();
+      } else {
+        alert(data.message || '저장에 실패했습니다.');
+      }
+    })
+    .catch(function(e) { alert('오류가 발생했습니다.'); console.error(e); });
 }
 
 // ── 비밀번호 변경 ──────────────────────────────────────────────────
-const TEMP_PW = '1234'; // 임시 현재 비밀번호
 function changePw() {
-  const cur  = document.getElementById('curPw').value;
-  const nw   = document.getElementById('newPw').value;
-  const nwcf = document.getElementById('newPwCf').value;
-  const msg  = document.getElementById('pwChangeMsg');
+  var cur   = document.getElementById('curPw').value;
+  var nw    = document.getElementById('newPw').value;
+  var nwcf  = document.getElementById('newPwCf').value;
+  var msg   = document.getElementById('pwChangeMsg');
   msg.style.display = 'none';
 
-  if (!cur)           { showPwMsg('현재 비밀번호를 입력해 주세요.'); return; }
-  if (cur !== TEMP_PW){ showPwMsg('현재 비밀번호가 올바르지 않습니다.'); return; }
+  if (!cur)              { showPwMsg('현재 비밀번호를 입력해 주세요.'); return; }
   if (!nw || nw.length < 8) { showPwMsg('새 비밀번호를 8자 이상 입력해 주세요.'); return; }
-  if (nw !== nwcf)    { showPwMsg('새 비밀번호가 일치하지 않습니다.'); return; }
+  if (nw !== nwcf)       { showPwMsg('새 비밀번호가 일치하지 않습니다.'); return; }
 
-  alert('비밀번호가 변경되었습니다.\n(DB 미연동 상태 — 실제 반영은 DB 연동 후 가능합니다.)');
-  document.getElementById('curPw').value  = '';
-  document.getElementById('newPw').value  = '';
-  document.getElementById('newPwCf').value= '';
-  closeDrawer('pwDrawer');
+  var params = new URLSearchParams();
+  params.append('action', 'changePassword');
+  params.append('curPw',  cur);
+  params.append('newPw',  nw);
+  params.append('newPwCf',nwcf);
+
+  fetch('mypage', { method: 'POST', body: params })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        alert('비밀번호가 변경되었습니다.');
+        document.getElementById('curPw').value   = '';
+        document.getElementById('newPw').value   = '';
+        document.getElementById('newPwCf').value = '';
+        closeDrawer('pwDrawer');
+      } else {
+        showPwMsg(data.message || '변경에 실패했습니다.');
+      }
+    })
+    .catch(function(e) { alert('오류가 발생했습니다.'); console.error(e); });
 }
 function showPwMsg(m) {
-  const el = document.getElementById('pwChangeMsg');
+  var el = document.getElementById('pwChangeMsg');
   el.textContent = m;
   el.style.display = 'block';
 }
 
-// ── 로그아웃 ──────────────────────────────────────────────────────
+// ── 회원탈퇴 ──────────────────────────────────────────────────────
+function confirmWithdraw() {
+  document.getElementById('withdrawPw').value = '';
+  document.getElementById('withdrawMsg').style.display = 'none';
+  openDrawer('withdrawDrawer');
+}
+
+function submitWithdraw() {
+  var pw  = document.getElementById('withdrawPw').value;
+  var msg = document.getElementById('withdrawMsg');
+  var btn = document.getElementById('withdrawBtn');
+  msg.style.display = 'none';
+
+  if (!pw) {
+    msg.textContent = '비밀번호를 입력해 주세요.';
+    msg.style.display = 'block';
+    return;
+  }
+
+  // 중복 클릭 방지
+  btn.disabled = true;
+  btn.textContent = '처리 중...';
+
+  var params = new URLSearchParams();
+  params.append('action', 'withdraw');
+  params.append('password', pw);
+
+  fetch('mypage', { method: 'POST', body: params })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        alert('탈퇴가 완료되었습니다.');
+        location.href = 'login.jsp';
+      } else {
+        msg.textContent = data.message || '탈퇴 처리에 실패했습니다.';
+        msg.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = '탈퇴하기';
+      }
+    })
+    .catch(function() {
+      msg.textContent = '오류가 발생했습니다. 다시 시도해 주세요.';
+      msg.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = '탈퇴하기';
+    });
+}
+
 function confirmLogout() {
   if (confirm('로그아웃 하시겠습니까?')) {
-    // 세션 만료 처리는 LogoutServlet으로 (DB 연동 후)
-    location.href = 'login.jsp';
+    var params = new URLSearchParams();
+    params.append('action', 'logout');
+    fetch('mypage', { method: 'POST', body: params })
+      .then(function() { location.href = 'login.jsp'; })
+      .catch(function() { location.href = 'login.jsp'; });
   }
 }
 
-// ── 통계 렌더링 ───────────────────────────────────────────────────
-const STATS = {
-  week:  { cases:3,  docs:4,  contra:1, proc:2 },
-  month: { cases:12, docs:18, contra:3, proc:7 },
-  all:   { cases:43, docs:28, contra:9, proc:22 }
-};
-const BAR_DATA = {
-  week:  [2,3,1,4,2,3,4],
-  month: [5,8,12,7,10,14,18],
-  all:   [15,22,18,25,30,28,35]
-};
-const BAR_LABELS = {
-  week:  ['월','화','수','목','금','토','일'],
-  month: ['10월','11월','12월','1월','2월','3월','이번달'],
-  all:   ['2023','상반기','하반기','1Q','2Q','3Q','현재']
-};
+// ── 내 조서 이력 로드 ─────────────────────────────────────────────
+function loadHistory() {
+  var container = document.getElementById('historyList');
+  container.innerHTML = '<p style="padding:20px; text-align:center; color:var(--text-muted); font-size:13px;">불러오는 중...</p>';
 
-function renderStats(period) {
-  const s = STATS[period];
+  fetch('mypage?action=history')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var list = data.history;
+      if (!list || list.length === 0) {
+        container.innerHTML = '<p style="padding:20px; text-align:center; color:var(--text-muted); font-size:13px;">조서 이력이 없습니다.</p>';
+        return;
+      }
+      var BADGE_MAP = {
+        '진행중':   'h-badge-ok',
+        '검토필요': 'h-badge-warn',
+        '모순탐지': 'h-badge-warn',
+        '완료':     'h-badge-done'
+      };
+      container.innerHTML = list.map(function(t) {
+        var date   = t.createdAt ? t.createdAt.substring(0, 10).replace(/-/g, '.') : '';
+        var badge  = BADGE_MAP[t.caseStatus] || 'h-badge-done';
+        return '<div class="history-item">' +
+          '<div>' +
+            '<div class="h-title">' + t.caseId + ' ' + (t.caseName || '') + '</div>' +
+            '<div class="h-meta">' + date + (t.stmtName ? ' · ' + t.stmtName + ' 진술' : '') + '</div>' +
+          '</div>' +
+          '<span class="h-badge ' + badge + '">' + (t.caseStatus || '') + '</span>' +
+        '</div>';
+      }).join('');
+    })
+    .catch(function(e) {
+      container.innerHTML = '<p style="padding:20px; text-align:center; color:var(--danger); font-size:13px;">불러오기에 실패했습니다.</p>';
+      console.error(e);
+    });
+}
+
+// ── 활동 통계 로드 ────────────────────────────────────────────────
+var _statsCache = null;
+
+function loadStats(period) {
+  if (_statsCache) { renderStats(_statsCache, period); return; }
+
+  fetch('mypage?action=stats')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      _statsCache = data;
+      renderStats(data, period);
+    })
+    .catch(function(e) { console.error('통계 로드 실패', e); });
+}
+
+function renderStats(data, period) {
+  // 기간 필터 없이 전체 집계값 표시 (서블릿에서 기간별 API 확장 가능)
   document.getElementById('statsGrid').innerHTML =
-    '<div class="stat-tile"><div class="tile-num">' + s.cases  + '</div><div class="tile-lbl">담당 사건</div></div>' +
-    '<div class="stat-tile"><div class="tile-num">' + s.docs   + '</div><div class="tile-lbl">조서 처리</div></div>' +
-    '<div class="stat-tile"><div class="tile-num">' + s.contra + '</div><div class="tile-lbl">모순 탐지</div></div>' +
-    '<div class="stat-tile"><div class="tile-num">' + s.proc   + '</div><div class="tile-lbl">관계망 등록</div></div>';
-  const data   = BAR_DATA[period];
-  const labels = BAR_LABELS[period];
-  const mx     = Math.max(...data);
-  document.getElementById('barChart').innerHTML = data.map(function(v,i) {
-    var cls = (i===data.length-1) ? 'cur' : '';
-    var h   = Math.round(v/mx*68);
-    return '<div class="bar-col"><div class="bar-fill ' + cls + '" style="height:' + h + 'px;"></div></div>';
-  }).join('');
-  document.getElementById('barLabels').innerHTML = labels.map(function(l) {
-    return '<div style="flex:1; font-size:9px; color:var(--text-muted); text-align:center;">' + l + '</div>';
-  }).join('');
+    '<div class="stat-tile"><div class="tile-num">' + (data.totalCases || 0)          + '</div><div class="tile-lbl">담당 사건</div></div>' +
+    '<div class="stat-tile"><div class="tile-num">' + (data.totalTranscripts || 0)     + '</div><div class="tile-lbl">조서 처리</div></div>' +
+    '<div class="stat-tile"><div class="tile-num">' + (data.contradictionCount || 0)   + '</div><div class="tile-lbl">모순 탐지</div></div>' +
+    '<div class="stat-tile"><div class="tile-num">' + (data.relationEdges || 0)        + '</div><div class="tile-lbl">관계망 등록</div></div>';
+
+  // 막대 차트: 데이터 없을 때 빈 상태 표시
+  document.getElementById('barChart').innerHTML  = '<div style="width:100%;text-align:center;color:var(--text-muted);font-size:11px;padding-top:24px;">기간별 데이터 준비 중</div>';
+  document.getElementById('barLabels').innerHTML = '';
 }
 
 function setPeriod(btn, period) {
-  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.period-btn').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
-  renderStats(period);
+  loadStats(period);
 }
 </script>
 
