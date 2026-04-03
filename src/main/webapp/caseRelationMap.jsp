@@ -629,38 +629,12 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 
 
   <!-- ── 하단 네비 ── -->
-  <nav class="bottom-nav">
-    <a href="main.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-      <span class="nav-label">홈</span>
-    </a>
-    <a href="myCase.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-      <span class="nav-label">조서</span>
-    </a>
-    <a href="askAI" class="nav-item active">
-      <div class="nav-icon">
-        <svg width="22" height="22" viewBox="0 0 86 86" fill="none">
-          <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="currentColor" stroke-width="5"/>
-          <circle cx="43" cy="40" r="11" fill="none" stroke="currentColor" stroke-width="3"/>
-          <circle cx="43" cy="40" r="5" fill="currentColor"/>
-          <circle cx="43" cy="40" r="2.5" fill="white"/>
-          <circle cx="43" cy="22" r="2.8" fill="currentColor"/>
-          <circle cx="43" cy="58" r="2.8" fill="currentColor"/>
-          <circle cx="28" cy="40" r="2.8" fill="currentColor"/>
-          <circle cx="58" cy="40" r="2.8" fill="currentColor"/>
-        </svg>
-      </div>
-      <span class="nav-label">AI</span>
-    </a>
-    <a href="board.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-      <span class="nav-label">커뮤니티</span>
-    </a>
-    <a href="mypage.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-      <span class="nav-label">마이페이지</span>
-    </a>
+    <nav class="bottom-nav">
+    <a href="main.jsp" class="nav-item"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><span class="nav-label">홈</span></a>
+    <a href="myCase.jsp" class="nav-item"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><span class="nav-label">조서</span></a>
+    <a href="askAI" class="nav-item active"><div class="nav-icon"><svg width="22" height="22" viewBox="0 0 86 86" fill="none"><path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="currentColor" stroke-width="5"/><circle cx="43" cy="40" r="11" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="43" cy="40" r="5" fill="currentColor"/><circle cx="43" cy="40" r="2.5" fill="white"/><circle cx="43" cy="22" r="2.8" fill="currentColor"/><circle cx="43" cy="58" r="2.8" fill="currentColor"/><circle cx="28" cy="40" r="2.8" fill="currentColor"/><circle cx="58" cy="40" r="2.8" fill="currentColor"/></svg></div><span class="nav-label">AI</span></a>
+    <a href="board.jsp" class="nav-item"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><span class="nav-label">커뮤니티</span></a>
+    <a href="mypage.jsp" class="nav-item"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="nav-label">마이페이지</span></a>
   </nav>
 </div>
 
@@ -859,13 +833,23 @@ function analyzeWithAI() {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({model:'gemma3:1b', prompt:prompt, stream:false})
     })
-    .then(function(r) { return r.json(); })
+    .then(function(r) {
+      if (!r.ok) throw new Error('Ollama HTTP ' + r.status);
+      return r.json();
+    })
     .then(function(data) {
       var raw = data.response || '';
+      console.log('[Ollama 응답 수신] 길이:', raw.length, '앞부분:', raw.substring(0, 100));
+      if (!raw.trim()) {
+        console.warn('[Ollama] 빈 응답 — model:', data.model, 'done:', data.done);
+        runFallback('Ollama가 빈 응답을 반환했습니다.');
+        document.getElementById('aiLoading').classList.remove('show');
+        return;
+      }
       parseAndApplyAiResult(raw);
     })
     .catch(function(err) {
-      // Ollama 연결 실패 시 서버 사이드 프록시로 시도
+      console.warn('[Ollama 직접 호출 실패]', err.message, '— 서버 프록시 시도');
       callAiViaServlet(prompt);
     });
   });
@@ -983,19 +967,33 @@ function extractJsonFromRaw(raw) {
 function parseAndApplyAiResult(raw) {
   document.getElementById('aiLoading').classList.remove('show');
 
+  // raw가 비어있으면 바로 fallback
+  if (!raw || !raw.trim()) {
+    console.warn('[AI 파싱] 응답이 비어있습니다.');
+    runFallback('AI가 빈 응답을 반환했습니다.');
+    return;
+  }
+
+  console.log('[AI 원본 응답]', raw.substring(0, 500));
+
   // JSON 추출 (마크다운 코드블록 포함 대응)
   var jsonStr = extractJsonFromRaw(raw);
   if (!jsonStr) {
-    showToast('AI 응답에서 JSON을 찾지 못했습니다. 수동 입력해 주세요.');
-    document.getElementById('aiResultBox').classList.add('show');
-    document.getElementById('aiResultText').textContent = 'AI 응답: ' + raw.substring(0, 300);
-    document.getElementById('btnAnalyze').disabled = false;
-    showBoardSection([], []);
+    console.warn('[AI 파싱] JSON 추출 실패. 원본:', raw.substring(0, 300));
+    runFallback('AI 응답에서 JSON 구조를 찾지 못했습니다.');
+    return;
+  }
+
+  var result;
+  try {
+    result = JSON.parse(jsonStr);
+  } catch(parseErr) {
+    console.warn('[AI 파싱] JSON.parse 실패:', parseErr.message, '\n원본:', jsonStr.substring(0, 300));
+    runFallback('JSON 파싱 실패: ' + parseErr.message);
     return;
   }
 
   try {
-    var result = JSON.parse(jsonStr);
     // gemma3:1b가 키 이름을 틀리는 경우 대응
     var rawPersons = result.persons || result.person || result.인물 || result.people || [];
     var rawEdges   = result.edges   || result.edge   || result.관계선 || result.relations || result.relationships || [];
@@ -1065,51 +1063,53 @@ function parseAndApplyAiResult(raw) {
       document.getElementById('btnAnalyze').disabled = false;
       showToast('✅ ' + summary);
       showBoardSection(parsedPersons, parsedEdges);
-      // 분석 완료 후 보드 팝업 자동 오픈
-      setTimeout(function() { openBoardPopup(); }, 400);
     });
 
   } catch (e) {
-    // 파싱 실패 시 checkedTranscripts 메타정보로 인물+관계선 fallback 생성
-    console.warn('AI 응답 파싱 오류, 메타정보 fallback:', e.message, raw.substring(0, 200));
-    var roleMap = {'피의자':'suspect','피해자':'victim','목격자':'witness','참고인':'reference'};
-    var fallbackPersons = dedupePersons(
-      checkedTranscripts.map(function(t) {
-        return { id:uid(), name:t.name||'미입력', role:roleMap[t.type]||'reference', memo:t.type||'' };
-      }).filter(function(p){ return p.name && p.name !== '미입력'; })
-    );
-
-    // 역할 기반 자동 관계선 생성
-    var fallbackEdges = [];
-    var suspects = fallbackPersons.filter(function(p){ return p.role==='suspect'; });
-    var victims  = fallbackPersons.filter(function(p){ return p.role==='victim'; });
-    var witnesses= fallbackPersons.filter(function(p){ return p.role==='witness'; });
-    suspects.forEach(function(s) {
-      victims.forEach(function(v) {
-        fallbackEdges.push({id:uid(),src:s.id,dst:v.id,relType:'harm',   status:'unknown',context:''});
-      });
-      witnesses.forEach(function(w) {
-        fallbackEdges.push({id:uid(),src:w.id,dst:s.id,relType:'witness',status:'unknown',context:''});
-      });
-    });
-    // 관계선이 하나도 없으면 전체 지인으로 연결
-    if (fallbackEdges.length === 0 && fallbackPersons.length >= 2) {
-      for (var fi=0; fi<fallbackPersons.length-1; fi++) {
-        fallbackEdges.push({id:uid(),src:fallbackPersons[fi].id,dst:fallbackPersons[fi+1].id,
-                            relType:'acquaint',status:'unknown',context:''});
-      }
-    }
-
-    document.getElementById('aiResultText').textContent =
-      'AI 파싱 오류 — 진술자 역할 기반으로 인물 ' + fallbackPersons.length + '명, 관계선 ' + fallbackEdges.length + '개를 자동 생성했습니다.';
-    document.getElementById('aiResultBox').classList.add('show');
-    document.getElementById('btnAnalyze').disabled = false;
-    saveToDb(currentCaseId, fallbackPersons, fallbackEdges, function(ok) {
-      showToast(ok ? '✅ 자동 생성 완료' : '⚠ 자동 생성 완료 (DB 저장 실패)');
-      showBoardSection(fallbackPersons, fallbackEdges);
-      setTimeout(function() { openBoardPopup(); }, 400);
-    });
+    console.warn('[AI 파싱] 처리 중 예외:', e.message, e.stack);
+    runFallback('처리 중 오류: ' + e.message);
   }
+}
+
+// ── Fallback: 진술자 메타정보로 인물+관계선 자동 생성 ────────────
+function runFallback(reason) {
+  var roleMap = {'피의자':'suspect','피해자':'victim','목격자':'witness','참고인':'reference'};
+  var fallbackPersons = dedupePersons(
+    checkedTranscripts.map(function(t) {
+      return { id:uid(), name:t.name||'미입력', role:roleMap[t.type]||'reference', memo:t.type||'' };
+    }).filter(function(p){ return p.name && p.name !== '미입력'; })
+  );
+
+  var fallbackEdges = [];
+  var suspects = fallbackPersons.filter(function(p){ return p.role==='suspect'; });
+  var victims  = fallbackPersons.filter(function(p){ return p.role==='victim'; });
+  var witnesses= fallbackPersons.filter(function(p){ return p.role==='witness'; });
+  suspects.forEach(function(s) {
+    victims.forEach(function(v) {
+      fallbackEdges.push({id:uid(),src:s.id,dst:v.id,relType:'harm',status:'unknown',context:''});
+    });
+    witnesses.forEach(function(w) {
+      fallbackEdges.push({id:uid(),src:w.id,dst:s.id,relType:'witness',status:'unknown',context:''});
+    });
+  });
+  if (fallbackEdges.length === 0 && fallbackPersons.length >= 2) {
+    for (var fi=0; fi<fallbackPersons.length-1; fi++) {
+      fallbackEdges.push({id:uid(),src:fallbackPersons[fi].id,dst:fallbackPersons[fi+1].id,
+                          relType:'acquaint',status:'unknown',context:''});
+    }
+  }
+  fallbackEdges = dedupeEdges(fallbackEdges);
+
+  var msg = '진술자 역할 기반으로 인물 ' + fallbackPersons.length + '명, 관계선 ' + fallbackEdges.length + '개를 자동 생성했습니다.';
+  if (reason) msg = '[' + reason + '] ' + msg;
+  document.getElementById('aiResultText').textContent = msg;
+  document.getElementById('aiResultBox').classList.add('show');
+  document.getElementById('btnAnalyze').disabled = false;
+
+  saveToDb(currentCaseId, fallbackPersons, fallbackEdges, function(ok) {
+    showToast(ok ? '✅ 자동 생성 완료' : '⚠ 자동 생성 완료 (DB 저장 실패)');
+    showBoardSection(fallbackPersons, fallbackEdges);
+  });
 }
 
 // ── Ollama 미실행 fallback ────────────────────────────────────────
@@ -1179,13 +1179,23 @@ function showBoardSection(parsedPersons, parsedEdges) {
   persons = parsedPersons;
   edges   = parsedEdges;
 
-  document.getElementById('boardSection').style.display = 'block';
-  renderPersonGrid();
-  renderEdgeList();
+  // boardJson을 sessionStorage에 저장 후 boardEdit.jsp로 이동
+  var edgesForJson = edges.map(function(e) {
+    var sp = persons.find(function(p){ return p.id===e.src; });
+    var dp = persons.find(function(p){ return p.id===e.dst; });
+    return {srcName:sp?sp.name:'', dstName:dp?dp.name:'',
+            relType:e.relType, status:e.status, context:sanitizeContext(e.context)};
+  }).filter(function(e){ return e.srcName && e.dstName; });
 
-  setTimeout(function() {
-    document.getElementById('boardSection').scrollIntoView({behavior:'smooth', block:'start'});
-  }, 200);
+  var boardJson = JSON.stringify({persons:persons, edges:edgesForJson});
+  try {
+    sessionStorage.setItem('boardEdit_caseId',   currentCaseId);
+    sessionStorage.setItem('boardEdit_caseName', currentCaseName);
+    sessionStorage.setItem('boardEdit_json',     boardJson);
+  } catch(ex) { console.warn('sessionStorage 저장 실패:', ex); }
+
+  // 분석 완료 → 보드 편집 페이지로 이동
+  location.href = 'boardEdit.jsp?caseId=' + encodeURIComponent(currentCaseId);
 }
 
 // ── 인물 그리드 렌더링 ───────────────────────────────────────────
@@ -2132,8 +2142,6 @@ window.addEventListener('resize', resizeCanvas);
         }).filter(Boolean);
 
         showBoardSection(loadedPersons, loadedEdges);
-
-        setTimeout(function() { openBoardPopup(); }, 400);
       })
       .catch(function() {
         showToast('보드를 불러오지 못했습니다.');
