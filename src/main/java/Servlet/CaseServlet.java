@@ -21,7 +21,7 @@ import org.json.JSONObject;
  *   caseDetail  - 사건 상세 조회 (GET)
  *   caseCreate  - 새 사건 등록 (POST)
  *   caseDelete  - 사건 삭제 (POST)
- *   caseStatus  - 사건 상태/진행률 수정 (POST)
+ *   caseStatus  - 사건 상태 수정 (POST)
  *   docList     - 내 조서 목록 조회 (GET)
  *   docStats    - 조서 통계 조회 (GET)
  *   myDept      - 내 부서 정보 조회 (GET) ← myTeam 대체
@@ -106,7 +106,7 @@ public class CaseServlet extends HttpServlet {
 
             StringBuilder sql = new StringBuilder(
                 "SELECT c.case_id, c.case_name, c.suspect, c.charge, c.status, " +
-                "       c.progress, DATE_FORMAT(c.created_at,'%Y-%m-%d') AS created_date, c.user_id, " +
+                "       DATE_FORMAT(c.created_at,'%Y-%m-%d') AS created_date, c.user_id, " +
                 "       u.user_name, u.user_rank, " +
                 "       (SELECT COUNT(*) FROM transcripts t WHERE t.case_id = c.case_id) AS doc_count, " +
                 "       (SELECT COUNT(*) FROM transcripts t WHERE t.case_id = c.case_id AND t.has_contradiction = 1) AS contradiction_count " +
@@ -154,7 +154,6 @@ public class CaseServlet extends HttpServlet {
                 c.put("detective",      nvl(rs.getString("user_name"), "미입력"));
                 c.put("rank",           nvl(rs.getString("user_rank"), ""));
                 c.put("status",         rs.getString("status"));
-                c.put("progress",       rs.getInt("progress"));
                 c.put("docs",           rs.getInt("doc_count"));
                 c.put("contradictions", rs.getInt("contradiction_count"));
                 c.put("urgent",         rs.getInt("contradiction_count") > 0);
@@ -197,7 +196,7 @@ public class CaseServlet extends HttpServlet {
             // 사건 기본 정보 + 접근 권한 확인
             ps = conn.prepareStatement(
                 "SELECT c.case_id, c.case_name, c.suspect, c.charge, c.status, " +
-                "       c.progress, DATE_FORMAT(c.created_at,'%Y-%m-%d') AS created_date, c.user_id, " +
+                "       DATE_FORMAT(c.created_at,'%Y-%m-%d') AS created_date, c.user_id, " +
                 "       u.user_name, u.user_rank, " +
                 "       d.dept_name, d.org_name " +
                 "FROM cases c " +
@@ -226,7 +225,6 @@ public class CaseServlet extends HttpServlet {
             detail.put("suspect",   nvl(rs.getString("suspect"),   "미입력"));
             detail.put("charge",    nvl(rs.getString("charge"),    "미입력"));
             detail.put("status",    rs.getString("status"));
-            detail.put("progress",  rs.getInt("progress"));
             detail.put("isMine",    loginUser.equals(rs.getString("user_id")));
             detail.put("detective", nvl(rs.getString("user_name"), "미입력"));
             detail.put("rank",      nvl(rs.getString("user_rank"), ""));
@@ -329,8 +327,8 @@ public class CaseServlet extends HttpServlet {
 
             // 사건 INSERT (team_id 없이 user_id만 저장 — dept_id로 팀 공유)
             ps = conn.prepareStatement(
-                "INSERT INTO cases (case_id, user_id, case_name, suspect, charge, status, progress) " +
-                "VALUES (?, ?, ?, ?, ?, '진행중', 0)");
+                "INSERT INTO cases (case_id, user_id, case_name, suspect, charge, status) " +
+                "VALUES (?, ?, ?, ?, ?, '진행중')");
             ps.setString(1, caseId);
             ps.setString(2, loginUser);
             ps.setString(3, caseName.trim());
@@ -447,7 +445,6 @@ public class CaseServlet extends HttpServlet {
 
         String caseId  = req.getParameter("caseId");
         String status  = req.getParameter("status");
-        String progStr = req.getParameter("progress");
 
         if (isEmpty(caseId)) { writeResult(res, false, "caseId가 필요합니다."); return; }
 
@@ -485,11 +482,6 @@ public class CaseServlet extends HttpServlet {
             if (!isEmpty(status)) {
                 sql.append(", status = ?");
                 params.add(status);
-            }
-            if (!isEmpty(progStr)) {
-                int progress = Math.max(0, Math.min(100, Integer.parseInt(progStr)));
-                sql.append(", progress = ?");
-                params.add(progress);
             }
             sql.append(" WHERE case_id = ?");
             params.add(caseId);

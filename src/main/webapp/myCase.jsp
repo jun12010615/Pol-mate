@@ -105,13 +105,7 @@
   .meta-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-muted); }
   .meta-item svg { width:12px; height:12px; stroke:var(--text-muted); }
 
-  .case-progress-wrap { display:flex; align-items:center; gap:10px; }
-  .case-progress-bar  { flex:1; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
-  .case-progress-fill { height:100%; border-radius:2px; transition:width 0.4s; }
-  .fill-blue   { background:var(--accent); }
-  .fill-green  { background:var(--success); }
-  .fill-amber  { background:#f59e0b; }
-  .case-progress-pct  { font-size:10px; color:var(--text-muted); white-space:nowrap; }
+
 
   /* 빈 상태 */
   .empty-state { padding:48px 20px; text-align:center; }
@@ -270,10 +264,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         오래된순
       </button>
-      <button class="sort-btn" id="sortProgress" onclick="setSort('progress')">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        진행도순
-      </button>
+
     </div>
     <div class="case-list" id="caseList"></div>
   </div>
@@ -409,10 +400,7 @@
             <button class="status-btn" data-val="모순탐지" onclick="selectStatus(this)">모순탐지</button>
           </div>
         </div>
-        <div>
-          <label style="font-size:11px;color:var(--text-muted);font-weight:500;display:block;margin-bottom:8px;">진행률 <span id="progressDisplay" style="color:var(--navy);font-weight:700;">0%</span></label>
-          <input type="range" id="progressSlider" min="0" max="100" step="5" value="0" oninput="document.getElementById('progressDisplay').textContent=this.value+'%'" style="width:100%;accent-color:var(--navy);">
-        </div>
+
         <button onclick="submitEditCase()" style="width:100%;padding:14px;background:var(--navy);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:500;font-family:'Noto Sans KR',sans-serif;cursor:pointer;">저장하기</button>
       </div>
     </div>
@@ -433,7 +421,7 @@ function setFilter(el, val) {
 function setSort(val) {
   currentSort = val;
   document.querySelectorAll('.sort-btn').forEach(function(b){b.classList.remove('active');});
-  var idMap = { date_desc:'sortDateDesc', date_asc:'sortDateAsc', progress:'sortProgress' };
+  var idMap = { date_desc:'sortDateDesc', date_asc:'sortDateAsc' };
   document.getElementById(idMap[val]).classList.add('active');
   renderCases(sortedCases(CASES));
 }
@@ -442,11 +430,6 @@ function sortedCases(list) {
   var arr = list.slice();
   if (currentSort === 'date_asc') {
     arr.sort(function(a, b){ return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
-  } else if (currentSort === 'progress') {
-    arr.sort(function(a, b){
-      if (a.progress !== b.progress) return a.progress - b.progress; // 낮은 진행도 먼저
-      return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;        // 동률이면 오래된순
-    });
   } else { // date_desc (기본)
     arr.sort(function(a, b){ return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
   }
@@ -478,7 +461,6 @@ function renderCases(list) {
   var html='';
   list.forEach(function(c,i){
     var bc=BADGE_CLS[c.status]||'badge-info';
-    var fc=c.progress===100?'fill-green':(c.progress>=60?'fill-blue':'fill-amber');
     var st=(c.suspect&&c.suspect!=='미입력')?'<span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">피의자: '+escHtml(c.suspect)+'</span>':'';
     var dt=(c.rank?c.rank+' ':'')+escHtml(c.detective);
     var tt=!c.isMine?'<span style="font-size:10px;background:#f0fdf4;color:#16a34a;padding:2px 7px;border-radius:10px;margin-left:4px;">팀원</span>':'';
@@ -490,7 +472,6 @@ function renderCases(list) {
         '<div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'+escHtml(c.date)+'</div>' +
         '<div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>조서 '+c.docs+'건</div>' +
       '</div>' +
-      '<div class="case-progress-wrap"><div class="case-progress-bar"><div class="case-progress-fill '+fc+'" style="width:'+c.progress+'%"></div></div><span class="case-progress-pct">'+c.progress+'%</span></div>' +
     '</div>';
   });
   document.getElementById('caseList').innerHTML=html;
@@ -555,7 +536,7 @@ function renderDrawerActions(c){
   var del=c.isMine?'<button class="action-btn" onclick="confirmDeleteCase(\''+escStr(c.id)+'\')" style="border:none;cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.8" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg><span style="color:var(--danger)">삭제</span></button>':'';
   document.getElementById('drawerActions').innerHTML=
     '<a href="writeTranscript.jsp?caseId='+encodeURIComponent(c.id)+'" class="action-btn primary"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg><span>조서 추가</span></a>' +
-    '<button class="action-btn" onclick="openEditDrawer(\''+escStr(c.id)+'\',\''+escStr(c.status)+'\','+c.progress+')" style="border:1px solid var(--border);cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.8" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><span>상태 수정</span></button>' +
+    '<button class="action-btn" onclick="openEditDrawer(\''+escStr(c.id)+'\',\''+escStr(c.status)+'\')" style="border:1px solid var(--border);cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.8" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><span>상태 수정</span></button>' +
     '<a href="caseRelationMap.jsp" class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="18" cy="19" r="2.5"/><line x1="8.4" y1="11.0" x2="15.6" y2="6.5"/><line x1="8.4" y1="13.0" x2="15.6" y2="17.5"/></svg><span>관계망</span></a>' +
     '<button type="button" class="action-btn disabled" id="contraBtn" onclick="runContradiction()" style="border:1px solid var(--border);"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>모순탐지</span></button>' +
     del +
@@ -758,18 +739,16 @@ function submitNewCase(){
   }).catch(function(){showToast('등록 중 오류 발생');});
 }
 
-function openEditDrawer(caseId,status,progress){
+function openEditDrawer(caseId,status){
   editCaseId=caseId;selectedStatus=status;
   document.getElementById('editDrawerSub').textContent=caseId;
-  document.getElementById('progressSlider').value=progress;
-  document.getElementById('progressDisplay').textContent=progress+'%';
   document.querySelectorAll('.status-btn').forEach(function(b){b.classList.toggle('selected',b.getAttribute('data-val')===status);});
   closeDrawer('caseDrawer');document.getElementById('editDrawer').classList.add('open');document.body.style.overflow='hidden';
 }
 function selectStatus(btn){document.querySelectorAll('.status-btn').forEach(function(b){b.classList.remove('selected');});btn.classList.add('selected');selectedStatus=btn.getAttribute('data-val');}
 function submitEditCase(){
   if(!editCaseId) return;
-  var p=new URLSearchParams();p.append('action','caseStatus');p.append('caseId',editCaseId);p.append('status',selectedStatus);p.append('progress',document.getElementById('progressSlider').value);
+  var p=new URLSearchParams();p.append('action','caseStatus');p.append('caseId',editCaseId);p.append('status',selectedStatus);
   fetch('caseApi',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:p.toString()}).then(function(r){return r.json();}).then(function(d){
     if(d.success){closeDrawer('editDrawer');showToast('✓ 수정됐습니다');loadCaseList();}else showToast(d.message||'수정 실패');
   }).catch(function(){showToast('수정 중 오류 발생');});
