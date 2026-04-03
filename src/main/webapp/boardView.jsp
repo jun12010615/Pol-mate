@@ -290,30 +290,56 @@ var detailPersons=[], detailEdges=[];
 var dCanvas, dCtx, dScale=1, dOffsetX=0, dOffsetY=0, dDrag=false, dLastX=0, dLastY=0;
 
 function openDetail(board) {
-  var bj;
-  try { bj = JSON.parse(board.boardJson); } catch(e) { bj = {}; }
-  detailPersons = (bj.persons || []).map(function(p) {
-    return {id:uid(), name:p.name, role:p.role||'reference', memo:p.memo||''};
-  });
-  detailEdges = (bj.edges || []).map(function(e) {
-    var sp = detailPersons.find(function(p){return p.name===e.srcName;});
-    var dp = detailPersons.find(function(p){return p.name===e.dstName;});
-    if (!sp||!dp) return null;
-    return {id:uid(), src:sp.id, dst:dp.id, relType:e.relType||'acquaint', status:e.status||'unknown'};
-  }).filter(Boolean);
-
+  // 팝업 먼저 열고 로딩 표시
   document.getElementById('detailTitle').textContent = board.caseId + ' ' + board.caseName;
-  document.getElementById('detailSub').textContent   =
-    '인물 ' + detailPersons.length + '명 · 관계선 ' + detailEdges.length + '개 · ' + (board.updatedAt||'');
+  document.getElementById('detailSub').textContent   = '불러오는 중...';
   document.getElementById('btnGoEdit').onclick = function() {
-    location.href = 'caseRelationMap.jsp?caseId=' + encodeURIComponent(board.caseId);
+    location.href = 'caseRelationMap.jsp?caseId=' + encodeURIComponent(board.caseId) + '&openBoard=true';
   };
-
   document.getElementById('detailOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
   dScale=1; dOffsetX=0; dOffsetY=0;
 
-  setTimeout(function() { initDetailCanvas(); resizeDetailCanvas(); drawDetailCanvas(); }, 120);
+  // boardApi/load 로 boardJson 실시간 조회
+  fetch('boardApi?action=load&caseId=' + encodeURIComponent(board.caseId))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error || !data.boardExists) {
+        document.getElementById('detailSub').textContent = '보드 데이터가 없습니다.';
+        detailPersons = []; detailEdges = [];
+        initDetailCanvas(); resizeDetailCanvas(); drawDetailCanvas();
+        return;
+      }
+
+      var bj;
+      try { bj = JSON.parse(data.boardJson); } catch(e) { bj = {}; }
+
+      detailPersons = (bj.persons || []).map(function(p) {
+        return {id:uid(), name:p.name||'', role:p.role||'reference', memo:p.memo||''};
+      }).filter(function(p){ return p.name; });
+
+      detailEdges = (bj.edges || []).map(function(e) {
+        var srcN = e.srcName || e.src || '';
+        var dstN = e.dstName || e.dst || '';
+        var sp = detailPersons.find(function(p){ return p.name === srcN; });
+        var dp = detailPersons.find(function(p){ return p.name === dstN; });
+        if (!sp || !dp) return null;
+        return {id:uid(), src:sp.id, dst:dp.id,
+                relType:e.relType||'acquaint', status:e.status||'unknown'};
+      }).filter(Boolean);
+
+      document.getElementById('detailSub').textContent =
+        '인물 ' + detailPersons.length + '명 · 관계선 ' + detailEdges.length + '개 · ' +
+        (data.updatedAt || board.updatedAt || '');
+
+      setTimeout(function() { initDetailCanvas(); resizeDetailCanvas(); drawDetailCanvas(); }, 80);
+    })
+    .catch(function(err) {
+      console.error('보드 상세 조회 실패:', err);
+      document.getElementById('detailSub').textContent = '불러오기 실패 — 다시 시도해 주세요.';
+      detailPersons = []; detailEdges = [];
+      initDetailCanvas(); resizeDetailCanvas(); drawDetailCanvas();
+    });
 }
 
 function closeDetail() {
@@ -339,6 +365,59 @@ function resizeDetailCanvas() {
   if (!w||!dCanvas) return;
   dCanvas.width=w.clientWidth; dCanvas.height=340; drawDetailCanvas();
 }
+// Force-directed 레이아웃 (boardView용)
+function initDetailForce(w, h) {
+  var cx = w/2, cy = h/2, n = detailPersons.length;
+  detailPersons.forEach(function(p, i) {
+    var a = (2*Math.PI*i/n) - Math.PI/2;
+    var r = Math.min(cx,cy)*0.55;
+    p._x = cx + Math.cos(a)*r;
+    p._y = cy + Math.sin(a)*r;
+    p._vx = 0; p._vy = 0;
+  });
+  if (n===1) { detailPersons[0]._x=cx; detailPersons[0]._y=cy; }
+  for (var i=0; i<150; i++) runDetailForce(w, h);
+}
+function runDetailForce(w, h) {
+  var n = detailPersons.length;
+  if (n<2) return;
+  var ideal = Math.min(w,h)*0.38, pad = 30;
+  detailPersons.forEach(function(p){ p._fx=0; p._fy=0; });
+  for (var i=0; i<n; i++) {
+    for (var j=i+1; j<n; j++) {
+      var pi=detailPersons[i], pj=detailPersons[j];
+      var dx=pi._x-pj._x, dy=pi._y-pj._y;
+      var dist=Math.sqrt(dx*dx+dy*dy)||1;
+      var f=3200/(dist*dist);
+      pi._fx+=dx/dist*f; pi._fy+=dy/dist*f;
+      pj._fx-=dx/dist*f; pj._fy-=dy/dist*f;
+    }
+  }
+  detailEdges.forEach(function(e){
+    var sp=detailPersons.find(function(p){return p.id===e.src;}),
+        dp=detailPersons.find(function(p){return p.id===e.dst;});
+    if(!sp||!dp) return;
+    var dx=dp._x-sp._x, dy=dp._y-sp._y;
+    var dist=Math.sqrt(dx*dx+dy*dy)||1;
+    var f=0.018*(dist-ideal);
+    sp._fx+=dx/dist*f; sp._fy+=dy/dist*f;
+    dp._fx-=dx/dist*f; dp._fy-=dy/dist*f;
+  });
+  detailPersons.forEach(function(p){
+    p._fx+=(w/2-p._x)*0.008; p._fy+=(h/2-p._y)*0.008;
+    p._vx=(p._vx+p._fx)*0.82; p._vy=(p._vy+p._fy)*0.82;
+    p._x=Math.max(pad,Math.min(w-pad, p._x+p._vx));
+    p._y=Math.max(pad,Math.min(h-pad, p._y+p._vy));
+  });
+}
+function calcDetailCurve(e) {
+  var pairs = detailEdges.filter(function(x){
+    return (x.src===e.src&&x.dst===e.dst)||(x.src===e.dst&&x.dst===e.src);
+  });
+  var idx = pairs.indexOf(e), total = pairs.length;
+  if (total===1) return 0;
+  return (Math.floor(idx/2)+1)*55*(idx%2===0?1:-1);
+}
 function drawDetailCanvas() {
   if (!dCtx) return;
   var c=dCanvas, ctx=dCtx;
@@ -349,37 +428,69 @@ function drawDetailCanvas() {
     ctx.textAlign='center'; ctx.fillText('인물 정보가 없습니다', c.width/2, c.height/2);
     return;
   }
-  var cx=c.width/2, cy=c.height/2, r=Math.min(cx,cy)*0.62;
-  detailPersons.forEach(function(p,i){
-    var a=(2*Math.PI*i/detailPersons.length)-Math.PI/2;
-    p._x=cx+Math.cos(a)*r+dOffsetX*dScale; p._y=cy+Math.sin(a)*r+dOffsetY*dScale;
-  });
-  if(detailPersons.length===1){detailPersons[0]._x=cx+dOffsetX*dScale;detailPersons[0]._y=cy+dOffsetY*dScale;}
+  // 첫 그리기 시 Force 레이아웃 수렴
+  if (!detailPersons[0]._x) initDetailForce(c.width, c.height);
+
   ctx.save();
+  ctx.translate(dOffsetX*dScale, dOffsetY*dScale);
+  ctx.scale(dScale, dScale);
+
+  // 관계선
   detailEdges.forEach(function(e){
-    var sp=detailPersons.find(function(p){return p.id===e.src;}),dp=detailPersons.find(function(p){return p.id===e.dst;});
-    if(!sp||!dp)return;
+    var sp=detailPersons.find(function(p){return p.id===e.src;}),
+        dp=detailPersons.find(function(p){return p.id===e.dst;});
+    if(!sp||!dp) return;
+    var curve=calcDetailCurve(e);
     var color=REL_COLOR[e.relType]||'#9ca3af';
-    ctx.beginPath();ctx.moveTo(sp._x,sp._y);ctx.lineTo(dp._x,dp._y);ctx.lineWidth=2*dScale;
-    if(e.status==='mismatch'){ctx.setLineDash([6*dScale,4*dScale]);ctx.strokeStyle='#dc2626';}
-    else if(e.status==='unknown'){ctx.setLineDash([4*dScale,4*dScale]);ctx.strokeStyle='#9ca3af';}
-    else{ctx.setLineDash([]);ctx.strokeStyle=color;}
-    ctx.stroke();ctx.setLineDash([]);
-    var ang=Math.atan2(dp._y-sp._y,dp._x-sp._x),nr=20*dScale,ax=dp._x-Math.cos(ang)*nr,ay=dp._y-Math.sin(ang)*nr;
-    ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(ax-8*dScale*Math.cos(ang-0.4),ay-8*dScale*Math.sin(ang-0.4));ctx.lineTo(ax-8*dScale*Math.cos(ang+0.4),ay-8*dScale*Math.sin(ang+0.4));ctx.closePath();
-    ctx.fillStyle=e.status==='mismatch'?'#dc2626':(e.status==='unknown'?'#9ca3af':color);ctx.fill();
-    var mx=(sp._x+dp._x)/2,my=(sp._y+dp._y)/2;
-    ctx.font=(10*dScale)+'px Noto Sans KR,sans-serif';ctx.fillStyle='rgba(255,255,255,0.75)';ctx.textAlign='center';
-    ctx.fillText(REL_LABEL[e.relType]||'',mx,my-5*dScale);
+    var isMis=e.status==='mismatch', isUnk=e.status==='unknown';
+    var sc=isMis?'#dc2626':isUnk?'#9ca3af':color;
+    ctx.lineWidth=2; ctx.strokeStyle=sc;
+    if(isMis) ctx.setLineDash([6,4]);
+    else if(isUnk) ctx.setLineDash([4,4]);
+    else ctx.setLineDash([]);
+    var mx=(sp._x+dp._x)/2, my=(sp._y+dp._y)/2;
+    var dx=dp._x-sp._x, dy=dp._y-sp._y, len=Math.sqrt(dx*dx+dy*dy)||1;
+    var cpx=mx-(dy/len)*curve, cpy=my+(dx/len)*curve;
+    ctx.beginPath(); ctx.moveTo(sp._x,sp._y);
+    if(curve===0) ctx.lineTo(dp._x,dp._y);
+    else ctx.quadraticCurveTo(cpx,cpy,dp._x,dp._y);
+    ctx.stroke(); ctx.setLineDash([]);
+    // 화살표
+    var ang=curve===0?Math.atan2(dp._y-sp._y,dp._x-sp._x):Math.atan2(dp._y-cpy,dp._x-cpx);
+    var nr=22, ax=dp._x-Math.cos(ang)*nr, ay=dp._y-Math.sin(ang)*nr;
+    ctx.beginPath(); ctx.moveTo(ax,ay);
+    ctx.lineTo(ax-9*Math.cos(ang-0.4),ay-9*Math.sin(ang-0.4));
+    ctx.lineTo(ax-9*Math.cos(ang+0.4),ay-9*Math.sin(ang+0.4));
+    ctx.closePath(); ctx.fillStyle=sc; ctx.fill(); ctx.setLineDash([]);
+    // 레이블
+    var t=0.5;
+    var lx=curve===0?mx:(1-t)*(1-t)*sp._x+2*(1-t)*t*cpx+t*t*dp._x;
+    var ly=curve===0?my:(1-t)*(1-t)*sp._y+2*(1-t)*t*cpy+t*t*dp._y;
+    var perpX=-(dy/len), perpY=dx/len;
+    if(curve===0){lx+=perpX*12; ly+=perpY*12;}
+    var label=REL_LABEL[e.relType]||'';
+    if(label){
+      ctx.font='10px Noto Sans KR,sans-serif';
+      var tw=ctx.measureText(label).width;
+      ctx.fillStyle='rgba(10,20,50,0.75)';
+      ctx.beginPath();
+      if(ctx.roundRect) ctx.roundRect(lx-tw/2-4,ly-9,tw+8,13,3);
+      else ctx.rect(lx-tw/2-4,ly-9,tw+8,13);
+      ctx.fill();
+      ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.fillText(label,lx,ly);
+    }
   });
+  // 노드
   detailPersons.forEach(function(p){
-    var nr=20*dScale;
-    ctx.beginPath();ctx.arc(p._x,p._y,nr,0,2*Math.PI);
-    ctx.fillStyle=ROLE_COLOR[p.role]||'#4a7cdc';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2*dScale;ctx.stroke();
-    ctx.font='bold '+(11*dScale)+'px Noto Sans KR,sans-serif';ctx.fillStyle='#fff';ctx.textAlign='center';
-    ctx.fillText(p.name.length>3?p.name.substr(0,3)+'…':p.name,p._x,p._y+4*dScale);
-    ctx.font=(9*dScale)+'px Noto Sans KR,sans-serif';ctx.fillStyle='rgba(255,255,255,0.7)';
-    ctx.fillText(ROLE_LABEL[p.role]||'',p._x,p._y+nr+12*dScale);
+    var nr=22;
+    ctx.beginPath(); ctx.arc(p._x,p._y,nr,0,2*Math.PI);
+    ctx.fillStyle=ROLE_COLOR[p.role]||'#4a7cdc'; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2.5; ctx.stroke();
+    ctx.font='bold 11px Noto Sans KR,sans-serif';
+    ctx.fillStyle='#fff'; ctx.textAlign='center';
+    ctx.fillText(p.name.length>3?p.name.substr(0,3)+'…':p.name,p._x,p._y+4);
+    ctx.font='9px Noto Sans KR,sans-serif'; ctx.fillStyle='rgba(255,255,255,0.75)';
+    ctx.fillText(ROLE_LABEL[p.role]||'',p._x,p._y+nr+13);
   });
   ctx.restore();
 }

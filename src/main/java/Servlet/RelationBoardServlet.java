@@ -355,7 +355,7 @@ public class RelationBoardServlet extends HttpServlet {
             "DELETE FROM relation_persons WHERE case_id = ?");
         ps.setString(1, caseId); ps.executeUpdate(); ps.close();
 
-        // 인물 삽입 & name→person_id 맵 구성
+        // 인물 삽입 & name→person_id 맵 구성 (이름 기준 중복 제거)
         Map<String, Integer> nameToId = new HashMap<>();
         if (persons != null) {
             ps = conn.prepareStatement(
@@ -363,13 +363,17 @@ public class RelationBoardServlet extends HttpServlet {
                 java.sql.Statement.RETURN_GENERATED_KEYS);
             for (int i = 0; i < persons.length(); i++) {
                 JSONObject p = persons.getJSONObject(i);
+                String pName = nvl(p.optString("name"), "").trim();
+                if (pName.isEmpty()) continue;
+                // 이름 중복 건너뜀
+                if (nameToId.containsKey(pName)) continue;
                 ps.setString(1, caseId);
-                ps.setString(2, nvl(p.optString("name"), ""));
+                ps.setString(2, pName);
                 ps.setString(3, nvl(p.optString("role"), "reference"));
                 ps.setString(4, nvl(p.optString("memo"), ""));
                 ps.executeUpdate();
                 ResultSet gk = ps.getGeneratedKeys();
-                if (gk.next()) nameToId.put(nvl(p.optString("name"), ""), gk.getInt(1));
+                if (gk.next()) nameToId.put(pName, gk.getInt(1));
                 gk.close();
             }
             ps.close();
@@ -393,7 +397,11 @@ public class RelationBoardServlet extends HttpServlet {
                 ps.setString(3, String.valueOf(dstId));
                 ps.setString(4, nvl(e.optString("relType"), "acquaint"));
                 ps.setString(5, nvl(e.optString("status"),  "unknown"));
-                String ctx = e.optString("context", "");
+                // context 허용값: scene / time / evidence 만 저장, 그 외는 null
+                String ctx = e.optString("context", "").trim();
+                if (!ctx.equals("scene") && !ctx.equals("time") && !ctx.equals("evidence")) {
+                    ctx = "";
+                }
                 ps.setString(6, ctx.isEmpty() ? null : ctx);
                 ps.executeUpdate();
             }
