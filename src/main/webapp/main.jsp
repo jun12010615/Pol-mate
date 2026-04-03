@@ -118,7 +118,10 @@
   .sec-label::after{content:'';flex:1;height:1px;background:var(--bd);}
 
   /* ══ 메뉴 그리드 ══ */
-  .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+  .menu-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+  .menu-row{display:grid;gap:10px;}
+  .menu-row.row3{grid-template-columns:1fr 1fr 1fr;}
+  .menu-row.row2{grid-template-columns:1fr 1fr;}
 
   .menu-card{
     background:var(--card);border-radius:16px;padding:16px 14px;
@@ -130,7 +133,8 @@
   .menu-card:nth-child(1){animation-delay:0.04s;}
   .menu-card:nth-child(2){animation-delay:0.08s;}
   .menu-card:nth-child(3){animation-delay:0.12s;}
-  .menu-card:nth-child(4){animation-delay:0.16s;}
+  .menu-card:nth-child(4){animation-delay:0.14s;}
+  .menu-card:nth-child(5){animation-delay:0.18s;}
   .menu-card:active{transform:scale(0.96);}
   .menu-card:hover{border-color:rgba(13,26,51,0.2);}
 
@@ -151,6 +155,8 @@
   .mn-green {color:#166534;}
   .mn-amber {color:#92400e;}
   .mn-purple{color:#5b21b6;}
+  .mi-teal  {background:#f0fdfa;}
+  .mn-teal  {color:#0f766e;}
 
   /* ══ 통계 ══ */
   .stats-row{
@@ -361,63 +367,86 @@
         <div class="sec-label">주요 기능</div>
         <div class="menu-grid">
 
-          <a href="writeTranscript.jsp" class="menu-card">
-            <div class="menu-icon-wrap mi-navy">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#1a2744" stroke-width="1.8" stroke-linecap="round">
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                <line x1="12" y1="19" x2="12" y2="23"/>
-                <line x1="8" y1="23" x2="16" y2="23"/>
-              </svg>
-            </div>
-            <div class="menu-name mn-navy">조서 작성</div>
-            <div class="menu-desc">STT + 모순 탐지</div>
-          </a>
+          <!-- 1행: 조서작성 · AI수사보조 · 사건관리 (3열) -->
+          <div class="menu-row row3">
 
-          <a href="caseRelationMap.jsp" class="menu-card">
-            <div class="menu-icon-wrap mi-green">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="1.8" stroke-linecap="round">
-                <circle cx="6" cy="12" r="2.5"/>
-                <circle cx="18" cy="5" r="2.5"/>
-                <circle cx="18" cy="19" r="2.5"/>
-                <line x1="8.4" y1="11.0" x2="15.6" y2="6.5"/>
-                <line x1="8.4" y1="13.0" x2="15.6" y2="17.5"/>
-              </svg>
-            </div>
-            <div class="menu-name mn-green">사건 관계망</div>
-            <div class="menu-desc">인물 · 관계 시각화</div>
-          </a>
+            <a href="writeTranscript.jsp" class="menu-card">
+              <div class="menu-icon-wrap mi-navy">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#1a2744" stroke-width="1.8" stroke-linecap="round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  <line x1="12" y1="19" x2="12" y2="23"/>
+                  <line x1="8" y1="23" x2="16" y2="23"/>
+                </svg>
+              </div>
+              <div class="menu-name mn-navy">조서 작성</div>
+              <div class="menu-desc">STT · 모순</div>
+            </a>
 
-          <a href="askAI" class="menu-card">
-            <div class="menu-icon-wrap mi-amber">
-              <svg width="20" height="20" viewBox="0 0 86 86" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="#92400e" opacity="0.15"/>
-                <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="#92400e" stroke-width="4"/>
-                <circle cx="43" cy="40" r="11" fill="#92400e" opacity="0.08"/>
-                <circle cx="43" cy="40" r="6" fill="#b45309" opacity="0.7"/>
-                <circle cx="43" cy="40" r="3" fill="#92400e"/>
-                <circle cx="43" cy="22" r="3" fill="#b45309"/>
-                <circle cx="43" cy="58" r="3" fill="#b45309"/>
-                <circle cx="28" cy="40" r="3" fill="#b45309"/>
-                <circle cx="58" cy="40" r="3" fill="#b45309"/>
-              </svg>
-            </div>
-            <div class="menu-name mn-amber">AI 수사 보조</div>
-            <div class="menu-desc">질의응답 · 법령 검색</div>
-          </a>
+            <a href="askAI" class="menu-card">
+              <div class="menu-icon-wrap mi-amber">
+                <svg width="20" height="20" viewBox="0 0 86 86" fill="none">
+                  <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="#92400e" opacity="0.15"/>
+                  <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="#92400e" stroke-width="4"/>
+                  <circle cx="43" cy="40" r="6" fill="#b45309" opacity="0.7"/>
+                  <circle cx="43" cy="40" r="3" fill="#92400e"/>
+                  <circle cx="43" cy="22" r="3" fill="#b45309"/>
+                  <circle cx="43" cy="58" r="3" fill="#b45309"/>
+                  <circle cx="28" cy="40" r="3" fill="#b45309"/>
+                  <circle cx="58" cy="40" r="3" fill="#b45309"/>
+                </svg>
+              </div>
+              <div class="menu-name mn-amber">AI 보조</div>
+              <div class="menu-desc">질의응답</div>
+            </a>
 
-          <a href="myCase.jsp" class="menu-card">
-            <div class="menu-icon-wrap mi-purple">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#5b21b6" stroke-width="1.8" stroke-linecap="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-              </svg>
-            </div>
-            <div class="menu-name mn-purple">사건 관리</div>
-            <div class="menu-desc">이력 · 수정 · 사건별</div>
-          </a>
+            <a href="myCase.jsp" class="menu-card">
+              <div class="menu-icon-wrap mi-purple">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#5b21b6" stroke-width="1.8" stroke-linecap="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+              </div>
+              <div class="menu-name mn-purple">사건 관리</div>
+              <div class="menu-desc">이력 · 수정</div>
+            </a>
+
+          </div>
+
+          <!-- 2행: 사건관계망 · 보드조회 (2열) -->
+          <div class="menu-row row2">
+
+            <a href="caseRelationMap.jsp" class="menu-card">
+              <div class="menu-icon-wrap mi-green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="1.8" stroke-linecap="round">
+                  <circle cx="6" cy="12" r="2.5"/>
+                  <circle cx="18" cy="5" r="2.5"/>
+                  <circle cx="18" cy="19" r="2.5"/>
+                  <line x1="8.4" y1="11.0" x2="15.6" y2="6.5"/>
+                  <line x1="8.4" y1="13.0" x2="15.6" y2="17.5"/>
+                </svg>
+              </div>
+              <div class="menu-name mn-green">사건 관계망</div>
+              <div class="menu-desc">인물 · 관계 시각화</div>
+            </a>
+
+            <a href="boardView.jsp" class="menu-card">
+              <div class="menu-icon-wrap mi-teal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round">
+                  <circle cx="6"  cy="12" r="2.5"/>
+                  <circle cx="18" cy="5"  r="2.5"/>
+                  <circle cx="18" cy="19" r="2.5"/>
+                  <line x1="8.4" y1="10.9" x2="15.6" y2="6.6"/>
+                  <line x1="8.4" y1="13.1" x2="15.6" y2="17.4"/>
+                </svg>
+              </div>
+              <div class="menu-name mn-teal">보드 조회</div>
+              <div class="menu-desc">사건별 관계망 보드</div>
+            </a>
+
+          </div>
 
         </div>
       </div>

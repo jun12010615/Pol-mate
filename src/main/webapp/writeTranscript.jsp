@@ -383,7 +383,7 @@
         <div style="display:flex;flex-direction:column;gap:10px;">
           <button onclick="location.href='myCase.jsp'" class="btn-save" style="margin-bottom:0;">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            내 조서 관리로 이동
+            사건 관리로 이동
           </button>
           <button onclick="resetAll()" class="btn-reset">새 조서 작성</button>
         </div>
