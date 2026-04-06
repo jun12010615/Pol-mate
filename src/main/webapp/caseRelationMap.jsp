@@ -9,6 +9,8 @@
   // URL 파라미터: 보드뷰에서 직접 편집 진입
   String paramCaseId   = request.getParameter("caseId")   != null ? request.getParameter("caseId")   : "";
   String paramOpenBoard= request.getParameter("openBoard") != null ? request.getParameter("openBoard") : "";
+  String safeCaseIdAttr = paramCaseId.replace("&", "&amp;").replace("\"", "&quot;").replace("'", "&#39;").replace("<", "&lt;");
+  String safeOpenBoardAttr = "true".equalsIgnoreCase(paramOpenBoard) ? "true" : "false";
 
   // ── 팀 사건 목록 조회 ────────────────────────────────────────────
   DBConnectionMgr mgr = DBConnectionMgr.getInstance();
@@ -494,6 +496,8 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
             <div class="legend-item"><div class="legend-line" style="background:#f97316;height:2px;"></div>피해관계</div>
             <div class="legend-item"><div class="legend-line" style="background:#4a7cdc;height:2px;"></div>목격</div>
             <div class="legend-item"><div class="legend-line" style="background:#16a34a;height:2px;"></div>가족</div>
+            <div class="legend-item"><div class="legend-line" style="background:#9ca3af;height:2px;"></div>지인</div>
+            <div class="legend-item"><div class="legend-line" style="background:#f59e0b;height:2px;"></div>진술 불일치(점선)</div>
           </div>
         </div>
       </div>
@@ -555,6 +559,8 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
             <div class="legend-item"><div class="legend-line" style="background:#f97316;height:2px;"></div>피해관계</div>
             <div class="legend-item"><div class="legend-line" style="background:#4a7cdc;height:2px;"></div>목격</div>
             <div class="legend-item"><div class="legend-line" style="background:#16a34a;height:2px;"></div>가족</div>
+            <div class="legend-item"><div class="legend-line" style="background:#9ca3af;height:2px;"></div>지인</div>
+            <div class="legend-item"><div class="legend-line" style="background:#f59e0b;height:2px;"></div>진술 불일치(점선)</div>
           </div>
         </div>
       </div>
@@ -639,6 +645,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 </div>
 
 <div id="toast"></div>
+<div id="_relationPageBoot" hidden data-case-id="<%= safeCaseIdAttr %>" data-open-board="<%= safeOpenBoardAttr %>"></div>
 
 <script>
 // ── 전역 상태 ──────────────────────────────────────────────────────
@@ -651,7 +658,13 @@ var checkedTranscripts = [];
 var ROLE_COLOR = {suspect:'#dc2626',victim:'#f97316',witness:'#4a7cdc',reference:'#8b5cf6'};
 var ROLE_LABEL = {suspect:'피의자',victim:'피해자',witness:'목격자',reference:'참고인'};
 var REL_COLOR  = {accomplice:'#dc2626',harm:'#f97316',witness:'#4a7cdc',acquaint:'#9ca3af',family:'#16a34a'};
+// mismatch 상태 선색: 공범(빨강)과 혼동 방지
+var EDGE_MISMATCH_STROKE = '#f59e0b';
 var REL_LABEL  = {accomplice:'공범',harm:'피해관계',witness:'목격',acquaint:'지인',family:'가족'};
+
+/** Pol-mate-Serv (Flask app.py) — Ollama는 서버에서만 호출. 로컬 개발 시 http://127.0.0.1:5001 로 바꿀 것. */
+var POL_MATE_SERV_BASE = 'http://113.198.238.108:5001';
+var RELATION_MAP_URL   = POL_MATE_SERV_BASE.replace(/\/$/, '') + '/relation_map';
 
 // ── STEP 1: 사건 선택 ────────────────────────────────────────────
 function selectCase(caseId, caseName) {
@@ -794,85 +807,56 @@ function analyzeWithAI() {
     // 원문 로드 결과 요약
     var filled = results.filter(function(r) { return r.text && r.text.trim().length > 0; }).length;
     console.log('[조서 원문 로드 완료] 총 ' + results.length + '건 중 ' + filled + '건 원문 있음');
-    document.getElementById('aiLoadingText').textContent = 'Ollama AI가 관계망을 분석하는 중... (' + filled + '/' + results.length + '건 원문 있음)';
+    document.getElementById('aiLoadingText').textContent = 'AI 서버(Pol-mate-Serv)가 관계망을 분석하는 중... (' + filled + '/' + results.length + '건 원문 있음)';
 
-    // AI에게 보낼 프롬프트 구성 (원문이 없으면 진술자 메타정보로 대체)
-    var transcriptBlock = results.map(function(r, i) {
-      var body = r.text && r.text.trim().length > 0
-        ? r.text
-        : '(원문 없음 — 진술자 정보만 존재)';
-      return '[조서 ' + (i+1) + '] 진술자: ' + r.meta.name + ' (' + r.meta.type + ')\n' + body;
-    }).join('\n\n---\n\n');
+    var payload = {
+      caseId: currentCaseId,
+      caseName: currentCaseName,
+      transcripts: results.map(function(r) {
+        return {
+          name: r.meta.name || '',
+          type: r.meta.type || '',
+          text: r.text || ''
+        };
+      })
+    };
 
-    // 원문이 모두 없어도 AI 프롬프트로 관계선까지 추론 (메타정보 활용)
-    // allEmpty 여부와 무관하게 항상 AI 분석 수행
-    // 진술자 이름/역할 목록을 간결하게 추출 (프롬프트 토큰 절약)
-    var personsMeta = results.map(function(r) {
-      return r.meta.name + '(' + r.meta.type + ')';
-    }).join(', ');
-
-    var prompt =
-      'Output ONLY valid JSON. No explanation. No markdown.\n' +
-      'Analyze these Korean criminal case transcripts and extract persons and relationships.\n\n' +
-      'Case: ' + currentCaseId + ' ' + currentCaseName + '\n' +
-      'Persons: ' + personsMeta + '\n\n' +
-      transcriptBlock + '\n\n' +
-      'Rules:\n' +
-      '- role must be one of: suspect victim witness reference\n' +
-      '- relType must be one of: accomplice harm witness acquaint family\n' +
-      '- status must be one of: match mismatch unknown\n' +
-      '- context must be empty string\n' +
-      '- Create at least one edge. Use acquaint if unsure.\n\n' +
-      'Output exactly this JSON format:\n' +
-      '{"persons":[{"name":"A","role":"suspect","memo":""},{"name":"B","role":"victim","memo":""}],' +
-      '"edges":[{"src":"A","dst":"B","relType":"harm","status":"unknown","context":""}]}';
-
-    // Ollama API 호출
-    fetch('http://localhost:11434/api/generate', {
+    fetch(RELATION_MAP_URL, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({model:'gemma3:1b', prompt:prompt, stream:false})
+      body: JSON.stringify(payload)
     })
     .then(function(r) {
-      if (!r.ok) throw new Error('Ollama HTTP ' + r.status);
-      return r.json();
+      return r.json().then(function(j) {
+        return { ok: r.ok, status: r.status, data: j };
+      }).catch(function() {
+        return { ok: false, status: r.status, data: { error: 'JSON 파싱 실패', response: '' } };
+      });
     })
-    .then(function(data) {
+    .then(function(w) {
+      var data = w.data || {};
+      if (!w.ok || data.success === false) {
+        var msg = (data.error || ('HTTP ' + w.status));
+        console.warn('[relation_map]', msg, data);
+        document.getElementById('aiLoading').classList.remove('show');
+        runFallback('AI 서버: ' + msg);
+        return;
+      }
       var raw = data.response || '';
-      console.log('[Ollama 응답 수신] 길이:', raw.length, '앞부분:', raw.substring(0, 100));
+      console.log('[relation_map 응답] 길이:', raw.length, '앞부분:', raw.substring(0, 120));
       if (!raw.trim()) {
-        console.warn('[Ollama] 빈 응답 — model:', data.model, 'done:', data.done);
-        runFallback('Ollama가 빈 응답을 반환했습니다.');
+        runFallback('AI 서버가 빈 응답을 반환했습니다.');
         document.getElementById('aiLoading').classList.remove('show');
         return;
       }
       parseAndApplyAiResult(raw);
     })
     .catch(function(err) {
-      console.warn('[Ollama 직접 호출 실패]', err.message, '— 서버 프록시 시도');
-      callAiViaServlet(prompt);
+      console.warn('[relation_map] 네트워크 오류', err);
+      document.getElementById('aiLoading').classList.remove('show');
+      runFallback(err.message || 'Pol-mate-Serv에 연결할 수 없습니다. (' + RELATION_MAP_URL + ')');
     });
   });
-}
-
-// ── 서버 프록시 경유 AI 호출 (Ollama 직접 접근 불가 시) ──────────
-function callAiViaServlet(prompt) {
-  document.getElementById('aiLoadingText').textContent = '서버를 통해 AI 분석 중...';
-
-  var params = new URLSearchParams();
-  params.append('userMsg', prompt);
-  params.append('category', '관계망분석');
-
-  fetch('askAI', { method:'POST', body:params })
-    .then(function(r) { return r.text(); })
-    .then(function(html) {
-      // 서블릿이 JSP로 forward하므로 result attribute 직접 호출 불가
-      // 대신 별도 JSON 엔드포인트 시도 또는 fallback
-      fallbackManualMode();
-    })
-    .catch(function() {
-      fallbackManualMode();
-    });
 }
 
 // ── AI 응답 파싱 & 적용 ──────────────────────────────────────────
@@ -902,6 +886,7 @@ function normalizeRelType(r) {
   if (r.indexOf('피해') >= 0 || r.indexOf('harm')       >= 0) return 'harm';
   if (r.indexOf('목격') >= 0 || r.indexOf('witness')    >= 0) return 'witness';
   if (r.indexOf('가족') >= 0 || r.indexOf('family')     >= 0) return 'family';
+  if (r.indexOf('지인') >= 0 || r.indexOf('지언') >= 0 || r.indexOf('acquaint') >= 0) return 'acquaint';
   return 'acquaint';
 }
 function normalizeStatus(s) {
@@ -1112,24 +1097,33 @@ function runFallback(reason) {
   });
 }
 
-// ── Ollama 미실행 fallback ────────────────────────────────────────
+// ── Pol-mate-Serv /relation_map 실패 시 수동 모드 안내 ───────────
 function fallbackManualMode() {
   document.getElementById('aiLoading').classList.remove('show');
   document.getElementById('aiResultBox').classList.add('show');
-  document.getElementById('aiResultText').textContent = 'AI 서버(Ollama)에 연결할 수 없습니다. 서버에서 "ollama run gemma3:1b"를 실행한 후 다시 시도해 주세요.';
+  document.getElementById('aiResultText').textContent =
+    'Pol-mate-Serv(' + POL_MATE_SERV_BASE + ')에 연결할 수 없습니다. app.py 실행·방화벽·CORS·서버의 Ollama(OLLAMA_URL)를 확인한 뒤 다시 시도해 주세요.';
   document.getElementById('btnAnalyze').disabled = false;
-  showToast('Ollama 서버에 연결할 수 없습니다.');
+  showToast('AI 서버 연결 실패');
   showBoardSection([], []);
 }
 
 // ── DB 저장 (boardApi) ───────────────────────────────────────────
 function saveToDb(caseId, parsedPersons, parsedEdges, callback) {
   var boardJson = buildBoardJson(parsedPersons, parsedEdges);
-  fetch('boardApi?action=save', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json; charset=UTF-8'},
-    body: JSON.stringify({caseId:caseId, boardJson:boardJson, isUpdate:false})
-  })
+  var cid = String(caseId || '').trim();
+  // 기존 보드가 있으면 isUpdate 플래그 전달(알림·호환). 서버는 존재 여부로 UPSERT 하지만 클라이언트도 명시.
+  fetch('boardApi?action=load&caseId=' + encodeURIComponent(cid))
+    .then(function(r) { return r.ok ? r.json() : {}; })
+    .catch(function() { return {}; })
+    .then(function(info) {
+      var exists = !!(info && info.success && info.boardExists);
+      return fetch('boardApi?action=save', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        body: JSON.stringify({caseId: cid, boardJson: boardJson, isUpdate: exists})
+      });
+    })
   .then(function(r) {
     if (r.status === 404) {
       console.error('[DB 저장 실패] RelationBoardServlet이 배포되지 않았습니다. RelationBoardServlet.java를 배포하고 relation_boards 테이블을 생성해 주세요.');
@@ -1143,8 +1137,8 @@ function saveToDb(caseId, parsedPersons, parsedEdges, callback) {
     return r.json();
   })
   .then(function(d) {
-    if (d && d.error) {
-      console.error('boardApi save 서버 오류:', d.error);
+    if (!d || d.error || d.success === false) {
+      if (d && d.error) console.error('boardApi save 서버 오류:', d.error);
       callback(false);
     } else {
       callback(true);
@@ -1343,7 +1337,7 @@ function drawEdge(ctx, sp, dp, e, allEdges, sc) {
   var color  = REL_COLOR[e.relType] || '#9ca3af';
   var isMis  = e.status === 'mismatch';
   var isUnk  = e.status === 'unknown';
-  var strokeC = isMis ? '#dc2626' : isUnk ? '#9ca3af' : color;
+  var strokeC = isMis ? EDGE_MISMATCH_STROKE : isUnk ? '#9ca3af' : color;
 
   ctx.lineWidth = 2 * sc;
   if (isMis)      ctx.setLineDash([6*sc, 4*sc]);
@@ -1543,7 +1537,7 @@ function drawEdgeScaled(ctx, sp, dp, e, allEdges) {
   var color   = REL_COLOR[e.relType] || '#9ca3af';
   var isMis   = e.status === 'mismatch';
   var isUnk   = e.status === 'unknown';
-  var strokeC = isMis ? '#dc2626' : isUnk ? '#9ca3af' : color;
+  var strokeC = isMis ? EDGE_MISMATCH_STROKE : isUnk ? '#9ca3af' : color;
   var label   = REL_LABEL[e.relType] || '';
 
   ctx.lineWidth   = 2;
@@ -2018,7 +2012,7 @@ function drawCanvas() {
     var color = REL_COLOR[e.relType] || '#9ca3af';
     ctx.beginPath(); ctx.moveTo(sp._x,sp._y); ctx.lineTo(dp._x,dp._y);
     ctx.lineWidth = 2*scale;
-    if (e.status==='mismatch')     { ctx.setLineDash([6*scale,4*scale]); ctx.strokeStyle='#dc2626'; }
+    if (e.status==='mismatch')     { ctx.setLineDash([6*scale,4*scale]); ctx.strokeStyle=EDGE_MISMATCH_STROKE; }
     else if (e.status==='unknown') { ctx.setLineDash([4*scale,4*scale]); ctx.strokeStyle='#9ca3af'; }
     else                           { ctx.setLineDash([]); ctx.strokeStyle=color; }
     ctx.stroke(); ctx.setLineDash([]);
@@ -2031,7 +2025,7 @@ function drawCanvas() {
     ctx.lineTo(ax-8*scale*Math.cos(ang-0.4), ay-8*scale*Math.sin(ang-0.4));
     ctx.lineTo(ax-8*scale*Math.cos(ang+0.4), ay-8*scale*Math.sin(ang+0.4));
     ctx.closePath();
-    ctx.fillStyle = e.status==='mismatch'?'#dc2626':(e.status==='unknown'?'#9ca3af':color);
+    ctx.fillStyle = e.status==='mismatch'?EDGE_MISMATCH_STROKE:(e.status==='unknown'?'#9ca3af':color);
     ctx.fill();
 
     // 관계 레이블
@@ -2098,8 +2092,10 @@ window.addEventListener('resize', resizeCanvas);
 
 // ── URL 파라미터로 직접 진입 시 자동 처리 ────────────────────────
 (function() {
-  var initCaseId    = '<%= paramCaseId.replace("'","\'") %>';
-  var initOpenBoard = '<%= paramOpenBoard %>' === 'true';
+  var boot = document.getElementById('_relationPageBoot');
+  if (!boot) return;
+  var initCaseId    = boot.getAttribute('data-case-id') || '';
+  var initOpenBoard = boot.getAttribute('data-open-board') === 'true';
 
   if (!initCaseId) return;
 

@@ -21,6 +21,9 @@
     } catch (Exception e) { e.printStackTrace(); }
     finally { mgr.freeConnection(conn); }
   }
+  if (paramCaseName == null) paramCaseName = "";
+  String safeCaseIdAttr = paramCaseId.replace("&", "&amp;").replace("\"", "&quot;").replace("'", "&#39;").replace("<", "&lt;");
+  String safeCaseNameAttr = paramCaseName.replace("&", "&amp;").replace("\"", "&quot;").replace("'", "&#39;").replace("<", "&lt;");
 %>
 <!DOCTYPE html>
 <html lang="ko">
@@ -361,11 +364,13 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 </div>
 
 <div id="toast"></div>
+<div id="_boardEditPageBoot" hidden data-case-id="<%= safeCaseIdAttr %>" data-case-name="<%= safeCaseNameAttr %>"></div>
 
 <script>
-// ── 상태 ─────────────────────────────────────────────────────────
-var currentCaseId   = '<%= paramCaseId.replace("'","\\'") %>';
-var currentCaseName = '<%= paramCaseName.replace("'","\\'") %>';
+// ── 상태: data-* 에서 사건 ID·이름 로드 (스크립트 안에 퍼센트+등호 조합을 쓰면 JSP가 표현식으로 오인식함) ──
+var _beBoot = document.getElementById('_boardEditPageBoot');
+var currentCaseId   = _beBoot ? (_beBoot.getAttribute('data-case-id')   || '') : '';
+var currentCaseName = _beBoot ? (_beBoot.getAttribute('data-case-name') || '') : '';
 var persons = [], edges = [];
 var boardExistsInDb = false;
 var _fdInit = false;
@@ -380,10 +385,14 @@ var REL_LABEL  = {accomplice:'공범',harm:'피해관계',witness:'목격',acqua
 // ── 초기화 ───────────────────────────────────────────────────────
 window.addEventListener('load', function() {
   var loaded = false;
-  // sessionStorage에서 AI 분석 결과 로드
+  var urlFromAi = /[?&]fromAi=1(?:&|$)/.test(window.location.search || '');
+  var sc = String(currentCaseId || '').trim();
+
+  // sessionStorage: 관계망 페이지에서 방금 저장한 AI 분석 결과(기존 DB 보드보다 우선)
   try {
     var sid = sessionStorage.getItem('boardEdit_caseId');
-    if (sid && sid === currentCaseId) {
+    var ss = String(sid != null ? sid : '').trim();
+    if (sid != null && ss === sc && sc) {
       var bj = JSON.parse(sessionStorage.getItem('boardEdit_json') || '{}');
       persons = (bj.persons || []).map(function(p) {
         return {id:uid(), name:p.name||'', role:p.role||'reference', memo:p.memo||''};
@@ -394,18 +403,40 @@ window.addEventListener('load', function() {
         if (!sp||!dp) return null;
         return {id:uid(),src:sp.id,dst:dp.id,relType:e.relType||'acquaint',status:e.status||'unknown'};
       }).filter(Boolean);
+      var hasData = persons.length > 0 || edges.length > 0;
+      if (hasData) {
+        sessionStorage.removeItem('boardEdit_caseId');
+        sessionStorage.removeItem('boardEdit_caseName');
+        sessionStorage.removeItem('boardEdit_json');
+        loaded = true;
+      } else {
+        sessionStorage.removeItem('boardEdit_caseId');
+        sessionStorage.removeItem('boardEdit_caseName');
+        sessionStorage.removeItem('boardEdit_json');
+        loaded = false;
+      }
+    }
+  } catch(ex) {
+    try {
       sessionStorage.removeItem('boardEdit_caseId');
       sessionStorage.removeItem('boardEdit_caseName');
       sessionStorage.removeItem('boardEdit_json');
-      loaded = true;
-    }
-  } catch(ex) {}
+    } catch (ignore) {}
+  }
 
   initCanvas();
 
   if (!loaded && currentCaseId) {
+    if (urlFromAi) {
+      showToast('AI 분석 결과를 불러오지 못했습니다. 저장된 보드를 표시합니다.');
+    }
     loadFromDb();
   } else {
+    if (loaded && urlFromAi && sc) {
+      try {
+        history.replaceState({}, '', 'boardEdit.jsp?caseId=' + encodeURIComponent(sc));
+      } catch (e1) {}
+    }
     checkDbExists();
     renderAll();
   }
