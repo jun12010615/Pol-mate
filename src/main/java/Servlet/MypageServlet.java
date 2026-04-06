@@ -126,10 +126,25 @@ public class MypageServlet extends HttpServlet {
                 break;
             }
 
-            // ── 활동 통계 ────────────────────────────────────────
+            // ── 활동 통계 (기간별 + 월별 차트) ─────────────────
             case "stats": {
-                MypageStatsDTO stats = dao.getStats(userId);
-                sendJson(resp, stats);
+                String period = req.getParameter("period");
+                if (period == null || period.isEmpty()) period = "all";
+
+                MypageStatsDTO stats = "all".equals(period)
+                    ? dao.getStats(userId)
+                    : dao.getStatsByPeriod(userId, period);
+
+                java.util.Map<String, Integer> monthly = dao.getMonthlyTranscripts(userId);
+
+                java.util.Map<String, Object> result = new java.util.HashMap<>();
+                result.put("totalCases",         stats.getTotalCases());
+                result.put("activeCases",        stats.getActiveCases());
+                result.put("totalTranscripts",   stats.getTotalTranscripts());
+                result.put("contradictionCount", stats.getContradictionCount());
+                result.put("relationEdges",      stats.getRelationEdges());
+                result.put("monthly",            monthly);
+                sendJson(resp, result);
                 break;
             }
 

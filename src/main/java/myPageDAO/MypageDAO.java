@@ -7,7 +7,9 @@ import myPageDTO.UserDTO;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class MypageDAO {
@@ -264,6 +266,129 @@ public class MypageDAO {
         }
 
         return stats;
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 5-b. 기간별 통계 (period: week / month / all)
+    // ════════════════════════════════════════════════════════════════
+    public MypageStatsDTO getStatsByPeriod(String userId, String period) {
+        MypageStatsDTO stats = new MypageStatsDTO();
+        String dateFilter = "";
+        if ("week".equals(period)) {
+            dateFilter = " AND t.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+        } else if ("month".equals(period)) {
+            dateFilter = " AND t.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+        }
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            conn = mgr.getConnection();
+            String sql =
+                "SELECT COUNT(*) AS total_transcripts, " +
+                "  SUM(t.has_contradiction) AS contradiction_count " +
+                "FROM transcripts t " +
+                "JOIN cases c ON t.case_id = c.case_id " +
+                "WHERE t.user_id = ?" + dateFilter;
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, userId);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                stats.setTotalTranscripts(rs.getInt("total_transcripts"));
+                stats.setContradictionCount(rs.getInt("contradiction_count"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            mgr.freeConnection(conn, pstmt, rs);
+        }
+
+        // 팀 사건 (기간 필터 없음 — 사건은 생성일 기준이 아닌 현재 상태 기반)
+        try {
+            conn = mgr.getConnection();
+            String sql =
+                "SELECT COUNT(*) AS total_cases, " +
+                "  SUM(CASE WHEN c.status != '완료' THEN 1 ELSE 0 END) AS active_cases " +
+                "FROM cases c " +
+                "WHERE (c.user_id = ? OR c.user_id IN (" +
+                "  SELECT u2.user_id FROM users u2 " +
+                "  JOIN users me ON me.user_id = ? " +
+                "  WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL" +
+                "))";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, userId);
+            pstmt.setString(2, userId);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                stats.setTotalCases(rs.getInt("total_cases"));
+                stats.setActiveCases(rs.getInt("active_cases"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            mgr.freeConnection(conn, pstmt, rs);
+        }
+
+        // 관계망 (기간 필터 적용)
+        try {
+            conn = mgr.getConnection();
+            String relFilter = "";
+            if ("week".equals(period))  relFilter = " AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+            else if ("month".equals(period)) relFilter = " AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+            pstmt = conn.prepareStatement(
+                "SELECT COUNT(*) AS relation_count FROM relation_history WHERE user_id = ?" + relFilter);
+            pstmt.setString(1, userId);
+            rs = pstmt.executeQuery();
+            if (rs.next()) stats.setRelationEdges(rs.getInt("relation_count"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            mgr.freeConnection(conn, pstmt, rs);
+        }
+
+        return stats;
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 5-c. 월별 조서 처리 현황 (최근 6개월)
+    // ════════════════════════════════════════════════════════════════
+    public Map<String, Integer> getMonthlyTranscripts(String userId) {
+        // 최근 6개월 라벨 미리 생성 (데이터 없는 달도 0으로 표시)
+        Map<String, Integer> result = new LinkedHashMap<>();
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        for (int i = 5; i >= 0; i--) {
+            java.util.Calendar c2 = (java.util.Calendar) cal.clone();
+            c2.add(java.util.Calendar.MONTH, -i);
+            String key = String.format("%d.%02d",
+                c2.get(java.util.Calendar.YEAR),
+                c2.get(java.util.Calendar.MONTH) + 1);
+            result.put(key, 0);
+        }
+
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = mgr.getConnection();
+            pstmt = conn.prepareStatement(
+                "SELECT DATE_FORMAT(created_at, '%Y.%m') AS ym, COUNT(*) AS cnt " +
+                "FROM transcripts " +
+                "WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH) " +
+                "GROUP BY ym ORDER BY ym");
+            pstmt.setString(1, userId);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                String ym = rs.getString("ym");
+                if (result.containsKey(ym)) result.put(ym, rs.getInt("cnt"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            mgr.freeConnection(conn, pstmt, rs);
+        }
+        return result;
     }
 
     // ════════════════════════════════════════════════════════════════

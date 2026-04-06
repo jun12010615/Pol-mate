@@ -639,8 +639,8 @@
             </svg>
           </div>
           <div class="menu-text">
-            <div class="menu-name">방해금지 모드</div>
-            <div class="menu-sub">알림 표시 안 함</div>
+            <div class="menu-name">야간 방해금지</div>
+            <div class="menu-sub">22:00 ~ 07:00 알림 차단</div>
           </div>
           <div class="menu-right">
             <label class="toggle-wrap">
@@ -1377,31 +1377,78 @@ function loadHistory() {
 }
 
 // ── 활동 통계 로드 ────────────────────────────────────────────────
-var _statsCache = null;
+var _currentPeriod = 'week';
 
 function loadStats(period) {
-  if (_statsCache) { renderStats(_statsCache, period); return; }
-
-  fetch('mypage?action=stats')
+  _currentPeriod = period || 'week';
+  fetch('mypage?action=stats&period=' + _currentPeriod + '&_=' + Date.now())
     .then(function(r) { return r.json(); })
-    .then(function(data) {
-      _statsCache = data;
-      renderStats(data, period);
-    })
+    .then(function(data) { renderStats(data); })
     .catch(function(e) { console.error('통계 로드 실패', e); });
 }
 
-function renderStats(data, period) {
-  // 기간 필터 없이 전체 집계값 표시 (서블릿에서 기간별 API 확장 가능)
+function renderStats(data) {
   document.getElementById('statsGrid').innerHTML =
-    '<div class="stat-tile"><div class="tile-num">' + (data.totalCases || 0)          + '</div><div class="tile-lbl">담당 사건</div></div>' +
-    '<div class="stat-tile"><div class="tile-num">' + (data.totalTranscripts || 0)     + '</div><div class="tile-lbl">조서 처리</div></div>' +
-    '<div class="stat-tile"><div class="tile-num">' + (data.contradictionCount || 0)   + '</div><div class="tile-lbl">모순 탐지</div></div>' +
-    '<div class="stat-tile"><div class="tile-num">' + (data.relationEdges || 0)        + '</div><div class="tile-lbl">관계망 등록</div></div>';
+    '<div class="stat-tile"><div class="tile-num">' + (data.activeCases      || 0) + '</div><div class="tile-lbl">진행 사건</div></div>' +
+    '<div class="stat-tile"><div class="tile-num">' + (data.totalTranscripts || 0) + '</div><div class="tile-lbl">조서 처리</div></div>' +
+    '<div class="stat-tile"><div class="tile-num">' + (data.contradictionCount||0) + '</div><div class="tile-lbl">모순 탐지</div></div>' +
+    '<div class="stat-tile"><div class="tile-num">' + (data.relationEdges    || 0) + '</div><div class="tile-lbl">관계망 등록</div></div>';
 
-  // 막대 차트: 데이터 없을 때 빈 상태 표시
-  document.getElementById('barChart').innerHTML  = '<div style="width:100%;text-align:center;color:var(--text-muted);font-size:11px;padding-top:24px;">기간별 데이터 준비 중</div>';
-  document.getElementById('barLabels').innerHTML = '';
+  renderBarChart(data.monthly || {});
+}
+
+function renderBarChart(monthly) {
+  var chartEl  = document.getElementById('barChart');
+  var labelEl  = document.getElementById('barLabels');
+  var entries  = Object.entries(monthly);
+  if (!entries.length) {
+    chartEl.innerHTML  = '<div style="width:100%;text-align:center;color:var(--text-muted);font-size:11px;padding-top:24px;">데이터 없음</div>';
+    labelEl.innerHTML  = '';
+    return;
+  }
+
+  var maxVal = Math.max.apply(null, entries.map(function(e){ return e[1]; })) || 1;
+  var BAR_H  = 72; // 최대 막대 높이(px)
+  var accent = '#4a7cdc';
+  var muted  = 'rgba(74,124,220,0.25)';
+
+  chartEl.innerHTML  = '';
+  labelEl.innerHTML  = '';
+  chartEl.style.display = 'flex';
+  chartEl.style.alignItems = 'flex-end';
+  chartEl.style.gap  = '6px';
+  chartEl.style.height = (BAR_H + 4) + 'px';
+  labelEl.style.display = 'flex';
+  labelEl.style.gap  = '6px';
+
+  entries.forEach(function(entry) {
+    var ym  = entry[0]; // "2026.04"
+    var val = entry[1];
+    var pct = val / maxVal;
+    var bh  = Math.max(pct * BAR_H, val > 0 ? 6 : 2);
+
+    // 막대
+    var bar = document.createElement('div');
+    bar.style.cssText = 'flex:1;border-radius:4px 4px 0 0;transition:height 0.4s ease;cursor:default;position:relative;';
+    bar.style.height  = bh + 'px';
+    bar.style.background = val > 0 ? accent : muted;
+    bar.title = ym + ': ' + val + '건';
+
+    // 수치 레이블 (0이 아닐때만)
+    if (val > 0) {
+      var numEl = document.createElement('div');
+      numEl.style.cssText = 'position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--accent, #4a7cdc);font-weight:500;white-space:nowrap;';
+      numEl.textContent = val;
+      bar.appendChild(numEl);
+    }
+    chartEl.appendChild(bar);
+
+    // 레이블 (월만 표시)
+    var lbl = document.createElement('div');
+    lbl.style.cssText = 'flex:1;text-align:center;font-size:9px;color:var(--text-muted);white-space:nowrap;overflow:hidden;';
+    lbl.textContent = ym.slice(5); // "04"
+    labelEl.appendChild(lbl);
+  });
 }
 
 function setPeriod(btn, period) {
