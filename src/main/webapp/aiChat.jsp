@@ -79,7 +79,7 @@
 
   /* ── 채팅 영역 ── */
   .chat-wrap {
-    flex:1; overflow-y:auto; padding:16px 16px 12px;
+    flex:1; overflow-y:auto; padding:16px 16px 90px;
     display:flex; flex-direction:column; gap:14px;
     scroll-behavior:smooth;
   }
@@ -136,6 +136,7 @@
   .bubble.user {
     background:var(--bubble-user); color:#fff;
     border-radius:18px 18px 4px 18px;
+    word-break:keep-all; min-width:120px;
   }
   .bubble-meta { font-size:10px; color:var(--text-muted); margin-top:4px; padding:0 4px; }
   .msg-row.user .bubble-meta { text-align:right; }
@@ -364,7 +365,7 @@
 
   <!-- 입력창 -->
   <div class="input-area">
-    <form action="askAI" method="post" id="chatForm" onsubmit="return handleSubmit()">
+    <form id="chatForm">
       <input type="hidden" name="category" id="categoryInput" value="<%= category != null ? category : "" %>">
       <div class="input-row">
         <textarea
@@ -373,9 +374,8 @@
           class="input-box"
           rows="1"
           placeholder="수사 관련 질문을 입력하세요..."
-          onkeydown="handleKeyDown(event)"
           oninput="autoResize(this)"></textarea>
-        <button type="submit" class="send-btn" id="sendBtn">
+        <button type="button" class="send-btn" id="sendBtn" onclick="handleSubmit()">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
@@ -422,37 +422,27 @@
 <script>
 var selectedCategory = '<%= category != null ? category : "" %>';
 
-// ── 카테고리 좌우 스크롤 ─────────────────────────────────────────
+// ── 카테고리 좌우 스크롤
 function scrollCat(dir) {
-  var row = document.getElementById('catRow');
-  row.scrollLeft += dir * 120;
+  document.getElementById('catRow').scrollLeft += dir * 120;
 }
-
 function updateArrows() {
   var row   = document.getElementById('catRow');
   var left  = document.getElementById('catLeft');
   var right = document.getElementById('catRight');
-  if (row.scrollLeft <= 4) {
-    left.classList.add('hidden');
-  } else {
-    left.classList.remove('hidden');
-  }
-  if (row.scrollLeft >= row.scrollWidth - row.clientWidth - 4) {
-    right.classList.add('hidden');
-  } else {
-    right.classList.remove('hidden');
-  }
+  left.classList.toggle('hidden',  row.scrollLeft <= 4);
+  right.classList.toggle('hidden', row.scrollLeft >= row.scrollWidth - row.clientWidth - 4);
 }
 
-// ── 카테고리 선택 ─────────────────────────────────────────────────
+// ── 카테고리 선택
 function setCategory(el, val) {
-  document.querySelectorAll('.cat-chip').forEach(function(c) { c.classList.remove('active'); });
+  document.querySelectorAll('.cat-chip').forEach(function(c){ c.classList.remove('active'); });
   el.classList.add('active');
   selectedCategory = val;
   document.getElementById('categoryInput').value = val;
 }
 
-// ── 입력 채우기 (추천 질문) ───────────────────────────────────────
+// ── 추천 질문 채우기
 function fillInput(text) {
   var input = document.getElementById('msgInput');
   input.value = text;
@@ -460,55 +450,146 @@ function fillInput(text) {
   input.focus();
 }
 
-// ── 자동 높이 조절 ────────────────────────────────────────────────
+// ── 자동 높이 조절
 function autoResize(el) {
   el.style.height = 'auto';
   el.style.height = Math.min(el.scrollHeight, 100) + 'px';
 }
 
-// ── 엔터 전송 (Shift+Enter = 줄바꿈) ─────────────────────────────
-function handleKeyDown(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    if (handleSubmit()) {
-      document.getElementById('chatForm').submit();
-    }
-  }
-}
-
-// ── 폼 제출 ──────────────────────────────────────────────────────
+// ── 전송
 function handleSubmit() {
   var msg = document.getElementById('msgInput').value.trim();
   if (!msg) return false;
+
+  var category = document.getElementById('categoryInput').value;
+  var now = new Date();
+  var timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+
+  // 유저 말풍선 추가
+  var escaped = msg.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  var userRow = document.createElement('div');
+  userRow.className = 'msg-row user';
+  userRow.innerHTML =
+    '<div>' +
+      '<div class="bubble user">' + escaped + '</div>' +
+      '<div class="bubble-meta" style="text-align:right;">' + timeStr + '</div>' +
+    '</div>' +
+    '<div class="avatar-sm avatar-user"><%= userInitial %></div>';
+  document.getElementById('chatWrap').insertBefore(userRow, document.getElementById('typingRow'));
+
+  // 입력창 비우기
+  document.getElementById('msgInput').value = '';
+  document.getElementById('msgInput').style.height = 'auto';
 
   // 로딩 표시
   document.getElementById('typingRow').style.display = 'flex';
   document.getElementById('sendBtn').disabled = true;
   scrollToBottom();
-  return true; // 폼 실제 제출
+
+  // fetch SSE
+  var params = new URLSearchParams();
+  params.append('userMsg', msg);
+  params.append('category', category);
+
+  fetch('askAI', { method: 'POST', body: params })
+    .then(function(res) {
+      document.getElementById('typingRow').style.display = 'none';
+
+      // AI 말풍선 생성 (변수 참조 — id 중복 없음)
+      var avatarEl = document.createElement('div');
+      avatarEl.className = 'avatar-sm avatar-ai';
+      avatarEl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>';
+
+      var bubbleEl = document.createElement('div');
+      bubbleEl.className = 'bubble ai';
+
+      var metaEl = document.createElement('div');
+      metaEl.className = 'bubble-meta';
+
+      var innerDiv = document.createElement('div');
+      innerDiv.appendChild(bubbleEl);
+      innerDiv.appendChild(metaEl);
+
+      var aiRow = document.createElement('div');
+      aiRow.className = 'msg-row';
+      aiRow.appendChild(avatarEl);
+      aiRow.appendChild(innerDiv);
+      document.getElementById('chatWrap').insertBefore(aiRow, document.getElementById('typingRow'));
+      scrollToBottom();
+
+      var reader = res.body.getReader();
+      var decoder = new TextDecoder();
+      var buf = '';
+      var fullText = '';
+
+      function pump() {
+        reader.read().then(function(result) {
+          if (result.done) {
+            var now2 = new Date();
+            metaEl.textContent = String(now2.getHours()).padStart(2,'0') + ':' + String(now2.getMinutes()).padStart(2,'0') + ' · gemma3:1b';
+            document.getElementById('sendBtn').disabled = false;
+            return;
+          }
+          buf += decoder.decode(result.value, { stream: true });
+          var lines = buf.split('\n\n');
+          buf = lines.pop();
+          lines.forEach(function(line) {
+            if (!line.startsWith('data: ')) return;
+            var token = line.slice(6);
+            if (token === '[DONE]') {
+              var now2 = new Date();
+              metaEl.textContent = String(now2.getHours()).padStart(2,'0') + ':' + String(now2.getMinutes()).padStart(2,'0') + ' · gemma3:1b';
+              document.getElementById('sendBtn').disabled = false;
+              return;
+            }
+            if (token.startsWith('[ERROR]')) {
+              bubbleEl.textContent = token.slice(7).trim();
+              document.getElementById('sendBtn').disabled = false;
+              return;
+            }
+            fullText += token.replace(/\\n/g, '\n');
+            bubbleEl.innerHTML = fullText.replace(/\n/g, '<br>');
+            scrollToBottom();
+          });
+          pump();
+        }).catch(function() {
+          document.getElementById('sendBtn').disabled = false;
+        });
+      }
+      pump();
+    })
+    .catch(function() {
+      document.getElementById('typingRow').style.display = 'none';
+      document.getElementById('sendBtn').disabled = false;
+    });
+
 }
 
-// ── 대화 초기화 ──────────────────────────────────────────────────
+// ── 대화 초기화
 function clearChat() {
   if (confirm('대화 내역을 초기화하시겠습니까?')) {
     location.href = 'askAI';
   }
 }
 
-// ── 스크롤 하단 고정 ──────────────────────────────────────────────
+// ── 스크롤 하단
 function scrollToBottom() {
   var wrap = document.getElementById('chatWrap');
   wrap.scrollTop = wrap.scrollHeight;
 }
 
-// 페이지 로드 시 하단 스크롤
 window.addEventListener('load', function() {
   scrollToBottom();
   updateArrows();
-  // 모바일 키보드 올라올 때 스크롤 유지
   var input = document.getElementById('msgInput');
-  input.addEventListener('focus', function() {
-    setTimeout(scrollToBottom, 300);
+  input.addEventListener('focus', function() { setTimeout(scrollToBottom, 300); });
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      handleSubmit();
+      return false;
+    }
   });
 });
 </script>
