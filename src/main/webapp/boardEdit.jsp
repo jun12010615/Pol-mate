@@ -216,7 +216,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
         </button>
       </div>
       <canvas id="boardCanvas" height="360"></canvas>
-      <div class="canvas-hint">드래그로 이동 · 핀치로 확대/축소</div>
+      <div class="canvas-hint">노드 끌어 배치 · 빈 곳 드래그로 화면 이동 · 핀치로 확대</div>
     </div>
 
     <!-- 범례 -->
@@ -230,6 +230,8 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
         <div class="legend-item"><div class="legend-line" style="background:#f97316"></div>피해관계</div>
         <div class="legend-item"><div class="legend-line" style="background:#4a7cdc"></div>목격</div>
         <div class="legend-item"><div class="legend-line" style="background:#16a34a"></div>가족</div>
+        <div class="legend-item"><div class="legend-line" style="background:#9ca3af"></div>지인·기타</div>
+        <div class="legend-item"><div class="legend-line" style="background:#f59e0b"></div>진술 불일치</div>
       </div>
     </div>
 
@@ -377,10 +379,13 @@ var _fdInit = false;
 var editingPersonId = null;
 var selectedRole = '', selectedRel = '';
 
+// 인물: 피의자 빨강 · 피해 주황 · 목격 파랑 · 참고 보라
 var ROLE_COLOR = {suspect:'#dc2626',victim:'#f97316',witness:'#4a7cdc',reference:'#8b5cf6'};
 var ROLE_LABEL = {suspect:'피의자',victim:'피해자',witness:'목격자',reference:'참고인'};
+// 관계선: 공범 빨강 · 피해 주황 · 목격 파랑 · 가족 초록 · 그 외(지인 등) 회색
 var REL_COLOR  = {accomplice:'#dc2626',harm:'#f97316',witness:'#4a7cdc',acquaint:'#9ca3af',family:'#16a34a'};
 var REL_LABEL  = {accomplice:'공범',harm:'피해관계',witness:'목격',acquaint:'지인',family:'가족'};
+var EDGE_MISMATCH_STROKE = '#f59e0b'; // 불일치 — 공범 빨강과 구분
 
 // ── 초기화 ───────────────────────────────────────────────────────
 window.addEventListener('load', function() {
@@ -781,25 +786,173 @@ function doSave() {
 // ── 캔버스 ───────────────────────────────────────────────────────
 var canvas, ctx;
 var cScale=1, cOffsetX=0, cOffsetY=0, cDrag=false, cLastX=0, cLastY=0;
+var cDraggingNode = null;
+
+function boardClientToDevice(clientX, clientY) {
+  if (!canvas) return {x:0,y:0};
+  var rect = canvas.getBoundingClientRect();
+  var sx = canvas.width / (rect.width || 1);
+  var sy = canvas.height / (rect.height || 1);
+  return { x: (clientX - rect.left) * sx, y: (clientY - rect.top) * sy };
+}
+function boardClientToWorld(clientX, clientY) {
+  var d = boardClientToDevice(clientX, clientY);
+  return {
+    x: (d.x - cOffsetX * cScale) / cScale,
+    y: (d.y - cOffsetY * cScale) / cScale
+  };
+}
+function boardHitPerson(wx, wy) {
+  var nr = 22, r2 = nr * nr * 1.44;
+  for (var i = persons.length - 1; i >= 0; i--) {
+    var p = persons[i];
+    var dx = wx - p._x, dy = wy - p._y;
+    if (dx * dx + dy * dy <= r2) return p;
+  }
+  return null;
+}
+function clampBoardPerson(p) {
+  var pad = 32;
+  p._x = Math.max(pad, Math.min(canvas.width - pad, p._x));
+  p._y = Math.max(pad, Math.min(canvas.height - pad, p._y));
+}
 
 function initCanvas() {
   canvas = document.getElementById('boardCanvas');
   ctx    = canvas.getContext('2d');
-  canvas.addEventListener('mousedown',  function(e){ cDrag=true; cLastX=e.clientX; cLastY=e.clientY; });
-  canvas.addEventListener('mousemove',  function(e){ if(!cDrag)return; cOffsetX+=(e.clientX-cLastX)/cScale; cOffsetY+=(e.clientY-cLastY)/cScale; cLastX=e.clientX; cLastY=e.clientY; drawCanvas(); });
-  canvas.addEventListener('mouseup',    function(){ cDrag=false; });
-  canvas.addEventListener('mouseleave', function(){ cDrag=false; });
-  var ltx,lty,ld;
-  canvas.addEventListener('touchstart',function(e){
-    if(e.touches.length===1){ltx=e.touches[0].clientX;lty=e.touches[0].clientY;}
-    if(e.touches.length===2){ld=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}
+
+  canvas.addEventListener('mousedown', function(e) {
+    if (!persons.length) {
+      cDraggingNode = null;
+      cDrag = true;
+    } else {
+      var w = boardClientToWorld(e.clientX, e.clientY);
+      var hit = boardHitPerson(w.x, w.y);
+      if (hit) {
+        cDraggingNode = hit;
+        cDrag = false;
+        canvas.style.cursor = 'grabbing';
+      } else {
+        cDraggingNode = null;
+        cDrag = true;
+      }
+    }
+    cLastX = e.clientX;
+    cLastY = e.clientY;
+  });
+  canvas.addEventListener('mousemove', function(e) {
+    if (cDraggingNode) {
+      var w0 = boardClientToWorld(cLastX, cLastY);
+      var w1 = boardClientToWorld(e.clientX, e.clientY);
+      cDraggingNode._x += w1.x - w0.x;
+      cDraggingNode._y += w1.y - w0.y;
+      clampBoardPerson(cDraggingNode);
+      cLastX = e.clientX;
+      cLastY = e.clientY;
+      drawCanvas();
+      return;
+    }
+    if (cDrag) {
+      cOffsetX += (e.clientX - cLastX) / cScale;
+      cOffsetY += (e.clientY - cLastY) / cScale;
+      cLastX = e.clientX;
+      cLastY = e.clientY;
+      drawCanvas();
+      return;
+    }
+    if (persons.length) {
+      var wh = boardClientToWorld(e.clientX, e.clientY);
+      canvas.style.cursor = boardHitPerson(wh.x, wh.y) ? 'grab' : 'default';
+    }
+  });
+  canvas.addEventListener('mouseup', function() {
+    cDraggingNode = null;
+    cDrag = false;
+    canvas.style.cursor = '';
+  });
+  canvas.addEventListener('mouseleave', function() {
+    cDraggingNode = null;
+    cDrag = false;
+    canvas.style.cursor = '';
+  });
+
+  var touchLx, touchLy, pinchD0;
+  canvas.addEventListener('touchstart', function(e) {
+    if (e.touches.length === 2) {
+      cDraggingNode = null;
+      cDrag = false;
+      pinchD0 = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      e.preventDefault();
+      return;
+    }
+    if (e.touches.length === 1) {
+      var t = e.touches[0];
+      if (persons.length) {
+        var w = boardClientToWorld(t.clientX, t.clientY);
+        var hit = boardHitPerson(w.x, w.y);
+        if (hit) {
+          cDraggingNode = hit;
+          cDrag = false;
+        } else {
+          cDraggingNode = null;
+          cDrag = true;
+        }
+      } else {
+        cDraggingNode = null;
+        cDrag = true;
+      }
+      touchLx = t.clientX;
+      touchLy = t.clientY;
+      cLastX = t.clientX;
+      cLastY = t.clientY;
+    }
     e.preventDefault();
-  },{passive:false});
-  canvas.addEventListener('touchmove',function(e){
-    if(e.touches.length===1){cOffsetX+=(e.touches[0].clientX-ltx)/cScale;cOffsetY+=(e.touches[0].clientY-lty)/cScale;ltx=e.touches[0].clientX;lty=e.touches[0].clientY;drawCanvas();}
-    if(e.touches.length===2){var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);cScale=Math.max(0.4,Math.min(2.5,cScale*d/ld));ld=d;drawCanvas();}
-    e.preventDefault();
-  },{passive:false});
+  }, {passive:false});
+  canvas.addEventListener('touchmove', function(e) {
+    if (e.touches.length === 2) {
+      var d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      cScale = Math.max(0.4, Math.min(2.5, cScale * d / pinchD0));
+      pinchD0 = d;
+      drawCanvas();
+      e.preventDefault();
+      return;
+    }
+    if (e.touches.length === 1 && cDraggingNode) {
+      var tn = e.touches[0];
+      var w0 = boardClientToWorld(touchLx, touchLy);
+      var w1 = boardClientToWorld(tn.clientX, tn.clientY);
+      cDraggingNode._x += w1.x - w0.x;
+      cDraggingNode._y += w1.y - w0.y;
+      clampBoardPerson(cDraggingNode);
+      touchLx = tn.clientX;
+      touchLy = tn.clientY;
+      drawCanvas();
+      e.preventDefault();
+      return;
+    }
+    if (e.touches.length === 1 && cDrag) {
+      var tp = e.touches[0];
+      cOffsetX += (tp.clientX - touchLx) / cScale;
+      cOffsetY += (tp.clientY - touchLy) / cScale;
+      touchLx = tp.clientX;
+      touchLy = tp.clientY;
+      drawCanvas();
+      e.preventDefault();
+    }
+  }, {passive:false});
+  canvas.addEventListener('touchend', function(e) {
+    if (e.touches.length === 0) {
+      cDraggingNode = null;
+      cDrag = false;
+    } else if (e.touches.length === 1) {
+      var tr = e.touches[0];
+      touchLx = tr.clientX;
+      touchLy = tr.clientY;
+      cLastX = tr.clientX;
+      cLastY = tr.clientY;
+    }
+  });
+
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
 }
@@ -866,7 +1019,7 @@ function drawCanvas(){
     if(!sp||!dp)return;
     var curve=calcCurve(e),color=REL_COLOR[e.relType]||'#9ca3af';
     var isMis=e.status==='mismatch',isUnk=e.status==='unknown';
-    var sc=isMis?'#dc2626':isUnk?'#9ca3af':color;
+    var sc=isMis?EDGE_MISMATCH_STROKE:isUnk?'#9ca3af':color;
     ctx.lineWidth=2;ctx.strokeStyle=sc;
     if(isMis)ctx.setLineDash([6,4]);else if(isUnk)ctx.setLineDash([4,4]);else ctx.setLineDash([]);
     var mx=(sp._x+dp._x)/2,my=(sp._y+dp._y)/2,dx=dp._x-sp._x,dy=dp._y-sp._y,len=Math.sqrt(dx*dx+dy*dy)||1;
@@ -904,7 +1057,7 @@ function drawCanvas(){
 }
 function zoomIn()    { cScale=Math.min(2.5,cScale+0.2); drawCanvas(); }
 function zoomOut()   { cScale=Math.max(0.4,cScale-0.2); drawCanvas(); }
-function resetView() { cScale=1;cOffsetX=0;cOffsetY=0;drawCanvas(); }
+function resetView() { cScale=1;cOffsetX=0;cOffsetY=0;cDraggingNode=null;cDrag=false;drawCanvas(); }
 
 // ── 유틸 ─────────────────────────────────────────────────────────
 function uid() { return Math.random().toString(36).substr(2,9); }

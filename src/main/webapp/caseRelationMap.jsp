@@ -471,18 +471,18 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
       <div id="canvasContainer" style="display:none;">
         <div class="canvas-wrap" id="canvasWrap">
           <div class="canvas-toolbar">
-            <button class="canvas-tool-btn" onclick="zoomIn()">
+            <button type="button" class="canvas-tool-btn" onclick="relationZoomIn()">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>
-            <button class="canvas-tool-btn" onclick="zoomOut()">
+            <button type="button" class="canvas-tool-btn" onclick="relationZoomOut()">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>
-            <button class="canvas-tool-btn" onclick="resetView()">
+            <button type="button" class="canvas-tool-btn" onclick="relationResetView()">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
             </button>
           </div>
           <canvas id="relationCanvas" height="340"></canvas>
-          <div class="canvas-hint">드래그로 이동 · 핀치로 확대/축소</div>
+          <div class="canvas-hint">노드 끌어 배치 · 빈 곳 드래그로 이동 · 핀치 확대</div>
         </div>
 
         <!-- 범례 -->
@@ -536,18 +536,18 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
       <div id="tabPanelCanvas">
         <div class="canvas-wrap" id="popupCanvasWrap">
           <div class="canvas-toolbar">
-            <button class="canvas-tool-btn" onclick="zoomIn()">
+            <button type="button" class="canvas-tool-btn" onclick="popupZoomIn()">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>
-            <button class="canvas-tool-btn" onclick="zoomOut()">
+            <button type="button" class="canvas-tool-btn" onclick="popupZoomOut()">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>
-            <button class="canvas-tool-btn" onclick="resetView()">
+            <button type="button" class="canvas-tool-btn" onclick="popupResetView()">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
             </button>
           </div>
           <canvas id="boardPopupCanvas" height="360"></canvas>
-          <div class="canvas-hint">드래그로 이동 · 핀치로 확대/축소</div>
+          <div class="canvas-hint">노드 끌어 배치 · 빈 곳 드래그로 이동 · 핀치 확대</div>
         </div>
         <div style="background:var(--card);border-radius:12px;border:1px solid var(--border);padding:12px 14px;margin-top:10px;">
           <div class="legend-wrap">
@@ -655,6 +655,7 @@ var persons = [];
 var edges   = [];
 var checkedTranscripts = [];
 
+// 인물: 피의자 빨강 · 피해 주황 · 목격 파랑 · 참고 보라 / 관계선: 공범 빨강 · 피해 주황 · 목격 파랑 · 가족 초록 · 기타 회색
 var ROLE_COLOR = {suspect:'#dc2626',victim:'#f97316',witness:'#4a7cdc',reference:'#8b5cf6'};
 var ROLE_LABEL = {suspect:'피의자',victim:'피해자',witness:'목격자',reference:'참고인'};
 var REL_COLOR  = {accomplice:'#dc2626',harm:'#f97316',witness:'#4a7cdc',acquaint:'#9ca3af',family:'#16a34a'};
@@ -1234,6 +1235,7 @@ function renderEdgeList() {
 var popupCanvas, popupCtx;
 var popupScale=1, popupOffsetX=0, popupOffsetY=0;
 var popupDragging=false, popupLastX=0, popupLastY=0;
+var popupDraggingNode = null;
 var miniSelectedRole='', miniSelectedRel='';
 var boardExistsInDb = false; // 이미 DB에 저장된 보드가 있는지
 
@@ -1285,28 +1287,174 @@ function switchPopupTab(tab) {
   }
 }
 
+// ── 팝업 캔버스: 좌표·히트 테스트 (노드 드래그) ───────────────────
+function popupClientToDevice(clientX, clientY) {
+  if (!popupCanvas) return {x:0,y:0};
+  var rect = popupCanvas.getBoundingClientRect();
+  var sx = popupCanvas.width / (rect.width || 1);
+  var sy = popupCanvas.height / (rect.height || 1);
+  return { x: (clientX - rect.left) * sx, y: (clientY - rect.top) * sy };
+}
+function popupClientToWorld(clientX, clientY) {
+  var d = popupClientToDevice(clientX, clientY);
+  return {
+    x: (d.x - popupOffsetX * popupScale) / popupScale,
+    y: (d.y - popupOffsetY * popupScale) / popupScale
+  };
+}
+function popupHitPerson(wx, wy) {
+  var nr = 22, r2 = nr * nr * 1.44;
+  for (var i = persons.length - 1; i >= 0; i--) {
+    var p = persons[i];
+    var dx = wx - p._px, dy = wy - p._py;
+    if (dx * dx + dy * dy <= r2) return p;
+  }
+  return null;
+}
+function clampPopupPersonNode(p) {
+  if (!popupCanvas) return;
+  var pad = 32;
+  p._px = Math.max(pad, Math.min(popupCanvas.width - pad, p._px));
+  p._py = Math.max(pad, Math.min(popupCanvas.height - pad, p._py));
+}
+
 // ── 팝업 캔버스 초기화 ────────────────────────────────────────────
 function initPopupCanvas() {
   if (popupCanvas) return;
   popupCanvas = document.getElementById('boardPopupCanvas');
   popupCtx = popupCanvas.getContext('2d');
 
-  popupCanvas.addEventListener('mousedown',  function(e){popupDragging=true;popupLastX=e.clientX;popupLastY=e.clientY;});
-  popupCanvas.addEventListener('mousemove',  function(e){if(!popupDragging)return;popupOffsetX+=(e.clientX-popupLastX)/popupScale;popupOffsetY+=(e.clientY-popupLastY)/popupScale;popupLastX=e.clientX;popupLastY=e.clientY;drawPopupCanvas();});
-  popupCanvas.addEventListener('mouseup',    function(){popupDragging=false;});
-  popupCanvas.addEventListener('mouseleave', function(){popupDragging=false;});
+  popupCanvas.addEventListener('mousedown', function(e) {
+    if (!persons.length) {
+      popupDraggingNode = null;
+      popupDragging = true;
+    } else {
+      var w = popupClientToWorld(e.clientX, e.clientY);
+      var hit = popupHitPerson(w.x, w.y);
+      if (hit) {
+        popupDraggingNode = hit;
+        popupDragging = false;
+        popupCanvas.style.cursor = 'grabbing';
+      } else {
+        popupDraggingNode = null;
+        popupDragging = true;
+      }
+    }
+    popupLastX = e.clientX;
+    popupLastY = e.clientY;
+  });
+  popupCanvas.addEventListener('mousemove', function(e) {
+    if (popupDraggingNode) {
+      var w0 = popupClientToWorld(popupLastX, popupLastY);
+      var w1 = popupClientToWorld(e.clientX, e.clientY);
+      popupDraggingNode._px += w1.x - w0.x;
+      popupDraggingNode._py += w1.y - w0.y;
+      clampPopupPersonNode(popupDraggingNode);
+      popupLastX = e.clientX;
+      popupLastY = e.clientY;
+      drawPopupCanvas();
+      return;
+    }
+    if (popupDragging) {
+      popupOffsetX += (e.clientX - popupLastX) / popupScale;
+      popupOffsetY += (e.clientY - popupLastY) / popupScale;
+      popupLastX = e.clientX;
+      popupLastY = e.clientY;
+      drawPopupCanvas();
+      return;
+    }
+    if (persons.length) {
+      var wh = popupClientToWorld(e.clientX, e.clientY);
+      popupCanvas.style.cursor = popupHitPerson(wh.x, wh.y) ? 'grab' : 'default';
+    }
+  });
+  popupCanvas.addEventListener('mouseup', function() {
+    popupDraggingNode = null;
+    popupDragging = false;
+    popupCanvas.style.cursor = '';
+  });
+  popupCanvas.addEventListener('mouseleave', function() {
+    popupDraggingNode = null;
+    popupDragging = false;
+    popupCanvas.style.cursor = '';
+  });
 
   var pltx, plty, pld;
-  popupCanvas.addEventListener('touchstart', function(e){
-    if(e.touches.length===1){pltx=e.touches[0].clientX;plty=e.touches[0].clientY;}
-    if(e.touches.length===2){pld=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}
+  popupCanvas.addEventListener('touchstart', function(e) {
+    if (e.touches.length === 2) {
+      popupDraggingNode = null;
+      popupDragging = false;
+      pld = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      e.preventDefault();
+      return;
+    }
+    if (e.touches.length === 1) {
+      var t = e.touches[0];
+      if (persons.length) {
+        var w = popupClientToWorld(t.clientX, t.clientY);
+        var hit = popupHitPerson(w.x, w.y);
+        if (hit) {
+          popupDraggingNode = hit;
+          popupDragging = false;
+        } else {
+          popupDraggingNode = null;
+          popupDragging = true;
+        }
+      } else {
+        popupDraggingNode = null;
+        popupDragging = true;
+      }
+      pltx = t.clientX;
+      plty = t.clientY;
+      popupLastX = t.clientX;
+      popupLastY = t.clientY;
+    }
     e.preventDefault();
-  },{passive:false});
-  popupCanvas.addEventListener('touchmove', function(e){
-    if(e.touches.length===1){popupOffsetX+=(e.touches[0].clientX-pltx)/popupScale;popupOffsetY+=(e.touches[0].clientY-plty)/popupScale;pltx=e.touches[0].clientX;plty=e.touches[0].clientY;drawPopupCanvas();}
-    if(e.touches.length===2){var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);popupScale=Math.max(0.4,Math.min(2.5,popupScale*d/pld));pld=d;drawPopupCanvas();}
-    e.preventDefault();
-  },{passive:false});
+  }, {passive:false});
+  popupCanvas.addEventListener('touchmove', function(e) {
+    if (e.touches.length === 2) {
+      var d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      popupScale = Math.max(0.4, Math.min(2.5, popupScale * d / pld));
+      pld = d;
+      drawPopupCanvas();
+      e.preventDefault();
+      return;
+    }
+    if (e.touches.length === 1 && popupDraggingNode) {
+      var tn = e.touches[0];
+      var w0 = popupClientToWorld(pltx, plty);
+      var w1 = popupClientToWorld(tn.clientX, tn.clientY);
+      popupDraggingNode._px += w1.x - w0.x;
+      popupDraggingNode._py += w1.y - w0.y;
+      clampPopupPersonNode(popupDraggingNode);
+      pltx = tn.clientX;
+      plty = tn.clientY;
+      drawPopupCanvas();
+      e.preventDefault();
+      return;
+    }
+    if (e.touches.length === 1 && popupDragging) {
+      var tp = e.touches[0];
+      popupOffsetX += (tp.clientX - pltx) / popupScale;
+      popupOffsetY += (tp.clientY - plty) / popupScale;
+      pltx = tp.clientX;
+      plty = tp.clientY;
+      drawPopupCanvas();
+      e.preventDefault();
+    }
+  }, {passive:false});
+  popupCanvas.addEventListener('touchend', function(e) {
+    if (e.touches.length === 0) {
+      popupDraggingNode = null;
+      popupDragging = false;
+    } else if (e.touches.length === 1) {
+      var tr = e.touches[0];
+      pltx = tr.clientX;
+      plty = tr.clientY;
+      popupLastX = tr.clientX;
+      popupLastY = tr.clientY;
+    }
+  });
 }
 
 function resizePopupCanvas() {
@@ -1601,9 +1749,9 @@ function drawEdgeScaled(ctx, sp, dp, e, allEdges) {
   }
 }
 
-function zoomIn()    { var s=popupScale; s=Math.min(2.5,s+0.2); popupScale=s; drawPopupCanvas(); }
-function zoomOut()   { var s=popupScale; s=Math.max(0.4,s-0.2); popupScale=s; drawPopupCanvas(); }
-function resetView() { popupScale=1; popupOffsetX=0; popupOffsetY=0; drawPopupCanvas(); }
+function popupZoomIn()    { var s=popupScale; s=Math.min(2.5,s+0.2); popupScale=s; drawPopupCanvas(); }
+function popupZoomOut()   { var s=popupScale; s=Math.max(0.4,s-0.2); popupScale=s; drawPopupCanvas(); }
+function popupResetView() { popupScale=1; popupOffsetX=0; popupOffsetY=0; popupDraggingNode=null; popupDragging=false; drawPopupCanvas(); }
 
 // ── 팝업 인물 목록 렌더링 ─────────────────────────────────────────
 function renderPopupPersonList() {
@@ -2051,9 +2199,9 @@ function drawCanvas() {
   ctx.restore();
 }
 
-function zoomIn()    { scale=Math.min(2.5,scale+0.2); drawCanvas(); }
-function zoomOut()   { scale=Math.max(0.4,scale-0.2); drawCanvas(); }
-function resetView() { scale=1; offsetX=0; offsetY=0; drawCanvas(); }
+function relationZoomIn()    { scale=Math.min(2.5,scale+0.2); drawCanvas(); }
+function relationZoomOut()   { scale=Math.max(0.4,scale-0.2); drawCanvas(); }
+function relationResetView() { scale=1; offsetX=0; offsetY=0; drawCanvas(); }
 
 // ── 유틸 ─────────────────────────────────────────────────────────
 function uid() { return Math.random().toString(36).substr(2,9); }
