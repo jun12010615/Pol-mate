@@ -347,7 +347,7 @@ public class CaseServlet extends HttpServlet {
             // 사건 INSERT (team_id 없이 user_id만 저장 — dept_id로 팀 공유)
             ps = conn.prepareStatement(
                 "INSERT INTO cases (case_id, user_id, case_name, suspect, charge, status) " +
-                "VALUES (?, ?, ?, ?, ?, '진행중', 0)");
+                "VALUES (?, ?, ?, ?, ?, '진행중')");
             ps.setString(1, caseId);
             ps.setString(2, loginUser);
             ps.setString(3, caseName.trim());
@@ -373,29 +373,34 @@ public class CaseServlet extends HttpServlet {
                 }
             }
 
-            // ── 같은 부서 팀원(본인 제외)에게 알림 발송 ──────────
-            mgr.freeConnection(null, ps);
-            ps = conn.prepareStatement(
-                "SELECT u2.user_id FROM users u2 " +
-                "JOIN users me ON me.user_id = ? " +
-                "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
-                "  AND u2.user_id != ? AND u2.notif_relation = 1");
-            ps.setString(1, loginUser);
-            ps.setString(2, loginUser);
-            ResultSet rsTeam = ps.executeQuery();
-            List<String> teammates = new ArrayList<>();
-            while (rsTeam.next()) teammates.add(rsTeam.getString("user_id"));
-            rsTeam.close();
-            mgr.freeConnection(null, ps);
+            // ── 같은 부서 팀원(본인 제외)에게 알림 발송 (실패해도 등록은 유지) ──
+            try {
+                mgr.freeConnection(null, ps);
+                ps = conn.prepareStatement(
+                    "SELECT u2.user_id FROM users u2 " +
+                    "JOIN users me ON me.user_id = ? " +
+                    "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
+                    "  AND u2.user_id != ? AND u2.notif_relation = 1");
+                ps.setString(1, loginUser);
+                ps.setString(2, loginUser);
+                ResultSet rsTeam = ps.executeQuery();
+                List<String> teammates = new ArrayList<>();
+                while (rsTeam.next()) teammates.add(rsTeam.getString("user_id"));
+                rsTeam.close();
+                mgr.freeConnection(null, ps);
+                ps = null;
 
-            String notifTitle = "팀 새 사건 등록: " + caseName.trim();
-            String notifDesc  = "사건 " + caseId + "(" + caseName.trim() + ")이(가) 팀에 등록됐습니다.";
-            for (String teammate : teammates) {
-                try {
-                    NotificationServlet.insertNotification(
-                        conn, teammate, "case", "새 사건", notifTitle, notifDesc,
-                        "myCase.jsp?caseId=" + caseId, false);
-                } catch (Exception ignored) {}
+                String notifTitle = "팀 새 사건 등록: " + caseName.trim();
+                String notifDesc  = "사건 " + caseId + "(" + caseName.trim() + ")이(가) 팀에 등록됐습니다.";
+                for (String teammate : teammates) {
+                    try {
+                        NotificationServlet.insertNotification(
+                            conn, teammate, "case", "새 사건", notifTitle, notifDesc,
+                            "myCase.jsp?caseId=" + caseId, false);
+                    } catch (Exception ignored) {}
+                }
+            } catch (SQLException notifEx) {
+                notifEx.printStackTrace();
             }
 
             JSONObject result = new JSONObject();
