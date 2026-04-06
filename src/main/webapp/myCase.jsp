@@ -3,6 +3,7 @@
     String loginUser = (String) session.getAttribute("loginUser");
     String userName  = (String) session.getAttribute("userName");
     if (loginUser == null) { response.sendRedirect("login.jsp"); return; }
+    String paramCaseId = request.getParameter("caseId") != null ? request.getParameter("caseId") : "";
 %>
 <!DOCTYPE html>
 <html lang="ko">
@@ -463,19 +464,17 @@ function renderCases(list) {
     var bc=BADGE_CLS[c.status]||'badge-info';
     var dt=(c.rank?c.rank+' ':'')+escHtml(c.detective);
     var tt=!c.isMine?'<span style="font-size:10px;background:#f0fdf4;color:#16a34a;padding:2px 7px;border-radius:10px;margin-left:4px;">팀원</span>':'';
-    var suspectMeta=(c.suspect&&c.suspect!=='미입력')
-      ?'<div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>피의자: '+escHtml(c.suspect)+'</div>'
-      :'';
+    var st=(c.suspect&&c.suspect!=='미입력')
+      ?'<span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">피의자: '+escHtml(c.suspect)+'</span>':'';
     html+='<div class="case-card'+(c.urgent?' urgent':'')+'" style="animation-delay:'+(i*0.05)+'s" onclick="openCase(\''+escStr(c.id)+'\')">' +
       '<div class="case-top">' +
         '<div><div class="case-num">'+escHtml(c.id)+tt+'</div><div class="case-name">'+escHtml(c.name)+'</div></div>' +
-        '<span class="badge '+bc+'" style="flex-shrink:0;">'+escHtml(c.status)+'</span>' +
+        '<div style="display:flex;align-items:center;gap:7px;flex-shrink:0;">'+st+'<span class="badge '+bc+'">'+escHtml(c.status)+'</span></div>' +
       '</div>' +
       '<div class="case-meta">' +
         '<div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'+dt+'</div>' +
         '<div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'+escHtml(c.date)+'</div>' +
         '<div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>조서 '+c.docs+'건</div>' +
-        suspectMeta +
       '</div>' +
     '</div>';
   });
@@ -774,6 +773,24 @@ function escStr(s){return String(s||'').replace(/'/g,"\\'");}
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';setTimeout(function(){t.style.opacity='0';t.style.transform='translateX(-50%) translateY(20px)';},2200);}
 
 loadCaseList();
+
+// 알림에서 caseId 파라미터로 직접 진입 시 해당 사건 드로어 자동 오픈
+(function() {
+  var targetId = '<%= paramCaseId.replace("'", "\'") %>';
+  if (!targetId) return;
+  // 카드 렌더링 완료 후 해당 사건 드로어 오픈
+  var maxTry = 20, tried = 0;
+  var timer = setInterval(function() {
+    tried++;
+    var cards = document.querySelectorAll('.case-card');
+    if (cards.length > 0) {
+      clearInterval(timer);
+      openCase(targetId);
+    } else if (tried >= maxTry) {
+      clearInterval(timer);
+    }
+  }, 150);
+})();
 </script>
 </body>
 </html>

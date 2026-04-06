@@ -426,10 +426,13 @@ public class RelationBoardServlet extends HttpServlet {
     private void sendTeamNotif(Connection conn, String loginUser, String caseId,
                                String tag, String title, String desc) {
         try {
+            // notif_relation = 1 인 팀원에게만 발송
             PreparedStatement ps = conn.prepareStatement(
                 "SELECT u2.user_id FROM users u2 " +
                 "JOIN users me ON me.user_id = ? " +
-                "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL AND u2.user_id != ?");
+                "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
+                "  AND u2.user_id != ? " +
+                "  AND u2.notif_relation = 1");
             ps.setString(1, loginUser);
             ps.setString(2, loginUser);
             ResultSet rs = ps.executeQuery();
@@ -441,7 +444,7 @@ public class RelationBoardServlet extends HttpServlet {
                 try {
                     NotificationServlet.insertNotification(
                         conn, tm, "case", tag, title, desc,
-                        "caseRelationMap.jsp?caseId=" + caseId, false);
+                        "boardView.jsp?caseId=" + caseId, false);
                 } catch (Exception ignored) {}
             }
         } catch (Exception e) { e.printStackTrace(); }

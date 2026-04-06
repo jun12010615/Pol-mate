@@ -304,8 +304,14 @@ function readItem(id, link) {
   // 4. 헤더 뱃지 갱신
   updateBadge();
 
-  // 5. 링크 이동
-  if (link) setTimeout(function() { location.href = link; }, 120);
+  // 5. 링크 이동 (caseRelationMap → boardView 자동 변환)
+  if (link) {
+    var dest = link.replace(
+      /caseRelationMap\.jsp(\?caseId=)/,
+      'boardView.jsp$1'
+    );
+    setTimeout(function() { location.href = dest; }, 120);
+  }
 }
 
 // ── 전체 읽음 ─────────────────────────────────────────────────────

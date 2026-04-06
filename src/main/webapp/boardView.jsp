@@ -4,6 +4,8 @@
   if (loginUser == null) { response.sendRedirect("login.jsp"); return; }
   String userName = (String) session.getAttribute("userName");
   if (userName == null) userName = loginUser;
+  // 알림에서 직접 진입 시 특정 보드 자동 오픈
+  String paramCaseId = request.getParameter("caseId") != null ? request.getParameter("caseId") : "";
 %>
 <!DOCTYPE html>
 <html lang="ko">
@@ -476,6 +478,48 @@ function uid() { return Math.random().toString(36).substr(2,9); }
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 loadBoardList();
+
+// 알림에서 caseId 파라미터로 직접 진입 시 해당 보드 자동 오픈
+(function() {
+  var targetCaseId = '<%= paramCaseId.replace("'", "\'") %>';
+  if (!targetCaseId) return;
+  // 보드 목록 로드 완료 후 해당 보드 자동 오픈
+  var maxTry = 20, tried = 0;
+  var timer = setInterval(function() {
+    tried++;
+    // loadBoardList에서 boards 변수가 채워질 때까지 대기
+    var cards = document.querySelectorAll('.board-card');
+    if (cards.length > 0) {
+      clearInterval(timer);
+      // caseId가 일치하는 카드 찾아서 클릭
+      var found = false;
+      cards.forEach(function(card) {
+        var idEl = card.querySelector('.board-case-id');
+        if (idEl && idEl.textContent.trim() === targetCaseId) {
+          card.click();
+          found = true;
+        }
+      });
+      // 카드가 없으면 boardApi로 직접 로드
+      if (!found) {
+        fetch('boardApi?action=load&caseId=' + encodeURIComponent(targetCaseId))
+          .then(function(r){ return r.json(); })
+          .then(function(data){
+            if (data.success && data.boardExists) {
+              openDetail({
+                caseId:   targetCaseId,
+                caseName: data.caseName || '',
+                updatedAt: data.updatedAt || ''
+              });
+            }
+          })
+          .catch(function(){});
+      }
+    } else if (tried >= maxTry) {
+      clearInterval(timer);
+    }
+  }, 150);
+})();
 </script>
 </body>
 </html>

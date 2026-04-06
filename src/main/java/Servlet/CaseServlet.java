@@ -1,8 +1,6 @@
 package Servlet;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -21,7 +19,7 @@ import org.json.JSONObject;
  *   caseDetail  - 사건 상세 조회 (GET)
  *   caseCreate  - 새 사건 등록 (POST)
  *   caseDelete  - 사건 삭제 (POST)
- *   caseStatus  - 사건 상태 수정 (POST)
+ *   caseStatus  - 사건 상태/진행률 수정 (POST)
  *   docList     - 내 조서 목록 조회 (GET)
  *   docStats    - 조서 통계 조회 (GET)
  *   myDept      - 내 부서 정보 조회 (GET) ← myTeam 대체
@@ -29,10 +27,7 @@ import org.json.JSONObject;
 @WebServlet("/caseApi")
 public class CaseServlet extends HttpServlet {
 
-    private static final SimpleDateFormat DATE_FMT = new SimpleDateFormat("yyyy-MM-dd");
-    static {
-        DATE_FMT.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
-    }
+    private static final SimpleDateFormat DATE_FMT = new SimpleDateFormat("yyyy.MM.dd");
 
     // ═══════════════════════════════════════════════════════
     // GET
@@ -80,7 +75,6 @@ public class CaseServlet extends HttpServlet {
             case "caseDelete":     handleCaseDelete(req, res, loginUser);     break;
             case "caseStatus":     handleCaseStatus(req, res, loginUser);     break;
             case "transcriptSave": handleTranscriptSave(req, res, loginUser); break;
-            case "transcriptSummarize": handleTranscriptSummarize(req, res, loginUser); break;
             default:               writeError(res, "알 수 없는 action");
         }
     }
@@ -106,7 +100,7 @@ public class CaseServlet extends HttpServlet {
 
             StringBuilder sql = new StringBuilder(
                 "SELECT c.case_id, c.case_name, c.suspect, c.charge, c.status, " +
-                "       DATE_FORMAT(c.created_at,'%Y-%m-%d') AS created_date, c.user_id, " +
+                "       c.created_at, c.user_id, " +
                 "       u.user_name, u.user_rank, " +
                 "       (SELECT COUNT(*) FROM transcripts t WHERE t.case_id = c.case_id) AS doc_count, " +
                 "       (SELECT COUNT(*) FROM transcripts t WHERE t.case_id = c.case_id AND t.has_contradiction = 1) AS contradiction_count " +
@@ -159,8 +153,8 @@ public class CaseServlet extends HttpServlet {
                 c.put("urgent",         rs.getInt("contradiction_count") > 0);
                 c.put("isMine",         loginUser.equals(rs.getString("user_id")));
 
-                c.put("date",      nvl(rs.getString("created_date"), ""));
-                c.put("createdAt", nvl(rs.getString("created_date"), ""));
+                Timestamp ts = rs.getTimestamp("created_at");
+                c.put("date", ts != null ? DATE_FMT.format(ts) : "");
 
                 arr.put(c);
             }
@@ -196,7 +190,7 @@ public class CaseServlet extends HttpServlet {
             // 사건 기본 정보 + 접근 권한 확인
             ps = conn.prepareStatement(
                 "SELECT c.case_id, c.case_name, c.suspect, c.charge, c.status, " +
-                "       DATE_FORMAT(c.created_at,'%Y-%m-%d') AS created_date, c.user_id, " +
+                "       c.created_at, c.user_id, " +
                 "       u.user_name, u.user_rank, " +
                 "       d.dept_name, d.org_name " +
                 "FROM cases c " +
@@ -239,14 +233,14 @@ public class CaseServlet extends HttpServlet {
                 detail.put("deptName", "미배정");
             }
 
-            detail.put("date",      nvl(rs.getString("created_date"), ""));
-            detail.put("createdAt", nvl(rs.getString("created_date"), ""));
+            Timestamp ts = rs.getTimestamp("created_at");
+            detail.put("date", ts != null ? DATE_FMT.format(ts) : "");
             mgr.freeConnection(null, ps, rs);
 
             // 해당 사건의 조서 목록
             ps = conn.prepareStatement(
                 "SELECT t.transcript_id, t.stmt_type, t.stmt_name, t.has_contradiction, " +
-                "       DATE_FORMAT(t.created_at,'%Y-%m-%d') AS created_date, t.user_id, u.user_name, u.user_rank, " +
+                "       t.created_at, t.user_id, u.user_name, u.user_rank, " +
                 "       CHAR_LENGTH(IFNULL(t.original_text,'')) AS text_len " +
                 "FROM transcripts t " +
                 "LEFT JOIN users u ON t.user_id = u.user_id " +
@@ -266,9 +260,8 @@ public class CaseServlet extends HttpServlet {
                 d.put("writerId",     nvl(rs.getString("user_id"),   ""));
                 d.put("writerName",   nvl(rs.getString("user_name"), "알 수 없음"));
                 d.put("writerRank",   nvl(rs.getString("user_rank"), ""));
-                String createdAt = nvl(rs.getString("created_date"), "");
-                d.put("date", createdAt);       // 기존 호환용
-                d.put("createdAt", createdAt); // 프론트 표시용
+                Timestamp dts = rs.getTimestamp("created_at");
+                d.put("date", dts != null ? DATE_FMT.format(dts) : "");
                 docs.put(d);
             }
             detail.put("docs",     docs);
@@ -328,7 +321,7 @@ public class CaseServlet extends HttpServlet {
             // 사건 INSERT (team_id 없이 user_id만 저장 — dept_id로 팀 공유)
             ps = conn.prepareStatement(
                 "INSERT INTO cases (case_id, user_id, case_name, suspect, charge, status) " +
-                "VALUES (?, ?, ?, ?, ?, '진행중')");
+                "VALUES (?, ?, ?, ?, ?, '진행중', 0)");
             ps.setString(1, caseId);
             ps.setString(2, loginUser);
             ps.setString(3, caseName.trim());
@@ -359,7 +352,8 @@ public class CaseServlet extends HttpServlet {
             ps = conn.prepareStatement(
                 "SELECT u2.user_id FROM users u2 " +
                 "JOIN users me ON me.user_id = ? " +
-                "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL AND u2.user_id != ?");
+                "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
+                "  AND u2.user_id != ? AND u2.notif_relation = 1");
             ps.setString(1, loginUser);
             ps.setString(2, loginUser);
             ResultSet rsTeam = ps.executeQuery();
@@ -374,7 +368,7 @@ public class CaseServlet extends HttpServlet {
                 try {
                     NotificationServlet.insertNotification(
                         conn, teammate, "case", "새 사건", notifTitle, notifDesc,
-                        "myCase.jsp", false);
+                        "myCase.jsp?caseId=" + caseId, false);
                 } catch (Exception ignored) {}
             }
 
@@ -455,7 +449,7 @@ public class CaseServlet extends HttpServlet {
         try {
             conn = mgr.getConnection();
 
-            // 접근 권한 확인 (등록자 또는 같은 부서 팀원)
+            // 접근 권한 확인
             ps = conn.prepareStatement(
                 "SELECT 1 FROM cases WHERE case_id = ? " +
                 "AND (user_id = ? " +
@@ -490,13 +484,16 @@ public class CaseServlet extends HttpServlet {
             for (int i = 0; i < params.size(); i++) ps.setObject(i + 1, params.get(i));
             ps.executeUpdate();
 
-            // ── 상태 변경 시 팀원에게 알림 발송 ─────────────────
+            // ── 상태 변경 시 팀원 알림 발송 (설정 확인) ──────────
             if (!isEmpty(status)) {
                 mgr.freeConnection(null, ps);
+                boolean isCritical = "모순탐지".equals(status);
+                String notifCol   = isCritical ? "notif_contradiction" : "notif_relation";
                 ps = conn.prepareStatement(
                     "SELECT u2.user_id FROM users u2 " +
                     "JOIN users me ON me.user_id = ? " +
-                    "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL AND u2.user_id != ?");
+                    "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
+                    "  AND u2.user_id != ? AND u2." + notifCol + " = 1");
                 ps.setString(1, loginUser);
                 ps.setString(2, loginUser);
                 ResultSet rsTeam = ps.executeQuery();
@@ -505,28 +502,15 @@ public class CaseServlet extends HttpServlet {
                 rsTeam.close();
                 mgr.freeConnection(null, ps);
 
-                boolean isCritical = "모순탐지".equals(status);
-                boolean isDone     = "완료".equals(status);
-                String notifTitle, notifDesc, tag;
-                if (isDone) {
-                    tag        = "조서";
-                    notifTitle = "사건 완료 처리: " + caseId;
-                    notifDesc  = "사건 " + caseId + "이(가) 완료 처리됐습니다. 최종 조서를 확인해 주세요.";
-                } else if (isCritical) {
-                    tag        = "경고";
-                    notifTitle = "모순 탐지 사건: " + caseId;
-                    notifDesc  = "사건 " + caseId + "에서 진술 모순이 탐지됐습니다. 즉시 검토가 필요합니다.";
-                } else {
-                    tag        = "새 사건";
-                    notifTitle = "사건 상태 변경: " + caseId;
-                    notifDesc  = "사건 " + caseId + "의 상태가 [" + status + "](으)로 변경됐습니다.";
-                }
+                String notifTitle = "사건 상태 변경: " + caseId;
+                String notifDesc  = "사건 " + caseId + "의 상태가 [" + status + "](으)로 변경됐습니다.";
+                String tag        = isCritical ? "경고" : "새 사건";
                 for (String teammate : teammates) {
                     try {
                         NotificationServlet.insertNotification(
                             conn, teammate, "case", tag,
                             notifTitle, notifDesc,
-                            "myCase.jsp", isCritical);
+                            "myCase.jsp?caseId=" + caseId, isCritical);
                     } catch (Exception ignored) {}
                 }
             }
@@ -559,7 +543,7 @@ public class CaseServlet extends HttpServlet {
 
             StringBuilder sql = new StringBuilder(
                 "SELECT t.transcript_id, t.case_id, t.stmt_type, t.stmt_name, " +
-                "       t.has_contradiction, DATE_FORMAT(t.created_at,'%Y-%m-%d') AS created_date, " +
+                "       t.has_contradiction, t.created_at, " +
                 "       CHAR_LENGTH(IFNULL(t.original_text,'')) AS text_len, " +
                 "       c.case_name " +
                 "FROM transcripts t " +
@@ -601,9 +585,8 @@ public class CaseServlet extends HttpServlet {
                 d.put("words",        rs.getInt("text_len"));
                 d.put("contradiction", hasCont);
 
-                String createdAt = nvl(rs.getString("created_date"), "");
-                d.put("date", createdAt);        // 기존 호환용
-                d.put("createdAt", createdAt);  // 프론트 표시용
+                Timestamp ts = rs.getTimestamp("created_at");
+                d.put("date", ts != null ? DATE_FMT.format(ts) : "");
 
                 arr.put(d);
             }
@@ -730,7 +713,8 @@ public class CaseServlet extends HttpServlet {
             ps = conn.prepareStatement(
                 "SELECT u2.user_id FROM users u2 " +
                 "JOIN users me ON me.user_id = ? " +
-                "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL AND u2.user_id != ?");
+                "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
+                "  AND u2.user_id != ? AND u2.notif_contradiction = 1");
             ps.setString(1, loginUser);
             ps.setString(2, loginUser);
             ResultSet rsTeam = ps.executeQuery();
@@ -739,16 +723,14 @@ public class CaseServlet extends HttpServlet {
             rsTeam.close();
             mgr.freeConnection(null, ps);
 
-            String who    = stmtName.isEmpty() ? "" : stmtName + " ";
-            String typeStr = stmtType.isEmpty()  ? "" : stmtType + " ";
-            String tTitle  = "조서 완성: " + caseId;
-            String tDesc   = "사건 " + caseId + "에 " + who + typeStr + "조서가 완성됐습니다.";
+            String who   = stmtName.isEmpty() ? "" : stmtName + " ";
+            String tDesc = "사건 " + caseId + "에 " + who + (stmtType.isEmpty() ? "" : stmtType + " ") + "조서가 추가됐습니다.";
             for (String teammate : teammates) {
                 try {
                     NotificationServlet.insertNotification(
                         conn, teammate, "case", "조서",
-                        tTitle, tDesc,
-                        "myCase.jsp", false);
+                        "새 조서 등록: " + caseId, tDesc,
+                        "myCase.jsp?caseId=" + caseId, false);
                 } catch (Exception ignored) {}
             }
 
@@ -788,17 +770,8 @@ public class CaseServlet extends HttpServlet {
         try {
             conn = mgr.getConnection();
 
-            String summaryCol = hasColumn(conn, "transcripts", "result_summary")
-                    ? "result_summary"
-                    : (hasColumn(conn, "transcripts", "ai_result") ? "ai_result" : null);
-
-            String sqlBase =
-                "SELECT t.transcript_id, t.original_text, t.stmt_type, t.stmt_name ";
-            if (summaryCol != null) {
-                sqlBase += ", t." + summaryCol + " AS summary ";
-            }
-            String sql =
-                sqlBase +
+            ps = conn.prepareStatement(
+                "SELECT t.transcript_id, t.original_text, t.stmt_type, t.stmt_name " +
                 "FROM transcripts t " +
                 "JOIN cases c ON t.case_id = c.case_id " +
                 "WHERE t.transcript_id = ? " +
@@ -807,9 +780,7 @@ public class CaseServlet extends HttpServlet {
                 "       SELECT u2.user_id FROM users u2 " +
                 "       JOIN users me ON me.user_id = ? " +
                 "       WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
-                "   ))";
-
-            ps = conn.prepareStatement(sql);
+                "   ))");
             ps.setInt(1, transcriptId);
             ps.setString(2, loginUser);
             ps.setString(3, loginUser);
@@ -825,100 +796,11 @@ public class CaseServlet extends HttpServlet {
             result.put("text", nvl(rs.getString("original_text"), ""));
             result.put("type", nvl(rs.getString("stmt_type"),     ""));
             result.put("name", nvl(rs.getString("stmt_name"),     ""));
-            if (summaryCol != null) {
-                result.put("summary", nvl(rs.getString("summary"), ""));
-            } else {
-                result.put("summary", "");
-            }
             res.getWriter().write(result.toString());
 
         } catch (Exception e) {
             e.printStackTrace();
             writeError(res, "조서 원문 조회 중 오류가 발생했습니다.");
-        } finally {
-            mgr.freeConnection(conn, ps, rs);
-        }
-    }
-
-    // ═══════════════════════════════════════════════════════
-    // 조서 요약 생성 (transcripts.result_summary / ai_result 저장)
-    // - transcriptSave에서는 저장만 수행하고, 이 엔드포인트로 비동기 처리
-    // ═══════════════════════════════════════════════════════
-    private void handleTranscriptSummarize(HttpServletRequest req, HttpServletResponse res, String loginUser)
-            throws IOException {
-
-        String idStr = req.getParameter("transcriptId");
-        if (isEmpty(idStr)) { writeError(res, "transcriptId가 필요합니다."); return; }
-
-        int transcriptId;
-        try { transcriptId = Integer.parseInt(idStr); }
-        catch (NumberFormatException e) { writeError(res, "잘못된 transcriptId"); return; }
-
-        DBConnectionMgr mgr = DBConnectionMgr.getInstance();
-        Connection conn = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-
-        try {
-            conn = mgr.getConnection();
-
-            // 접근 권한: 내 사건 또는 같은 부서 팀원 사건
-            ps = conn.prepareStatement(
-                "SELECT t.transcript_id, t.original_text, t.stmt_type, t.stmt_name, t.case_id " +
-                "FROM transcripts t " +
-                "JOIN cases c ON t.case_id = c.case_id " +
-                "WHERE t.transcript_id = ? " +
-                "AND (c.user_id = ? " +
-                "   OR c.user_id IN ( " +
-                "       SELECT u2.user_id FROM users u2 " +
-                "       JOIN users me ON me.user_id = ? " +
-                "       WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
-                "   ))"
-            );
-            ps.setInt(1, transcriptId);
-            ps.setString(2, loginUser);
-            ps.setString(3, loginUser);
-            rs = ps.executeQuery();
-
-            if (!rs.next()) {
-                writeError(res, "조서를 찾을 수 없거나 접근 권한이 없습니다.");
-                return;
-            }
-
-            String caseId      = nvl(rs.getString("case_id"), "");
-            String original    = nvl(rs.getString("original_text"), "");
-            String stmtType    = nvl(rs.getString("stmt_type"), "");
-            String stmtName    = nvl(rs.getString("stmt_name"), "");
-
-            if (isEmpty(caseId) || isEmpty(original)) {
-                writeError(res, "요약에 필요한 원문이 없습니다.");
-                return;
-            }
-
-            // Python 요약 요청
-            String structuredSummary = requestTranscriptStructuredSummary(
-                caseId, stmtType, stmtName, original);
-
-            if (structuredSummary == null || structuredSummary.trim().isEmpty()) {
-                // 요약 실패는 서버 에러로 올리지 않고 실패 응답으로만 처리
-                res.getWriter().write(new JSONObject()
-                    .put("success", false)
-                    .put("message", "요약 생성에 실패했습니다.")
-                    .toString());
-                return;
-            }
-
-            storeTranscriptSummaryIfColumnExists(conn, transcriptId, structuredSummary);
-
-            res.getWriter().write(new JSONObject()
-                .put("success", true)
-                .put("transcriptId", transcriptId)
-                .put("message", "요약이 생성되었습니다.")
-                .toString());
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            writeError(res, "요약 생성 중 오류가 발생했습니다: " + e.getMessage());
         } finally {
             mgr.freeConnection(conn, ps, rs);
         }
@@ -990,114 +872,6 @@ public class CaseServlet extends HttpServlet {
         j.put("success", ok);
         j.put("message", msg);
         res.getWriter().write(j.toString());
-    }
-
-    private boolean hasColumn(Connection conn, String tableName, String columnName) {
-        try {
-            DatabaseMetaData md = conn.getMetaData();
-            if (md == null) return false;
-            String[] tables = new String[] {
-                tableName,
-                tableName == null ? null : tableName.toLowerCase(),
-                tableName == null ? null : tableName.toUpperCase()
-            };
-            String[] cols = new String[] {
-                columnName,
-                columnName == null ? null : columnName.toLowerCase(),
-                columnName == null ? null : columnName.toUpperCase()
-            };
-
-            for (String t : tables) {
-                if (t == null) continue;
-                for (String c : cols) {
-                    if (c == null) continue;
-                    try (ResultSet rs = md.getColumns(null, null, t, c)) {
-                        if (rs != null && rs.next()) return true;
-                    }
-                }
-            }
-        } catch (Exception ignored) {}
-        return false;
-    }
-
-    private void storeTranscriptSummaryIfColumnExists(Connection conn, int transcriptId, String structuredSummary) {
-        String col = null;
-        if (hasColumn(conn, "transcripts", "result_summary")) col = "result_summary";
-        else if (hasColumn(conn, "transcripts", "ai_result")) col = "ai_result";
-        if (col == null) return;
-
-        PreparedStatement ps = null;
-        try {
-            ps = conn.prepareStatement(
-                "UPDATE transcripts SET " + col + " = ? WHERE transcript_id = ?");
-            ps.setString(1, structuredSummary);
-            ps.setInt(2, transcriptId);
-            ps.executeUpdate();
-        } catch (SQLException ignored) {
-        } finally {
-            if (ps != null) try { ps.close(); } catch (Exception ignored) {}
-        }
-    }
-
-    private String requestTranscriptStructuredSummary(
-        String caseId, String stmtType, String stmtName, String originalText) {
-
-        // Python 분석 서버 주소를 환경에 따라 1차/2차로 나눠 시도
-        List<String> urls = Arrays.asList(
-            "http://113.198.238.108:5001/summarize",
-            "http://localhost:5001/summarize"
-        );
-
-        JSONObject payload = new JSONObject();
-        payload.put("caseNum", caseId);
-        JSONArray stmts = new JSONArray();
-        JSONObject s = new JSONObject();
-        s.put("stmt_type", stmtType);
-        s.put("stmt_name", stmtName);
-        s.put("original_text", originalText);
-        stmts.put(s);
-        payload.put("statements", stmts);
-
-        for (String urlStr : urls) {
-            HttpURLConnection conn = null;
-            try {
-                URL url = new URL(urlStr);
-                conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-                conn.setRequestProperty("Accept", "application/json");
-                conn.setConnectTimeout(5000);
-                conn.setReadTimeout(120000);
-                conn.setDoOutput(true);
-
-                byte[] out = payload.toString().getBytes("UTF-8");
-                try (OutputStream os = conn.getOutputStream()) {
-                    os.write(out);
-                }
-
-                int code = conn.getResponseCode();
-                if (code != 200) continue;
-
-                InputStream is = conn.getInputStream();
-                StringBuilder sb = new StringBuilder();
-                try (BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"))) {
-                    String line;
-                    while ((line = br.readLine()) != null) sb.append(line);
-                }
-
-                JSONObject res = new JSONObject(sb.toString());
-                if (!res.optBoolean("success", false)) continue;
-
-                String structured = res.optString("structured_summary", null);
-                if (structured == null || structured.trim().isEmpty()) continue;
-                return structured;
-            } catch (Exception ignored) {
-            } finally {
-                if (conn != null) conn.disconnect();
-            }
-        }
-
-        return null;
     }
 
     private String nvl(String s, String def) { return (s == null || s.trim().isEmpty()) ? def : s.trim(); }
