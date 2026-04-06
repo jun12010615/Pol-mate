@@ -36,56 +36,51 @@ public class AiChatServlet extends HttpServlet {
     		        "5. 답변은 명확하고 간결하게 (200자 내외 권장)\n\n";
     // ─────────────────────────────────────────────────────────────
 
-    @Override
+        @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         request.setCharacterEncoding("UTF-8");
-        response.setCharacterEncoding("UTF-8");
-        
+
         String userMsg  = request.getParameter("userMsg");
-        String category = request.getParameter("category"); // 질문 카테고리 (선택)
+        String category = request.getParameter("category");
+
+        // SSE 헤더
+        response.setContentType("text/event-stream;charset=UTF-8");
+        response.setHeader("Cache-Control", "no-cache");
+        response.setHeader("X-Accel-Buffering", "no");
+        PrintWriter out = response.getWriter();
 
         if (userMsg == null || userMsg.trim().isEmpty()) {
-            request.setAttribute("result",    "질문을 입력해 주세요.");
-            request.setAttribute("userMsg",   "");
-            request.setAttribute("category",  "");
-            request.getRequestDispatcher("aiChat.jsp").forward(request, response);
+            out.write("data: [ERROR] 질문을 입력해 주세요.\n\n");
+            out.flush();
             return;
         }
-        
-        // 카테고리 프리픽스 추가
+
+        // 프롬프트 구성
         String prompt = SYSTEM_PROMPT;
         if (category != null && !category.trim().isEmpty()) {
             prompt += "[질문 분류: " + category + "]\n\n";
         }
-        
-        // ── 법령/판례 검색 후 프롬프트에 추가 ──────────────────
-       String lawText  = searchLaw(userMsg.trim());
-       String precText = searchPrec(userMsg.trim());
-
+        String lawText  = searchLaw(userMsg.trim());
+        String precText = searchPrec(userMsg.trim());
         if (!lawText.isEmpty())  prompt += "[관련 법령]\n" + lawText + "\n\n";
         if (!precText.isEmpty()) prompt += "[관련 판례]\n" + precText + "\n\n";
-        // ────────────────────────────────────────────────────────
-        
         prompt += "수사관 질문: " + userMsg.trim();
-
-        String aiResponse = "";
-        boolean ollamaOk  = false;
 
         try {
             URL url = new URL("http://localhost:11434/api/generate");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json; utf-8");
-            conn.setConnectTimeout(5000);   // 5초 연결 타임아웃
-            conn.setReadTimeout(60000);     // 60초 읽기 타임아웃
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(180000);
             conn.setDoOutput(true);
 
             JsonObject jsonInput = new JsonObject();
             jsonInput.addProperty("model",  "gemma3:1b");
             jsonInput.addProperty("prompt", prompt);
-            jsonInput.addProperty("stream", false);
+            jsonInput.addProperty("stream", true);
 
             try (OutputStream os = conn.getOutputStream()) {
                 os.write(jsonInput.toString().getBytes("utf-8"));
@@ -94,26 +89,33 @@ public class AiChatServlet extends HttpServlet {
             if (conn.getResponseCode() == 200) {
                 BufferedReader br = new BufferedReader(
                     new InputStreamReader(conn.getInputStream(), "utf-8"));
-                String line = br.readLine();
-                JsonObject jsonRes = JsonParser.parseString(line).getAsJsonObject();
-                aiResponse = jsonRes.get("response").getAsString();
-                ollamaOk   = true;
+                String line;
+                while ((line = br.readLine()) != null) {
+                    JsonObject chunk = JsonParser.parseString(line).getAsJsonObject();
+                    String token = chunk.has("response") ? chunk.get("response").getAsString() : "";
+                    boolean done = chunk.has("done") && chunk.get("done").getAsBoolean();
+                    if (!token.isEmpty()) {
+                        out.write("data: " + token.replace("\n", "\\n") + "\n\n");
+                        out.flush();
+                    }
+                    if (done) {
+                        out.write("data: [DONE]\n\n");
+                        out.flush();
+                        break;
+                    }
+                }
             } else {
-                aiResponse = "[오류] Ollama 서버 응답 코드: " + conn.getResponseCode();
+                out.write("data: [ERROR] Ollama 응답 오류\n\n");
+                out.flush();
             }
 
         } catch (java.net.ConnectException ce) {
-            aiResponse = "[OFFLINE] Ollama 서버에 연결할 수 없습니다.\n" +
-                         "로컬에서 'ollama run gemma3:1b' 명령어로 서버를 시작해 주세요.";
+            out.write("data: [ERROR] Ollama 서버에 연결할 수 없습니다.\n\n");
+            out.flush();
         } catch (Exception e) {
-            aiResponse = "[오류] " + e.getMessage();
+            out.write("data: [ERROR] " + e.getMessage() + "\n\n");
+            out.flush();
         }
-
-        request.setAttribute("result",    aiResponse);
-        request.setAttribute("userMsg",   userMsg.trim());
-        request.setAttribute("category",  category != null ? category : "");
-        request.setAttribute("ollamaOk",  ollamaOk);
-        request.getRequestDispatcher("aiChat.jsp").forward(request, response);
     }
 
     @Override
