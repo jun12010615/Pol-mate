@@ -385,7 +385,120 @@ var ROLE_LABEL = {suspect:'피의자',victim:'피해자',witness:'목격자',ref
 // 관계선: 공범 빨강 · 피해 주황 · 목격 파랑 · 가족 초록 · 그 외(지인 등) 회색
 var REL_COLOR  = {accomplice:'#dc2626',harm:'#f97316',witness:'#4a7cdc',acquaint:'#9ca3af',family:'#16a34a'};
 var REL_LABEL  = {accomplice:'공범',harm:'피해관계',witness:'목격',acquaint:'지인',family:'가족'};
-var EDGE_MISMATCH_STROKE = '#f59e0b'; // 불일치 — 공범 빨강과 구분
+var EDGE_MISMATCH_STROKE = '#f97316';
+
+function normalizeRelTypeBE(r) {
+  if (!r) return 'acquaint';
+  var t = String(r).toLowerCase().trim();
+  if (t.indexOf('|') >= 0) t = t.split('|')[0].trim();
+  if (['accomplice','harm','witness','acquaint','family'].indexOf(t) >= 0) return t;
+  var u = String(r);
+  if (u.indexOf('공범') >= 0 || t.indexOf('accomplice') >= 0) return 'accomplice';
+  if (u.indexOf('피해') >= 0 || t.indexOf('harm') >= 0) return 'harm';
+  if (u.indexOf('목격') >= 0 || t.indexOf('witness') >= 0) return 'witness';
+  if (u.indexOf('가족') >= 0 || t.indexOf('family') >= 0) return 'family';
+  if (u.indexOf('지인') >= 0 || u.indexOf('지언') >= 0 || t.indexOf('acquaint') >= 0) return 'acquaint';
+  return 'acquaint';
+}
+function normalizeEdgeStatusBE(s) {
+  if (!s) return 'unknown';
+  var raw = String(s).trim();
+  var t = raw.toLowerCase();
+  if (t.indexOf('|') >= 0) { t = t.split('|')[0].trim(); raw = raw.split('|')[0].trim(); }
+  if (['match','mismatch','unknown'].indexOf(t) >= 0) return t;
+  if (raw.indexOf('진술') >= 0 && raw.indexOf('불일치') >= 0) return 'mismatch';
+  if (raw.indexOf('불일치') >= 0 || t.indexOf('mismatch') >= 0) return 'mismatch';
+  if ((raw.indexOf('일치') >= 0 || t === 'match') && raw.indexOf('불일치') < 0) return 'match';
+  return 'unknown';
+}
+function paintMismatchEdgeLabelBE(ctx, lx, ly, subText, sc, bgRgba) {
+  sc = sc || 1;
+  subText = String(subText || '').trim();
+  var fzM = 10 * sc, fzS = 8 * sc, gap = 3 * sc, padX = 4 * sc, padY = 3 * sc;
+  ctx.textAlign = 'center';
+  var line1 = '진술 불일치';
+  ctx.font = fzM + 'px Noto Sans KR,sans-serif';
+  var w1 = ctx.measureText(line1).width;
+  var w2 = 0;
+  if (subText) {
+    ctx.font = fzS + 'px Noto Sans KR,sans-serif';
+    w2 = ctx.measureText(subText).width;
+  }
+  var tw = Math.max(w1, w2 || w1, 1);
+  var innerH = subText ? fzM + gap + fzS : fzM;
+  var boxH = innerH + 2 * padY;
+  var y0 = ly - boxH / 2;
+  ctx.fillStyle = bgRgba || 'rgba(10,20,50,0.75)';
+  ctx.fillRect(lx - tw / 2 - padX, y0, tw + 2 * padX, boxH);
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.font = fzM + 'px Noto Sans KR,sans-serif';
+  ctx.fillText(line1, lx, y0 + padY + fzM * 0.72);
+  if (subText) {
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = fzS + 'px Noto Sans KR,sans-serif';
+    ctx.fillText(subText, lx, y0 + padY + fzM + gap + fzS * 0.72);
+  }
+}
+function edgeUndirectedKeyBE(e) {
+  if (e.src < e.dst) return e.src + '\x1e' + e.dst;
+  return e.dst + '\x1e' + e.src;
+}
+function groupEdgesByPairBE(allEdges) {
+  var m = {};
+  (allEdges || []).forEach(function(e) {
+    var k = edgeUndirectedKeyBE(e);
+    if (!m[k]) m[k] = [];
+    m[k].push(e);
+  });
+  return m;
+}
+function mergeEdgeGroupForDrawBE(edgeList) {
+  var anyMis = false;
+  var orderLabs = [], seen = {};
+  var nonMisLabs = [], seenNM = {};
+  edgeList.forEach(function(e) {
+    if (normalizeEdgeStatusBE(e.status) === 'mismatch') anyMis = true;
+    var rt = normalizeRelTypeBE(e.relType);
+    var lab = REL_LABEL[rt] || String(e.relType || '').trim();
+    if (lab && !seen[lab]) { seen[lab] = true; orderLabs.push(lab); }
+  });
+  edgeList.forEach(function(e) {
+    if (normalizeEdgeStatusBE(e.status) === 'mismatch') return;
+    var rt = normalizeRelTypeBE(e.relType);
+    var lab = REL_LABEL[rt] || String(e.relType || '').trim();
+    if (lab && !seenNM[lab]) { seenNM[lab] = true; nonMisLabs.push(lab); }
+  });
+  var subMis = nonMisLabs.length ? nonMisLabs.join(' · ') : orderLabs.join(' · ');
+  var rts = edgeList.map(function(e) { return normalizeRelTypeBE(e.relType); });
+  var sameRt = rts.length && rts.every(function(rt) { return rt === rts[0]; });
+  var strokeColor;
+  if (anyMis) strokeColor = EDGE_MISMATCH_STROKE;
+  else if (sameRt) strokeColor = REL_COLOR[rts[0]] || '#9ca3af';
+  else strokeColor = '#9ca3af';
+  return { anyMis: anyMis, subMis: subMis, lines: orderLabs, strokeColor: strokeColor, rep: edgeList[0] };
+}
+function paintMultilineRelLabelsBE(ctx, lx, ly, lines, sc, bgRgba) {
+  if (!lines || !lines.length) return;
+  sc = sc || 1;
+  var fz = 10 * sc, gap = 2 * sc, padX = 4 * sc, padY = 3 * sc;
+  ctx.textAlign = 'center';
+  var maxW = 0;
+  lines.forEach(function(line) {
+    ctx.font = fz + 'px Noto Sans KR,sans-serif';
+    maxW = Math.max(maxW, ctx.measureText(line).width);
+  });
+  var innerH = lines.length * fz + (lines.length - 1) * gap;
+  var boxH = innerH + 2 * padY;
+  var y0 = ly - boxH / 2;
+  ctx.fillStyle = bgRgba || 'rgba(10,20,50,0.75)';
+  ctx.fillRect(lx - maxW / 2 - padX, y0, maxW + 2 * padX, boxH);
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  lines.forEach(function(line, i) {
+    ctx.font = fz + 'px Noto Sans KR,sans-serif';
+    var y = y0 + padY + fz * 0.72 + i * (fz + gap);
+    ctx.fillText(line, lx, y);
+  });
+}
 
 // ── 초기화 ───────────────────────────────────────────────────────
 window.addEventListener('load', function() {
@@ -400,7 +513,9 @@ window.addEventListener('load', function() {
     if (sid != null && ss === sc && sc) {
       var bj = JSON.parse(sessionStorage.getItem('boardEdit_json') || '{}');
       persons = (bj.persons || []).map(function(p) {
-        return {id:uid(), name:p.name||'', role:p.role||'reference', memo:p.memo||''};
+        var o = {id:uid(), name:p.name||'', role:p.role||'reference', memo:p.memo||''};
+        applyPersonLayoutFromJson(o, p);
+        return o;
       }).filter(function(p){ return p.name; });
       edges = (bj.edges || []).map(function(e) {
         var sp = persons.find(function(p){ return p.name === (e.srcName||''); });
@@ -408,6 +523,7 @@ window.addEventListener('load', function() {
         if (!sp||!dp) return null;
         return {id:uid(),src:sp.id,dst:dp.id,relType:e.relType||'acquaint',status:e.status||'unknown'};
       }).filter(Boolean);
+      syncBoardLayoutStateAfterLoad();
       var hasData = persons.length > 0 || edges.length > 0;
       if (hasData) {
         sessionStorage.removeItem('boardEdit_caseId');
@@ -456,7 +572,9 @@ function loadFromDb() {
         var bj;
         try { bj = JSON.parse(data.boardJson); } catch(e){ bj={}; }
         persons = (bj.persons||[]).map(function(p){
-          return {id:uid(),name:p.name||'',role:p.role||'reference',memo:p.memo||''};
+          var o = {id:uid(),name:p.name||'',role:p.role||'reference',memo:p.memo||''};
+          applyPersonLayoutFromJson(o, p);
+          return o;
         }).filter(function(p){ return p.name; });
         edges = (bj.edges||[]).map(function(e){
           var sp=persons.find(function(p){ return p.name===(e.srcName||e.src||''); });
@@ -464,6 +582,7 @@ function loadFromDb() {
           if(!sp||!dp) return null;
           return {id:uid(),src:sp.id,dst:dp.id,relType:e.relType||'acquaint',status:e.status||'unknown'};
         }).filter(Boolean);
+        syncBoardLayoutStateAfterLoad();
         updateSaveBtn();
       }
       renderAll();
@@ -488,8 +607,53 @@ function updateSaveBtn() {
 function renderAll() {
   renderPersonList();
   renderEdgeList();
-  _fdInit = false;
   drawCanvas();
+}
+
+/** DB/JSON용 인물 (id 제외). layoutX/Y는 캔버스 월드 좌표. */
+function serializePersonsForBoard() {
+  return persons.map(function(p) {
+    var o = { name: p.name, role: p.role, memo: p.memo || '' };
+    if (typeof p._x === 'number' && typeof p._y === 'number' && !isNaN(p._x) && !isNaN(p._y)) {
+      o.layoutX = Math.round(p._x * 100) / 100;
+      o.layoutY = Math.round(p._y * 100) / 100;
+    }
+    return o;
+  });
+}
+
+function applyPersonLayoutFromJson(o, raw) {
+  var lx = Number(raw && raw.layoutX);
+  var ly = Number(raw && raw.layoutY);
+  if (!isNaN(lx) && !isNaN(ly)) {
+    o.layoutX = lx;
+    o.layoutY = ly;
+    o._x = lx;
+    o._y = ly;
+    o._vx = 0;
+    o._vy = 0;
+    return true;
+  }
+  return false;
+}
+
+function syncBoardLayoutStateAfterLoad() {
+  if (!persons.length) {
+    _fdInit = false;
+    return;
+  }
+  _fdInit = persons.every(function(p) {
+    return typeof p._x === 'number' && typeof p._y === 'number' && !isNaN(p._x) && !isNaN(p._y);
+  });
+}
+
+function placeNewPersonOnCanvas(p) {
+  if (!canvas) return;
+  var cx = canvas.width / 2, cy = canvas.height / 2;
+  p._x = cx;
+  p._y = cy;
+  p._vx = 0;
+  p._vy = 0;
 }
 
 function renderPersonList() {
@@ -653,7 +817,9 @@ function confirmPerson() {
   } else {
     var dup = persons.find(function(p){ return p.name.trim().toLowerCase() === name.toLowerCase(); });
     if (dup) { showToast('"' + name + '"은(는) 이미 등록된 인물입니다.'); return; }
-    persons.push({id:uid(), name:name, role:selectedRole, memo:memo});
+    var np = {id:uid(), name:name, role:selectedRole, memo:memo};
+    persons.push(np);
+    if (_fdInit) placeNewPersonOnCanvas(np);
     closePersonDrawer();
     renderAll();
     showToast('인물이 추가됐습니다.');
@@ -761,7 +927,7 @@ function doSave() {
     headers:{'Content-Type':'application/json; charset=UTF-8'},
     body: JSON.stringify({
       caseId: currentCaseId,
-      boardJson: JSON.stringify({persons:persons, edges:edgesForJson}),
+      boardJson: JSON.stringify({persons: serializePersonsForBoard(), edges: edgesForJson}),
       isUpdate: boardExistsInDb
     })
   })
@@ -812,7 +978,7 @@ function boardHitPerson(wx, wy) {
   return null;
 }
 function clampBoardPerson(p) {
-  var pad = 32;
+  var pad = 52;
   p._x = Math.max(pad, Math.min(canvas.width - pad, p._x));
   p._y = Math.max(pad, Math.min(canvas.height - pad, p._y));
 }
@@ -960,45 +1126,62 @@ function initCanvas() {
 function resizeCanvas() {
   var w = document.getElementById('canvasWrap');
   if (!w||!canvas) return;
-  canvas.width=w.clientWidth; canvas.height=360; drawCanvas();
+  var prevW = canvas.width, prevH = canvas.height;
+  canvas.width=w.clientWidth; canvas.height=360;
+  if (_fdInit && persons.length && prevW > 0 && (canvas.width !== prevW || canvas.height !== prevH)) {
+    var sx = canvas.width / prevW, sy = canvas.height / prevH;
+    persons.forEach(function(p) {
+      if (typeof p._x === 'number') {
+        p._x *= sx;
+        p._y *= sy;
+      }
+    });
+  }
+  drawCanvas();
 }
 
 // Force-directed 레이아웃
 function initForce() {
   var n=persons.length, cx=canvas.width/2, cy=canvas.height/2;
+  var minDim=Math.min(cx,cy)*2, area=Math.max(canvas.width*canvas.height,1);
+  var k0=Math.sqrt(area/Math.max(n,1))*0.82;
+  var r=Math.min(minDim*0.36, k0*Math.sqrt(Math.max(n,2))*0.52);
+  var jitter=k0*0.16;
   persons.forEach(function(p,i){
-    var a=(2*Math.PI*i/n)-Math.PI/2, r=Math.min(cx,cy)*0.55;
-    p._x=cx+Math.cos(a)*r; p._y=cy+Math.sin(a)*r; p._vx=0; p._vy=0;
+    var a=(2*Math.PI*i/n)-Math.PI/2;
+    p._x=cx+Math.cos(a)*r+(Math.random()-0.5)*jitter;
+    p._y=cy+Math.sin(a)*r+(Math.random()-0.5)*jitter;
+    p._vx=0; p._vy=0;
   });
   if(n===1){persons[0]._x=cx;persons[0]._y=cy;}
-  for(var i=0;i<150;i++) runForce();
+  for(var i=0;i<300;i++) runForce();
   _fdInit=true;
 }
 function runForce(){
-  var n=persons.length, ideal=Math.min(canvas.width,canvas.height)*0.38, pad=32;
-  var cx=canvas.width/2, cy=canvas.height/2;
+  var n=persons.length, w=canvas.width, h=canvas.height, pad=52;
+  var area=Math.max(w*h,1), k=Math.sqrt(area/n)*0.82, repK=k*k, attract=0.052;
+  var cx=w/2, cy=h/2, damping=0.86, grav=0.018, vmax=k*0.38;
   persons.forEach(function(p){p._fx=0;p._fy=0;});
   for(var i=0;i<n;i++){for(var j=i+1;j<n;j++){
-    var pi=persons[i],pj=persons[j],dx=pi._x-pj._x,dy=pi._y-pj._y,dist=Math.sqrt(dx*dx+dy*dy)||1;
-    var f=3200/(dist*dist);pi._fx+=dx/dist*f;pi._fy+=dy/dist*f;pj._fx-=dx/dist*f;pj._fy-=dy/dist*f;
+    var pi=persons[i],pj=persons[j],dx=pi._x-pj._x,dy=pi._y-pj._y;
+    var dist=Math.sqrt(dx*dx+dy*dy); if(dist<0.01)dist=0.01;
+    var f=repK/dist; pi._fx+=dx/dist*f;pi._fy+=dy/dist*f;pj._fx-=dx/dist*f;pj._fy-=dy/dist*f;
   }}
   edges.forEach(function(e){
     var sp=persons.find(function(p){return p.id===e.src;}),dp=persons.find(function(p){return p.id===e.dst;});
     if(!sp||!dp)return;
-    var dx=dp._x-sp._x,dy=dp._y-sp._y,dist=Math.sqrt(dx*dx+dy*dy)||1,f=0.018*(dist-ideal);
+    var dx=dp._x-sp._x,dy=dp._y-sp._y,dist=Math.sqrt(dx*dx+dy*dy); if(dist<0.01)dist=0.01;
+    var f=attract*(dist-k);
     sp._fx+=dx/dist*f;sp._fy+=dy/dist*f;dp._fx-=dx/dist*f;dp._fy-=dy/dist*f;
   });
   persons.forEach(function(p){
-    p._fx+=(cx-p._x)*0.008;p._fy+=(cy-p._y)*0.008;
-    p._vx=(p._vx+p._fx)*0.82;p._vy=(p._vy+p._fy)*0.82;
-    p._x=Math.max(pad,Math.min(canvas.width-pad,p._x+p._vx));
-    p._y=Math.max(pad,Math.min(canvas.height-pad,p._y+p._vy));
+    p._fx+=(cx-p._x)*grav;p._fy+=(cy-p._y)*grav;
+    p._vx=(p._vx+p._fx)*damping;p._vy=(p._vy+p._fy)*damping;
+    var v=Math.sqrt(p._vx*p._vx+p._vy*p._vy);
+    if(v>vmax&&v>0){p._vx*=vmax/v;p._vy*=vmax/v;}
+    p._x=Math.max(pad,Math.min(w-pad,p._x+p._vx));
+    p._y=Math.max(pad,Math.min(h-pad,p._y+p._vy));
   });
-}
-function calcCurve(e){
-  var pairs=edges.filter(function(x){return(x.src===e.src&&x.dst===e.dst)||(x.src===e.dst&&x.dst===e.src);});
-  var idx=pairs.indexOf(e);if(pairs.length===1)return 0;
-  return(Math.floor(idx/2)+1)*55*(idx%2===0?1:-1);
 }
 function drawCanvas(){
   if(!ctx)return;
@@ -1009,37 +1192,40 @@ function drawCanvas(){
     ctx.textAlign='center';ctx.fillText('인물을 추가하면 관계망이 표시됩니다',canvas.width/2,canvas.height/2);
     return;
   }
-  if(!_fdInit)initForce();
+  var needForce = !_fdInit || persons.some(function(p){ return typeof p._x !== 'number' || typeof p._y !== 'number' || isNaN(p._x) || isNaN(p._y); });
+  if (needForce) initForce();
   ctx.save();
   ctx.translate(cOffsetX*cScale,cOffsetY*cScale);
   ctx.scale(cScale,cScale);
-  // 관계선
-  edges.forEach(function(e){
-    var sp=persons.find(function(p){return p.id===e.src;}),dp=persons.find(function(p){return p.id===e.dst;});
+  var pairMapBE=groupEdgesByPairBE(edges);
+  Object.keys(pairMapBE).forEach(function(pk){
+    var group=pairMapBE[pk];
+    var idsK=pk.split('\x1e');
+    var sp=persons.find(function(p){return p.id===idsK[0];}),dp=persons.find(function(p){return p.id===idsK[1];});
     if(!sp||!dp)return;
-    var curve=calcCurve(e),color=REL_COLOR[e.relType]||'#9ca3af';
-    var isMis=e.status==='mismatch',isUnk=e.status==='unknown';
-    var sc=isMis?EDGE_MISMATCH_STROKE:isUnk?'#9ca3af':color;
-    ctx.lineWidth=2;ctx.strokeStyle=sc;
-    if(isMis)ctx.setLineDash([6,4]);else if(isUnk)ctx.setLineDash([4,4]);else ctx.setLineDash([]);
+    var merged=mergeEdgeGroupForDrawBE(group);
+    ctx.lineWidth=2;ctx.strokeStyle=merged.strokeColor;
+    ctx.setLineDash([]);
     var mx=(sp._x+dp._x)/2,my=(sp._y+dp._y)/2,dx=dp._x-sp._x,dy=dp._y-sp._y,len=Math.sqrt(dx*dx+dy*dy)||1;
-    var cpx=mx-(dy/len)*curve,cpy=my+(dx/len)*curve;
-    ctx.beginPath();ctx.moveTo(sp._x,sp._y);
-    if(curve===0)ctx.lineTo(dp._x,dp._y);else ctx.quadraticCurveTo(cpx,cpy,dp._x,dp._y);
+    ctx.beginPath();ctx.moveTo(sp._x,sp._y);ctx.lineTo(dp._x,dp._y);
     ctx.stroke();ctx.setLineDash([]);
-    var ang=curve===0?Math.atan2(dp._y-sp._y,dp._x-sp._x):Math.atan2(dp._y-cpy,dp._x-cpx);
+    var ang=Math.atan2(dp._y-sp._y,dp._x-sp._x);
     var nr=22,ax=dp._x-Math.cos(ang)*nr,ay=dp._y-Math.sin(ang)*nr;
-    ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(ax-9*Math.cos(ang-0.4),ay-9*Math.sin(ang-0.4));ctx.lineTo(ax-9*Math.cos(ang+0.4),ay-9*Math.sin(ang+0.4));ctx.closePath();ctx.fillStyle=sc;ctx.fill();
-    var t=0.5;
-    var lx=curve===0?mx:(1-t)*(1-t)*sp._x+2*(1-t)*t*cpx+t*t*dp._x;
-    var ly=curve===0?my:(1-t)*(1-t)*sp._y+2*(1-t)*t*cpy+t*t*dp._y;
-    var perpX=-(dy/len),perpY=dx/len;if(curve===0){lx+=perpX*12;ly+=perpY*12;}
-    var label=REL_LABEL[e.relType]||'';
-    if(label){
+    ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(ax-9*Math.cos(ang-0.4),ay-9*Math.sin(ang-0.4));ctx.lineTo(ax-9*Math.cos(ang+0.4),ay-9*Math.sin(ang+0.4));ctx.closePath();ctx.fillStyle=merged.strokeColor;ctx.fill();
+    var lx=mx, ly=my;
+    var perpX=-(dy/len),perpY=dx/len;
+    lx+=perpX*12;ly+=perpY*12;
+    ctx.textAlign='center';
+    if(merged.anyMis){
+      paintMismatchEdgeLabelBE(ctx,lx,ly,merged.subMis,1,'rgba(10,20,50,0.75)');
+    } else if(merged.lines.length>1){
+      paintMultilineRelLabelsBE(ctx,lx,ly,merged.lines,1,'rgba(10,20,50,0.75)');
+    } else if(merged.lines.length===1){
+      var label=merged.lines[0];
       ctx.font='10px Noto Sans KR,sans-serif';var tw=ctx.measureText(label).width;
       ctx.fillStyle='rgba(10,20,50,0.75)';ctx.beginPath();
       if(ctx.roundRect)ctx.roundRect(lx-tw/2-4,ly-9,tw+8,13,3);else ctx.rect(lx-tw/2-4,ly-9,tw+8,13);
-      ctx.fill();ctx.fillStyle='#fff';ctx.textAlign='center';ctx.fillText(label,lx,ly);
+      ctx.fill();ctx.fillStyle='#fff';ctx.fillText(label,lx,ly);
     }
   });
   // 노드

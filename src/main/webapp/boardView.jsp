@@ -6,6 +6,8 @@
   if (userName == null) userName = loginUser;
   // 알림에서 직접 진입 시 특정 보드 자동 오픈
   String paramCaseId = request.getParameter("caseId") != null ? request.getParameter("caseId") : "";
+  // 단일따옴표 JS 문자열용 이스케이프 (스크립트 안에서 replace("'",...) 쓰면 파서/빌드 오류 유발)
+  String bootCaseIdJs = paramCaseId.replace("\\", "\\\\").replace("'", "\\'").replace("\r", "").replace("\n", "\\n");
 %>
 <!DOCTYPE html>
 <html lang="ko">
@@ -199,6 +201,120 @@ var ROLE_COLOR = {suspect:'#dc2626',victim:'#f97316',witness:'#4a7cdc',reference
 var ROLE_LABEL = {suspect:'피의자',victim:'피해자',witness:'목격자',reference:'참고인'};
 var REL_COLOR  = {accomplice:'#dc2626',harm:'#f97316',witness:'#4a7cdc',acquaint:'#9ca3af',family:'#16a34a'};
 var REL_LABEL  = {accomplice:'공범',harm:'피해관계',witness:'목격',acquaint:'지인',family:'가족'};
+var EDGE_MISMATCH_STROKE = '#f97316';
+
+function normalizeRelTypeBV(r) {
+  if (!r) return 'acquaint';
+  var t = String(r).toLowerCase().trim();
+  if (t.indexOf('|') >= 0) t = t.split('|')[0].trim();
+  if (['accomplice','harm','witness','acquaint','family'].indexOf(t) >= 0) return t;
+  var u = String(r);
+  if (u.indexOf('공범') >= 0 || t.indexOf('accomplice') >= 0) return 'accomplice';
+  if (u.indexOf('피해') >= 0 || t.indexOf('harm') >= 0) return 'harm';
+  if (u.indexOf('목격') >= 0 || t.indexOf('witness') >= 0) return 'witness';
+  if (u.indexOf('가족') >= 0 || t.indexOf('family') >= 0) return 'family';
+  if (u.indexOf('지인') >= 0 || u.indexOf('지언') >= 0 || t.indexOf('acquaint') >= 0) return 'acquaint';
+  return 'acquaint';
+}
+function normalizeEdgeStatusBV(s) {
+  if (!s) return 'unknown';
+  var raw = String(s).trim();
+  var t = raw.toLowerCase();
+  if (t.indexOf('|') >= 0) { t = t.split('|')[0].trim(); raw = raw.split('|')[0].trim(); }
+  if (['match','mismatch','unknown'].indexOf(t) >= 0) return t;
+  if (raw.indexOf('진술') >= 0 && raw.indexOf('불일치') >= 0) return 'mismatch';
+  if (raw.indexOf('불일치') >= 0 || t.indexOf('mismatch') >= 0) return 'mismatch';
+  if ((raw.indexOf('일치') >= 0 || t === 'match') && raw.indexOf('불일치') < 0) return 'match';
+  return 'unknown';
+}
+function paintMismatchEdgeLabelBV(ctx, lx, ly, subText, sc, bgRgba) {
+  sc = sc || 1;
+  subText = String(subText || '').trim();
+  var fzM = 10 * sc, fzS = 8 * sc, gap = 3 * sc, padX = 4 * sc, padY = 3 * sc;
+  ctx.textAlign = 'center';
+  var line1 = '진술 불일치';
+  ctx.font = fzM + 'px Noto Sans KR,sans-serif';
+  var w1 = ctx.measureText(line1).width;
+  var w2 = 0;
+  if (subText) {
+    ctx.font = fzS + 'px Noto Sans KR,sans-serif';
+    w2 = ctx.measureText(subText).width;
+  }
+  var tw = Math.max(w1, w2 || w1, 1);
+  var innerH = subText ? fzM + gap + fzS : fzM;
+  var boxH = innerH + 2 * padY;
+  var y0 = ly - boxH / 2;
+  ctx.fillStyle = bgRgba || 'rgba(10,20,50,0.75)';
+  ctx.fillRect(lx - tw / 2 - padX, y0, tw + 2 * padX, boxH);
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.font = fzM + 'px Noto Sans KR,sans-serif';
+  ctx.fillText(line1, lx, y0 + padY + fzM * 0.72);
+  if (subText) {
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = fzS + 'px Noto Sans KR,sans-serif';
+    ctx.fillText(subText, lx, y0 + padY + fzM + gap + fzS * 0.72);
+  }
+}
+function edgeUndirectedKeyBV(e) {
+  if (e.src < e.dst) return e.src + '\x1e' + e.dst;
+  return e.dst + '\x1e' + e.src;
+}
+function groupEdgesByPairBV(allEdges) {
+  var m = {};
+  (allEdges || []).forEach(function(e) {
+    var k = edgeUndirectedKeyBV(e);
+    if (!m[k]) m[k] = [];
+    m[k].push(e);
+  });
+  return m;
+}
+function mergeEdgeGroupForDrawBV(edgeList) {
+  var anyMis = false;
+  var orderLabs = [], seen = {};
+  var nonMisLabs = [], seenNM = {};
+  edgeList.forEach(function(e) {
+    if (normalizeEdgeStatusBV(e.status) === 'mismatch') anyMis = true;
+    var rt = normalizeRelTypeBV(e.relType);
+    var lab = REL_LABEL[rt] || String(e.relType || '').trim();
+    if (lab && !seen[lab]) { seen[lab] = true; orderLabs.push(lab); }
+  });
+  edgeList.forEach(function(e) {
+    if (normalizeEdgeStatusBV(e.status) === 'mismatch') return;
+    var rt = normalizeRelTypeBV(e.relType);
+    var lab = REL_LABEL[rt] || String(e.relType || '').trim();
+    if (lab && !seenNM[lab]) { seenNM[lab] = true; nonMisLabs.push(lab); }
+  });
+  var subMis = nonMisLabs.length ? nonMisLabs.join(' · ') : orderLabs.join(' · ');
+  var rts = edgeList.map(function(e) { return normalizeRelTypeBV(e.relType); });
+  var sameRt = rts.length && rts.every(function(rt) { return rt === rts[0]; });
+  var strokeColor;
+  if (anyMis) strokeColor = EDGE_MISMATCH_STROKE;
+  else if (sameRt) strokeColor = REL_COLOR[rts[0]] || '#9ca3af';
+  else strokeColor = '#9ca3af';
+  return { anyMis: anyMis, subMis: subMis, lines: orderLabs, strokeColor: strokeColor, rep: edgeList[0] };
+}
+function paintMultilineRelLabelsBV(ctx, lx, ly, lines, sc, bgRgba) {
+  if (!lines || !lines.length) return;
+  sc = sc || 1;
+  var fz = 10 * sc, gap = 2 * sc, padX = 4 * sc, padY = 3 * sc;
+  ctx.textAlign = 'center';
+  var maxW = 0;
+  lines.forEach(function(line) {
+    ctx.font = fz + 'px Noto Sans KR,sans-serif';
+    maxW = Math.max(maxW, ctx.measureText(line).width);
+  });
+  var innerH = lines.length * fz + (lines.length - 1) * gap;
+  var boxH = innerH + 2 * padY;
+  var y0 = ly - boxH / 2;
+  ctx.fillStyle = bgRgba || 'rgba(10,20,50,0.75)';
+  ctx.fillRect(lx - maxW / 2 - padX, y0, maxW + 2 * padX, boxH);
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  lines.forEach(function(line, i) {
+    ctx.font = fz + 'px Noto Sans KR,sans-serif';
+    var y = y0 + padY + fz * 0.72 + i * (fz + gap);
+    ctx.fillText(line, lx, y);
+  });
+}
 
 // ── 보드 목록 로드 ────────────────────────────────────────────────
 function loadBoardList() {
@@ -291,7 +407,13 @@ function openDetail(board) {
       try { bj = JSON.parse(data.boardJson); } catch(e) { bj = {}; }
 
       detailPersons = (bj.persons || []).map(function(p) {
-        return {id:uid(), name:p.name||'', role:p.role||'reference', memo:p.memo||''};
+        var o = {id:uid(), name:p.name||'', role:p.role||'reference', memo:p.memo||''};
+        var lx = Number(p.layoutX), ly = Number(p.layoutY);
+        if (!isNaN(lx) && !isNaN(ly)) {
+          o.layoutX = lx; o.layoutY = ly;
+          o._x = lx; o._y = ly; o._vx = 0; o._vy = 0;
+        }
+        return o;
       }).filter(function(p){ return p.name; });
 
       detailEdges = (bj.edges || []).map(function(e) {
@@ -339,32 +461,51 @@ function initDetailCanvas() {
 function resizeDetailCanvas() {
   var w = document.getElementById('detailCanvasWrap');
   if (!w||!dCanvas) return;
-  dCanvas.width=w.clientWidth; dCanvas.height=340; drawDetailCanvas();
+  var prevW = dCanvas.width, prevH = dCanvas.height;
+  dCanvas.width=w.clientWidth; dCanvas.height=340;
+  var allPos = detailPersons.length && detailPersons.every(function(p) {
+    return typeof p._x === 'number' && typeof p._y === 'number' && !isNaN(p._x) && !isNaN(p._y);
+  });
+  if (allPos && prevW > 0 && (dCanvas.width !== prevW || dCanvas.height !== prevH)) {
+    var sx = dCanvas.width / prevW, sy = dCanvas.height / prevH;
+    detailPersons.forEach(function(p) {
+      p._x *= sx; p._y *= sy;
+      if (typeof p.layoutX === 'number') { p.layoutX = p._x; p.layoutY = p._y; }
+    });
+  }
+  drawDetailCanvas();
 }
 // Force-directed 레이아웃 (boardView용)
 function initDetailForce(w, h) {
   var cx = w/2, cy = h/2, n = detailPersons.length;
+  var minDim = Math.min(w, h);
+  var area = Math.max(w * h, 1);
+  var k0 = Math.sqrt(area / Math.max(n, 1)) * 0.82;
+  var r = Math.min(minDim * 0.36, k0 * Math.sqrt(Math.max(n, 2)) * 0.52);
+  var jitter = k0 * 0.16;
   detailPersons.forEach(function(p, i) {
     var a = (2*Math.PI*i/n) - Math.PI/2;
-    var r = Math.min(cx,cy)*0.55;
-    p._x = cx + Math.cos(a)*r;
-    p._y = cy + Math.sin(a)*r;
+    p._x = cx + Math.cos(a)*r + (Math.random()-0.5)*jitter;
+    p._y = cy + Math.sin(a)*r + (Math.random()-0.5)*jitter;
     p._vx = 0; p._vy = 0;
   });
   if (n===1) { detailPersons[0]._x=cx; detailPersons[0]._y=cy; }
-  for (var i=0; i<150; i++) runDetailForce(w, h);
+  for (var i=0; i<300; i++) runDetailForce(w, h);
 }
 function runDetailForce(w, h) {
   var n = detailPersons.length;
   if (n<2) return;
-  var ideal = Math.min(w,h)*0.38, pad = 30;
+  var area = Math.max(w * h, 1);
+  var k = Math.sqrt(area / n) * 0.82;
+  var repK = k * k, attract = 0.052, pad = 52;
+  var cx = w/2, cy = h/2, damping = 0.86, grav = 0.018, vmax = k * 0.38;
   detailPersons.forEach(function(p){ p._fx=0; p._fy=0; });
   for (var i=0; i<n; i++) {
     for (var j=i+1; j<n; j++) {
       var pi=detailPersons[i], pj=detailPersons[j];
       var dx=pi._x-pj._x, dy=pi._y-pj._y;
-      var dist=Math.sqrt(dx*dx+dy*dy)||1;
-      var f=3200/(dist*dist);
+      var dist=Math.sqrt(dx*dx+dy*dy); if (dist<0.01) dist=0.01;
+      var f=repK/dist;
       pi._fx+=dx/dist*f; pi._fy+=dy/dist*f;
       pj._fx-=dx/dist*f; pj._fy-=dy/dist*f;
     }
@@ -374,25 +515,19 @@ function runDetailForce(w, h) {
         dp=detailPersons.find(function(p){return p.id===e.dst;});
     if(!sp||!dp) return;
     var dx=dp._x-sp._x, dy=dp._y-sp._y;
-    var dist=Math.sqrt(dx*dx+dy*dy)||1;
-    var f=0.018*(dist-ideal);
+    var dist=Math.sqrt(dx*dx+dy*dy); if (dist<0.01) dist=0.01;
+    var f=attract*(dist-k);
     sp._fx+=dx/dist*f; sp._fy+=dy/dist*f;
     dp._fx-=dx/dist*f; dp._fy-=dy/dist*f;
   });
   detailPersons.forEach(function(p){
-    p._fx+=(w/2-p._x)*0.008; p._fy+=(h/2-p._y)*0.008;
-    p._vx=(p._vx+p._fx)*0.82; p._vy=(p._vy+p._fy)*0.82;
+    p._fx+=(cx-p._x)*grav; p._fy+=(cy-p._y)*grav;
+    p._vx=(p._vx+p._fx)*damping; p._vy=(p._vy+p._fy)*damping;
+    var v = Math.sqrt(p._vx*p._vx + p._vy*p._vy);
+    if (v > vmax && v > 0) { p._vx *= vmax/v; p._vy *= vmax/v; }
     p._x=Math.max(pad,Math.min(w-pad, p._x+p._vx));
     p._y=Math.max(pad,Math.min(h-pad, p._y+p._vy));
   });
-}
-function calcDetailCurve(e) {
-  var pairs = detailEdges.filter(function(x){
-    return (x.src===e.src&&x.dst===e.dst)||(x.src===e.dst&&x.dst===e.src);
-  });
-  var idx = pairs.indexOf(e), total = pairs.length;
-  if (total===1) return 0;
-  return (Math.floor(idx/2)+1)*55*(idx%2===0?1:-1);
 }
 function drawDetailCanvas() {
   if (!dCtx) return;
@@ -404,48 +539,53 @@ function drawDetailCanvas() {
     ctx.textAlign='center'; ctx.fillText('인물 정보가 없습니다', c.width/2, c.height/2);
     return;
   }
-  // 첫 그리기 시 Force 레이아웃 수렴
-  if (!detailPersons[0]._x) initDetailForce(c.width, c.height);
+  var allSavedPos = detailPersons.every(function(p) {
+    return typeof p._x === 'number' && typeof p._y === 'number' && !isNaN(p._x) && !isNaN(p._y);
+  });
+  if (!allSavedPos) {
+    initDetailForce(c.width, c.height);
+  } else {
+    var pad = 52;
+    detailPersons.forEach(function(p) {
+      p._x = Math.max(pad, Math.min(c.width - pad, p._x));
+      p._y = Math.max(pad, Math.min(c.height - pad, p._y));
+    });
+  }
 
   ctx.save();
   ctx.translate(dOffsetX*dScale, dOffsetY*dScale);
   ctx.scale(dScale, dScale);
 
-  // 관계선
-  detailEdges.forEach(function(e){
-    var sp=detailPersons.find(function(p){return p.id===e.src;}),
-        dp=detailPersons.find(function(p){return p.id===e.dst;});
-    if(!sp||!dp) return;
-    var curve=calcDetailCurve(e);
-    var color=REL_COLOR[e.relType]||'#9ca3af';
-    var isMis=e.status==='mismatch', isUnk=e.status==='unknown';
-    var sc=isMis?'#dc2626':isUnk?'#9ca3af':color;
-    ctx.lineWidth=2; ctx.strokeStyle=sc;
-    if(isMis) ctx.setLineDash([6,4]);
-    else if(isUnk) ctx.setLineDash([4,4]);
-    else ctx.setLineDash([]);
+  var pairMapBV = groupEdgesByPairBV(detailEdges);
+  Object.keys(pairMapBV).forEach(function(pk) {
+    var group = pairMapBV[pk];
+    var idsB = pk.split('\x1e');
+    var sp = detailPersons.find(function(p){return p.id===idsB[0];}),
+        dp = detailPersons.find(function(p){return p.id===idsB[1];});
+    if (!sp||!dp) return;
+    var merged = mergeEdgeGroupForDrawBV(group);
+    ctx.lineWidth=2; ctx.strokeStyle=merged.strokeColor;
+    ctx.setLineDash([]);
     var mx=(sp._x+dp._x)/2, my=(sp._y+dp._y)/2;
     var dx=dp._x-sp._x, dy=dp._y-sp._y, len=Math.sqrt(dx*dx+dy*dy)||1;
-    var cpx=mx-(dy/len)*curve, cpy=my+(dx/len)*curve;
-    ctx.beginPath(); ctx.moveTo(sp._x,sp._y);
-    if(curve===0) ctx.lineTo(dp._x,dp._y);
-    else ctx.quadraticCurveTo(cpx,cpy,dp._x,dp._y);
+    ctx.beginPath(); ctx.moveTo(sp._x,sp._y); ctx.lineTo(dp._x,dp._y);
     ctx.stroke(); ctx.setLineDash([]);
-    // 화살표
-    var ang=curve===0?Math.atan2(dp._y-sp._y,dp._x-sp._x):Math.atan2(dp._y-cpy,dp._x-cpx);
+    var ang=Math.atan2(dp._y-sp._y,dp._x-sp._x);
     var nr=22, ax=dp._x-Math.cos(ang)*nr, ay=dp._y-Math.sin(ang)*nr;
     ctx.beginPath(); ctx.moveTo(ax,ay);
     ctx.lineTo(ax-9*Math.cos(ang-0.4),ay-9*Math.sin(ang-0.4));
     ctx.lineTo(ax-9*Math.cos(ang+0.4),ay-9*Math.sin(ang+0.4));
-    ctx.closePath(); ctx.fillStyle=sc; ctx.fill(); ctx.setLineDash([]);
-    // 레이블
-    var t=0.5;
-    var lx=curve===0?mx:(1-t)*(1-t)*sp._x+2*(1-t)*t*cpx+t*t*dp._x;
-    var ly=curve===0?my:(1-t)*(1-t)*sp._y+2*(1-t)*t*cpy+t*t*dp._y;
+    ctx.closePath(); ctx.fillStyle=merged.strokeColor; ctx.fill(); ctx.setLineDash([]);
+    var lx=mx, ly=my;
     var perpX=-(dy/len), perpY=dx/len;
-    if(curve===0){lx+=perpX*12; ly+=perpY*12;}
-    var label=REL_LABEL[e.relType]||'';
-    if(label){
+    lx+=perpX*12; ly+=perpY*12;
+    ctx.textAlign='center';
+    if (merged.anyMis) {
+      paintMismatchEdgeLabelBV(ctx,lx,ly,merged.subMis,1,'rgba(10,20,50,0.75)');
+    } else if (merged.lines.length > 1) {
+      paintMultilineRelLabelsBV(ctx,lx,ly,merged.lines,1,'rgba(10,20,50,0.75)');
+    } else if (merged.lines.length === 1) {
+      var label=merged.lines[0];
       ctx.font='10px Noto Sans KR,sans-serif';
       var tw=ctx.measureText(label).width;
       ctx.fillStyle='rgba(10,20,50,0.75)';
@@ -453,7 +593,7 @@ function drawDetailCanvas() {
       if(ctx.roundRect) ctx.roundRect(lx-tw/2-4,ly-9,tw+8,13,3);
       else ctx.rect(lx-tw/2-4,ly-9,tw+8,13);
       ctx.fill();
-      ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.fillText(label,lx,ly);
+      ctx.fillStyle='#fff'; ctx.fillText(label,lx,ly);
     }
   });
   // 노드
@@ -481,7 +621,7 @@ loadBoardList();
 
 // 알림에서 caseId 파라미터로 직접 진입 시 해당 보드 자동 오픈
 (function() {
-  var targetCaseId = '<%= paramCaseId.replace("'", "\'") %>';
+  var targetCaseId = '<%= bootCaseIdJs %>';
   if (!targetCaseId) return;
   // 보드 목록 로드 완료 후 해당 보드 자동 오픈
   var maxTry = 20, tried = 0;

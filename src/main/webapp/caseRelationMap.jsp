@@ -497,7 +497,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
             <div class="legend-item"><div class="legend-line" style="background:#4a7cdc;height:2px;"></div>목격</div>
             <div class="legend-item"><div class="legend-line" style="background:#16a34a;height:2px;"></div>가족</div>
             <div class="legend-item"><div class="legend-line" style="background:#9ca3af;height:2px;"></div>지인</div>
-            <div class="legend-item"><div class="legend-line" style="background:#f59e0b;height:2px;"></div>진술 불일치(점선)</div>
+            <div class="legend-item"><div class="legend-line" style="background:#f97316;height:2px;"></div>진술 불일치</div>
           </div>
         </div>
       </div>
@@ -560,7 +560,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
             <div class="legend-item"><div class="legend-line" style="background:#4a7cdc;height:2px;"></div>목격</div>
             <div class="legend-item"><div class="legend-line" style="background:#16a34a;height:2px;"></div>가족</div>
             <div class="legend-item"><div class="legend-line" style="background:#9ca3af;height:2px;"></div>지인</div>
-            <div class="legend-item"><div class="legend-line" style="background:#f59e0b;height:2px;"></div>진술 불일치(점선)</div>
+            <div class="legend-item"><div class="legend-line" style="background:#f97316;height:2px;"></div>진술 불일치</div>
           </div>
         </div>
       </div>
@@ -660,7 +660,7 @@ var ROLE_COLOR = {suspect:'#dc2626',victim:'#f97316',witness:'#4a7cdc',reference
 var ROLE_LABEL = {suspect:'피의자',victim:'피해자',witness:'목격자',reference:'참고인'};
 var REL_COLOR  = {accomplice:'#dc2626',harm:'#f97316',witness:'#4a7cdc',acquaint:'#9ca3af',family:'#16a34a'};
 // mismatch 상태 선색: 공범(빨강)과 혼동 방지
-var EDGE_MISMATCH_STROKE = '#f59e0b';
+var EDGE_MISMATCH_STROKE = '#f97316'; // 진술 불일치(다른 관계색보다 우선) — 주황
 var REL_LABEL  = {accomplice:'공범',harm:'피해관계',witness:'목격',acquaint:'지인',family:'가족'};
 
 /** Pol-mate-Serv (Flask app.py) — Ollama는 서버에서만 호출. 로컬 개발 시 http://127.0.0.1:5001 로 바꿀 것. */
@@ -892,9 +892,13 @@ function normalizeRelType(r) {
 }
 function normalizeStatus(s) {
   if (!s) return 'unknown';
-  s = String(s).toLowerCase().trim();
-  if (s.indexOf('|') >= 0) s = s.split('|')[0].trim();
-  if (VALID_STATUSES.indexOf(s) >= 0) return s;
+  var raw = String(s).trim();
+  var t = raw.toLowerCase();
+  if (t.indexOf('|') >= 0) { t = t.split('|')[0].trim(); raw = raw.split('|')[0].trim(); }
+  if (VALID_STATUSES.indexOf(t) >= 0) return t;
+  if (raw.indexOf('진술') >= 0 && raw.indexOf('불일치') >= 0) return 'mismatch';
+  if (raw.indexOf('불일치') >= 0 || t.indexOf('mismatch') >= 0) return 'mismatch';
+  if ((raw.indexOf('일치') >= 0 || t === 'match') && raw.indexOf('불일치') < 0 && t.indexOf('mismatch') < 0) return 'match';
   return 'unknown';
 }
 
@@ -1156,8 +1160,28 @@ function sanitizeContext(ctx) {
   var v = String(ctx||'').trim();
   return VALID_CTX.indexOf(v) >= 0 ? v : '';
 }
+function serializePersonsWithLayout(personArr) {
+  return (personArr || []).map(function(p) {
+    var o = { name: p.name, role: p.role, memo: p.memo || '' };
+    var lx, ly;
+    if (typeof p._px === 'number' && typeof p._py === 'number' && !isNaN(p._px) && !isNaN(p._py)) {
+      lx = p._px; ly = p._py;
+    } else if (typeof p._x === 'number' && typeof p._y === 'number' && !isNaN(p._x) && !isNaN(p._y)) {
+      lx = p._x; ly = p._y;
+    } else if (typeof p.layoutX === 'number' && typeof p.layoutY === 'number') {
+      lx = p.layoutX; ly = p.layoutY;
+    }
+    if (typeof lx === 'number' && !isNaN(lx) && typeof ly === 'number' && !isNaN(ly)) {
+      o.layoutX = Math.round(lx * 100) / 100;
+      o.layoutY = Math.round(ly * 100) / 100;
+    }
+    return o;
+  });
+}
+
 function buildBoardJson(pList, eList) {
   var cleanPersons = dedupePersons(pList);
+  var personsOut = serializePersonsWithLayout(cleanPersons);
   var edgesForJson = dedupeEdges(
     eList.map(function(e) {
       var sp = cleanPersons.find(function(p) { return p.id === e.src; });
@@ -1166,7 +1190,7 @@ function buildBoardJson(pList, eList) {
               relType:e.relType, status:e.status, context:sanitizeContext(e.context)};
     }).filter(function(e) { return e.srcName && e.dstName; })
   );
-  return JSON.stringify({persons:cleanPersons, edges:edgesForJson});
+  return JSON.stringify({persons:personsOut, edges:edgesForJson});
 }
 
 // ── STEP 3: 보드 섹션 표시 ──────────────────────────────────────
@@ -1182,7 +1206,7 @@ function showBoardSection(parsedPersons, parsedEdges) {
             relType:e.relType, status:e.status, context:sanitizeContext(e.context)};
   }).filter(function(e){ return e.srcName && e.dstName; });
 
-  var boardJson = JSON.stringify({persons:persons, edges:edgesForJson});
+  var boardJson = JSON.stringify({persons:serializePersonsWithLayout(persons), edges:edgesForJson});
   try {
     sessionStorage.setItem('boardEdit_caseId',   currentCaseId);
     sessionStorage.setItem('boardEdit_caseName', currentCaseName);
@@ -1224,9 +1248,18 @@ function renderEdgeList() {
     var sp = persons.find(function(p) { return p.id === e.src; });
     var dp = persons.find(function(p) { return p.id === e.dst; });
     if (!sp || !dp) return '';
+    var rt = normalizeRelType(e.relType), st = normalizeStatus(e.status);
+    var relBlock;
+    if (st === 'mismatch') {
+      var sub = REL_LABEL[rt] || e.relType || '';
+      relBlock = '<span style="display:block">진술 불일치</span>' +
+        (sub ? '<span style="display:block;font-size:11px;opacity:0.88;margin-top:2px">' + escHtml(sub) + '</span>' : '');
+    } else {
+      relBlock = escHtml((REL_LABEL[rt]||e.relType||'') + (st === 'match' ? ' · 일치' : ''));
+    }
     return '<div class="edge-item ' + e.relType + '">' +
       '<div class="edge-names">' + escHtml(sp.name) + '<span class="edge-arrow">→</span>' + escHtml(dp.name) + '</div>' +
-      '<div class="edge-rel">' + (REL_LABEL[e.relType]||e.relType) + (e.status !== 'unknown' ? ' · ' + (e.status==='match'?'일치':'불일치') : '') + '</div>' +
+      '<div class="edge-rel">' + relBlock + '</div>' +
     '</div>';
   }).join('');
 }
@@ -1313,7 +1346,7 @@ function popupHitPerson(wx, wy) {
 }
 function clampPopupPersonNode(p) {
   if (!popupCanvas) return;
-  var pad = 32;
+  var pad = 52;
   p._px = Math.max(pad, Math.min(popupCanvas.width - pad, p._px));
   p._py = Math.max(pad, Math.min(popupCanvas.height - pad, p._py));
 }
@@ -1460,97 +1493,115 @@ function initPopupCanvas() {
 function resizePopupCanvas() {
   var w = document.getElementById('popupCanvasWrap');
   if (!w || !popupCanvas) return;
+  var prevW = popupCanvas.width, prevH = popupCanvas.height;
   popupCanvas.width  = w.clientWidth;
   popupCanvas.height = 360;
+  if (_fdInitialized && persons.length && prevW > 0 && (popupCanvas.width !== prevW || popupCanvas.height !== prevH)) {
+    var sx = popupCanvas.width / prevW, sy = popupCanvas.height / prevH;
+    persons.forEach(function(p) {
+      if (typeof p._px === 'number') {
+        p._px *= sx;
+        p._py *= sy;
+      }
+    });
+  }
   drawPopupCanvas();
 }
 
-// ── 두 노드 사이 관계선 곡률 계산 (겹침 방지) ───────────────────
-function calcEdgeCurve(e, allEdges) {
-  // 같은 노드 쌍 사이의 모든 엣지 수집 (방향 무시)
-  var pairEdges = allEdges.filter(function(x) {
-    return (x.src===e.src&&x.dst===e.dst)||(x.src===e.dst&&x.dst===e.src);
+// ── 두 노드 쌍 묶기 (방향 무시, 시각적으로 한 선으로 병합) ───────
+function edgeUndirectedKey(e) {
+  if (e.src < e.dst) return e.src + '\x1e' + e.dst;
+  return e.dst + '\x1e' + e.src;
+}
+function groupEdgesByPair(allEdges) {
+  var m = {};
+  (allEdges || []).forEach(function(e) {
+    var k = edgeUndirectedKey(e);
+    if (!m[k]) m[k] = [];
+    m[k].push(e);
   });
-  var idx = pairEdges.indexOf(e);
-  var total = pairEdges.length;
-  if (total === 1) return 0; // 1개면 직선
-  // 홀수 인덱스는 곡률 반대 방향
-  var sign = (idx % 2 === 0) ? 1 : -1;
-  var curve = (Math.floor(idx / 2) + 1) * 55 * sign;
-  return curve;
+  return m;
+}
+function mergeEdgeGroupForDraw(edgeList) {
+  var anyMis = false;
+  var orderLabs = [];
+  var seen = {};
+  var nonMisLabs = [];
+  var seenNM = {};
+  edgeList.forEach(function(e) {
+    if (normalizeStatus(e.status) === 'mismatch') anyMis = true;
+    var rt = normalizeRelType(e.relType);
+    var lab = REL_LABEL[rt] || String(e.relType || '').trim();
+    if (lab && !seen[lab]) { seen[lab] = true; orderLabs.push(lab); }
+  });
+  edgeList.forEach(function(e) {
+    if (normalizeStatus(e.status) === 'mismatch') return;
+    var rt = normalizeRelType(e.relType);
+    var lab = REL_LABEL[rt] || String(e.relType || '').trim();
+    if (lab && !seenNM[lab]) { seenNM[lab] = true; nonMisLabs.push(lab); }
+  });
+  var subMis = nonMisLabs.length ? nonMisLabs.join(' · ') : orderLabs.join(' · ');
+  var rts = edgeList.map(function(e) { return normalizeRelType(e.relType); });
+  var sameRt = rts.length && rts.every(function(rt) { return rt === rts[0]; });
+  var strokeColor;
+  if (anyMis) strokeColor = EDGE_MISMATCH_STROKE;
+  else if (sameRt) strokeColor = REL_COLOR[rts[0]] || '#9ca3af';
+  else strokeColor = '#9ca3af';
+  return { anyMis: anyMis, subMis: subMis, lines: orderLabs, strokeColor: strokeColor, rep: edgeList[0] };
 }
 
-function drawEdge(ctx, sp, dp, e, allEdges, sc) {
-  var curve  = calcEdgeCurve(e, allEdges);
-  var color  = REL_COLOR[e.relType] || '#9ca3af';
-  var isMis  = e.status === 'mismatch';
-  var isUnk  = e.status === 'unknown';
-  var strokeC = isMis ? EDGE_MISMATCH_STROKE : isUnk ? '#9ca3af' : color;
-
-  ctx.lineWidth = 2 * sc;
-  if (isMis)      ctx.setLineDash([6*sc, 4*sc]);
-  else if (isUnk) ctx.setLineDash([4*sc, 4*sc]);
-  else            ctx.setLineDash([]);
-  ctx.strokeStyle = strokeC;
-
-  // 곡선 제어점 계산
-  var mx = (sp._px + dp._px) / 2;
-  var my = (sp._py + dp._py) / 2;
-  var dx = dp._px - sp._px, dy = dp._py - sp._py;
-  var len = Math.sqrt(dx*dx + dy*dy) || 1;
-  var cpx = mx - (dy / len) * curve;
-  var cpy = my + (dx / len) * curve;
-
-  ctx.beginPath();
-  ctx.moveTo(sp._px, sp._py);
-  if (curve === 0) {
-    ctx.lineTo(dp._px, dp._py);
-  } else {
-    ctx.quadraticCurveTo(cpx, cpy, dp._px, dp._py);
-  }
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // 화살표: 도착 노드 경계에서
-  var nr = 20 * sc;
-  var arrowAng;
-  if (curve === 0) {
-    arrowAng = Math.atan2(dp._py - sp._py, dp._px - sp._px);
-  } else {
-    // 제어점 → 도착점 방향
-    arrowAng = Math.atan2(dp._py - cpy, dp._px - cpx);
-  }
-  var ax = dp._px - Math.cos(arrowAng) * nr;
-  var ay = dp._py - Math.sin(arrowAng) * nr;
-  ctx.beginPath();
-  ctx.moveTo(ax, ay);
-  ctx.lineTo(ax - 8*sc*Math.cos(arrowAng-0.4), ay - 8*sc*Math.sin(arrowAng-0.4));
-  ctx.lineTo(ax - 8*sc*Math.cos(arrowAng+0.4), ay - 8*sc*Math.sin(arrowAng+0.4));
-  ctx.closePath();
-  ctx.fillStyle = strokeC;
-  ctx.fill();
-  ctx.setLineDash([]);
-
-  // 레이블 (곡선 중간점)
-  var lx, ly;
-  if (curve === 0) {
-    lx = mx; ly = my - 5*sc;
-  } else {
-    // 베지에 곡선 t=0.5 지점
-    var t = 0.5;
-    lx = (1-t)*(1-t)*sp._px + 2*(1-t)*t*cpx + t*t*dp._px;
-    ly = (1-t)*(1-t)*sp._py + 2*(1-t)*t*cpy + t*t*dp._py - 5*sc;
-  }
-  ctx.font = (10*sc) + 'px Noto Sans KR,sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+/** 진술 불일치: 1행 + 소글씨(나머지 관계 요약). subText는 한 줄 문자열 */
+function paintMismatchEdgeLabel(ctx, lx, ly, subText, sc, bgRgba) {
+  sc = sc || 1;
+  subText = String(subText || '').trim();
+  var fzM = 10 * sc, fzS = 8 * sc, gap = 3 * sc, padX = 4 * sc, padY = 3 * sc;
   ctx.textAlign = 'center';
-  // 레이블 배경
-  var label = REL_LABEL[e.relType] || '';
-  var tw = ctx.measureText(label).width;
-  ctx.fillStyle = 'rgba(13,26,51,0.6)';
-  ctx.fillRect(lx - tw/2 - 3, ly - 9*sc, tw + 6, 11*sc);
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  ctx.fillText(label, lx, ly);
+  var line1 = '진술 불일치';
+  ctx.font = fzM + 'px Noto Sans KR,sans-serif';
+  var w1 = ctx.measureText(line1).width;
+  var w2 = 0;
+  if (subText) {
+    ctx.font = fzS + 'px Noto Sans KR,sans-serif';
+    w2 = ctx.measureText(subText).width;
+  }
+  var tw = Math.max(w1, w2 || w1, 1);
+  var innerH = subText ? fzM + gap + fzS : fzM;
+  var boxH = innerH + 2 * padY;
+  var y0 = ly - boxH / 2;
+  ctx.fillStyle = bgRgba || 'rgba(13,26,51,0.6)';
+  ctx.fillRect(lx - tw / 2 - padX, y0, tw + 2 * padX, boxH);
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.font = fzM + 'px Noto Sans KR,sans-serif';
+  ctx.fillText(line1, lx, y0 + padY + fzM * 0.72);
+  if (subText) {
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = fzS + 'px Noto Sans KR,sans-serif';
+    ctx.fillText(subText, lx, y0 + padY + fzM + gap + fzS * 0.72);
+  }
+}
+
+/** 진술 불일치 아님·동일 쌍 다중 관계: 줄마다 한 관계명 */
+function paintMultilineRelLabels(ctx, lx, ly, lines, sc, bgRgba) {
+  if (!lines || !lines.length) return;
+  sc = sc || 1;
+  var fz = 10 * sc, gap = 2 * sc, padX = 4 * sc, padY = 3 * sc;
+  ctx.textAlign = 'center';
+  var maxW = 0;
+  lines.forEach(function(line) {
+    ctx.font = fz + 'px Noto Sans KR,sans-serif';
+    maxW = Math.max(maxW, ctx.measureText(line).width);
+  });
+  var innerH = lines.length * fz + (lines.length - 1) * gap;
+  var boxH = innerH + 2 * padY;
+  var y0 = ly - boxH / 2;
+  ctx.fillStyle = bgRgba || 'rgba(10,20,50,0.75)';
+  ctx.fillRect(lx - maxW / 2 - padX, y0, maxW + 2 * padX, boxH);
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  lines.forEach(function(line, i) {
+    ctx.font = fz + 'px Noto Sans KR,sans-serif';
+    var y = y0 + padY + fz * 0.72 + i * (fz + gap);
+    ctx.fillText(line, lx, y);
+  });
 }
 
 // ── Force-directed 레이아웃 초기화 ──────────────────────────────
@@ -1560,76 +1611,102 @@ function initForceLayout(canvasW, canvasH) {
   var cx = canvasW / 2, cy = canvasH / 2;
   var n = persons.length;
   if (!n) return;
-  // 원형 초기 배치
   persons.forEach(function(p, i) {
-    if (p._px === undefined || _fdInitialized === false) {
+    var hasPos = typeof p._px === 'number' && typeof p._py === 'number' && !isNaN(p._px) && !isNaN(p._py);
+    var lx = Number(p.layoutX), ly = Number(p.layoutY);
+    if (hasPos) {
+      /* 이미 화면 좌표 있음(드래그·이전 팝업) — 유지 */
+    } else if (!isNaN(lx) && !isNaN(ly)) {
+      p._px = lx;
+      p._py = ly;
+    } else {
+      var minDim = Math.min(canvasW, canvasH);
+      var area = Math.max(canvasW * canvasH, 1);
+      var k0 = Math.sqrt(area / Math.max(n, 1)) * 0.82;
+      var r = Math.min(minDim * 0.36, k0 * Math.sqrt(Math.max(n, 2)) * 0.52);
+      var jitter = k0 * 0.16;
       var a = (2 * Math.PI * i / n) - Math.PI / 2;
-      var r = Math.min(cx, cy) * 0.55;
-      p._px = cx + Math.cos(a) * r;
-      p._py = cy + Math.sin(a) * r;
+      p._px = cx + Math.cos(a) * r + (Math.random() - 0.5) * jitter;
+      p._py = cy + Math.sin(a) * r + (Math.random() - 0.5) * jitter;
     }
     p._vx = 0; p._vy = 0;
   });
-  if (n === 1) { persons[0]._px = cx; persons[0]._py = cy; }
+  if (n === 1) {
+    var p0 = persons[0];
+    var h = typeof p0._px === 'number' && typeof p0._py === 'number' && !isNaN(p0._px) && !isNaN(p0._py);
+    if (!h) {
+      var lx0 = Number(p0.layoutX), ly0 = Number(p0.layoutY);
+      if (!isNaN(lx0) && !isNaN(ly0)) {
+        p0._px = lx0; p0._py = ly0;
+      } else {
+        p0._px = cx; p0._py = cy;
+      }
+    }
+  }
   _fdInitialized = true;
 }
 
 function runForceStep(canvasW, canvasH) {
   var n = persons.length;
   if (n < 2) return;
-  var repulse  = 3200;   // 노드 간 반발력
-  var attract  = 0.018;  // 관계선 인력
-  var ideal    = Math.min(canvasW, canvasH) * 0.38; // 연결된 노드 이상 거리
-  var damping  = 0.82;
+  var area = Math.max(canvasW * canvasH, 1);
+  var k = Math.sqrt(area / n) * 0.82;
+  var repulseK = k * k;
+  var attract = 0.052;
+  var damping = 0.86;
   var cx = canvasW / 2, cy = canvasH / 2;
-  var padding  = 30;
+  var padding = 52;
+  var grav = 0.018;
 
   persons.forEach(function(p) { p._fx = 0; p._fy = 0; });
 
-  // 반발력 (모든 쌍)
   for (var i = 0; i < n; i++) {
     for (var j = i + 1; j < n; j++) {
       var pi = persons[i], pj = persons[j];
       var dx = pi._px - pj._px, dy = pi._py - pj._py;
-      var dist = Math.sqrt(dx*dx + dy*dy) || 1;
-      var force = repulse / (dist * dist);
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 0.01) dist = 0.01;
+      var force = repulseK / dist;
       var fx = (dx / dist) * force, fy = (dy / dist) * force;
       pi._fx += fx; pi._fy += fy;
       pj._fx -= fx; pj._fy -= fy;
     }
   }
 
-  // 인력 (관계선으로 연결된 쌍)
   edges.forEach(function(e) {
     var sp = persons.find(function(p){ return p.id === e.src; });
     var dp = persons.find(function(p){ return p.id === e.dst; });
     if (!sp || !dp) return;
     var dx = dp._px - sp._px, dy = dp._py - sp._py;
-    var dist = Math.sqrt(dx*dx + dy*dy) || 1;
-    var force = attract * (dist - ideal);
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 0.01) dist = 0.01;
+    var force = attract * (dist - k);
     var fx = (dx / dist) * force, fy = (dy / dist) * force;
     sp._fx += fx; sp._fy += fy;
     dp._fx -= fx; dp._fy -= fy;
   });
 
-  // 중심 인력 (노드가 캔버스 밖으로 나가지 않도록)
   persons.forEach(function(p) {
-    p._fx += (cx - p._px) * 0.008;
-    p._fy += (cy - p._py) * 0.008;
+    p._fx += (cx - p._px) * grav;
+    p._fy += (cy - p._py) * grav;
   });
 
-  // 속도·위치 업데이트 + 경계 클램프
+  var vmax = k * 0.38;
   persons.forEach(function(p) {
     p._vx = (p._vx + p._fx) * damping;
     p._vy = (p._vy + p._fy) * damping;
+    var v = Math.sqrt(p._vx * p._vx + p._vy * p._vy);
+    if (v > vmax && v > 0) {
+      p._vx *= vmax / v;
+      p._vy *= vmax / v;
+    }
     p._px = Math.max(padding, Math.min(canvasW - padding, p._px + p._vx));
     p._py = Math.max(padding, Math.min(canvasH - padding, p._py + p._vy));
   });
 }
 
-// Force 시뮬레이션 미리 수렴 (첫 그리기 시 150회 실행)
 function preRunForce(canvasW, canvasH) {
-  for (var i = 0; i < 150; i++) runForceStep(canvasW, canvasH);
+  for (var i = 0; i < 300; i++) runForceStep(canvasW, canvasH);
 }
 
 function drawPopupCanvas() {
@@ -1643,10 +1720,16 @@ function drawPopupCanvas() {
     return;
   }
 
-  // 레이아웃 초기화 (최초 1회 + 수렴)
+  // 레이아웃 초기화: 저장 좌표가 전부 있으면 힘 시뮬 생략
   if (!_fdInitialized) {
     initForceLayout(c.width, c.height);
-    preRunForce(c.width, c.height);
+    var allSaved = persons.length && persons.every(function(p) {
+      var lx = Number(p.layoutX), ly = Number(p.layoutY);
+      return !isNaN(lx) && !isNaN(ly);
+    });
+    if (!allSaved) {
+      preRunForce(c.width, c.height);
+    }
   }
 
   ctx.save();
@@ -1655,12 +1738,15 @@ function drawPopupCanvas() {
   ctx.translate(popupOffsetX * popupScale, popupOffsetY * popupScale);
   ctx.scale(popupScale, popupScale);
 
-  // 관계선
-  edges.forEach(function(e) {
-    var sp = persons.find(function(p){ return p.id===e.src; }),
-        dp = persons.find(function(p){ return p.id===e.dst; });
+  // 관계선 (동일 노드 쌍은 한 줄로 병합)
+  var pairMap = groupEdgesByPair(edges);
+  Object.keys(pairMap).forEach(function(k) {
+    var group = pairMap[k];
+    var ids = k.split('\x1e');
+    var sp = persons.find(function(p){ return p.id===ids[0]; }),
+        dp = persons.find(function(p){ return p.id===ids[1]; });
     if (!sp || !dp) return;
-    drawEdgeScaled(ctx, sp, dp, e, edges);
+    drawEdgeScaled(ctx, sp, dp, group);
   });
 
   // 노드
@@ -1679,40 +1765,29 @@ function drawPopupCanvas() {
   ctx.restore();
 }
 
-// scale 1 기준 drawEdge (ctx.scale 적용 후 호출용)
-function drawEdgeScaled(ctx, sp, dp, e, allEdges) {
-  var curve   = calcEdgeCurve(e, allEdges);
-  var color   = REL_COLOR[e.relType] || '#9ca3af';
-  var isMis   = e.status === 'mismatch';
-  var isUnk   = e.status === 'unknown';
-  var strokeC = isMis ? EDGE_MISMATCH_STROKE : isUnk ? '#9ca3af' : color;
-  var label   = REL_LABEL[e.relType] || '';
+// scale 1 기준 · edgeGroup = 동일 노드 쌍의 엣지 배열
+function drawEdgeScaled(ctx, sp, dp, edgeGroup) {
+  var merged = mergeEdgeGroupForDraw(edgeGroup);
+  var strokeC = merged.strokeColor;
+  var curve = 0;
 
   ctx.lineWidth   = 2;
   ctx.strokeStyle = strokeC;
-  if (isMis)      ctx.setLineDash([6, 4]);
-  else if (isUnk) ctx.setLineDash([4, 4]);
-  else            ctx.setLineDash([]);
+  ctx.setLineDash([]);
 
   var mx  = (sp._px + dp._px) / 2;
   var my  = (sp._py + dp._py) / 2;
   var dx  = dp._px - sp._px, dy = dp._py - sp._py;
   var len = Math.sqrt(dx*dx + dy*dy) || 1;
-  var cpx = mx - (dy / len) * curve;
-  var cpy = my + (dx / len) * curve;
 
   ctx.beginPath();
   ctx.moveTo(sp._px, sp._py);
-  if (curve === 0) ctx.lineTo(dp._px, dp._py);
-  else             ctx.quadraticCurveTo(cpx, cpy, dp._px, dp._py);
+  ctx.lineTo(dp._px, dp._py);
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // 화살표
   var nr = 22;
-  var arrowAng = curve === 0
-    ? Math.atan2(dp._py - sp._py, dp._px - sp._px)
-    : Math.atan2(dp._py - cpy,    dp._px - cpx);
+  var arrowAng = Math.atan2(dp._py - sp._py, dp._px - sp._px);
   var ax = dp._px - Math.cos(arrowAng) * nr;
   var ay = dp._py - Math.sin(arrowAng) * nr;
   ctx.beginPath();
@@ -1723,28 +1798,26 @@ function drawEdgeScaled(ctx, sp, dp, e, allEdges) {
   ctx.fillStyle = strokeC; ctx.fill();
   ctx.setLineDash([]);
 
-  // 레이블 위치: 곡선 중간점 + 선에 수직 방향으로 오프셋
-  var t  = 0.5;
-  var lx = curve === 0 ? mx : (1-t)*(1-t)*sp._px + 2*(1-t)*t*cpx + t*t*dp._px;
-  var ly = curve === 0 ? my : (1-t)*(1-t)*sp._py + 2*(1-t)*t*cpy + t*t*dp._py;
-
-  // 선 방향 수직 벡터로 레이블 오프셋 (겹침 방지)
+  var lx = mx, ly = my;
   var perpX = -(dy / len), perpY = (dx / len);
-  var labelOffset = curve === 0 ? 12 : 0; // 직선일 때만 수직 오프셋
-  lx += perpX * labelOffset;
-  ly += perpY * labelOffset;
+  lx += perpX * 12;
+  ly += perpY * 12;
 
-  if (label) {
+  ctx.textAlign = 'center';
+  if (merged.anyMis) {
+    paintMismatchEdgeLabel(ctx, lx, ly, merged.subMis, 1, 'rgba(10,20,50,0.75)');
+  } else if (merged.lines.length > 1) {
+    paintMultilineRelLabels(ctx, lx, ly, merged.lines, 1, 'rgba(10,20,50,0.75)');
+  } else if (merged.lines.length === 1) {
+    var label = merged.lines[0];
     ctx.font = '10px Noto Sans KR,sans-serif';
     var tw = ctx.measureText(label).width;
-    // 배경 패딩
     ctx.fillStyle = 'rgba(10,20,50,0.75)';
     ctx.beginPath();
     ctx.roundRect ? ctx.roundRect(lx-tw/2-4, ly-9, tw+8, 13, 3)
                   : ctx.rect(lx-tw/2-4, ly-9, tw+8, 13);
     ctx.fill();
     ctx.fillStyle = '#fff';
-    ctx.textAlign = 'center';
     ctx.fillText(label, lx, ly);
   }
 }
@@ -1845,14 +1918,21 @@ function renderPopupEdgeList() {
     var sp = persons.find(function(p){return p.id===e.src;}),
         dp = persons.find(function(p){return p.id===e.dst;});
     if (!sp||!dp) return;
+    var rt = normalizeRelType(e.relType), st = normalizeStatus(e.status);
+    var edgeAccent = st === 'mismatch' ? EDGE_MISMATCH_STROKE : (REL_COLOR[rt]||'#9ca3af');
+    var subRel = REL_LABEL[rt] || e.relType || '';
+    var subHtml = st === 'mismatch'
+      ? ('<span style="display:block;color:var(--text-primary)">진술 불일치</span>' +
+         (subRel ? '<span style="display:block;font-size:10px;color:var(--text-muted);margin-top:2px">' + escHtml(subRel) + '</span>' : ''))
+      : escHtml(subRel + (st === 'match' ? ' · 일치' : ''));
     var item = document.createElement('div');
     item.className = 'popup-edge-item ' + e.relType;
-    item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 13px;background:var(--card);border-radius:12px;border:1px solid var(--border);border-left:3px solid ' + (REL_COLOR[e.relType]||'#9ca3af') + ';margin-bottom:8px;';
+    item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 13px;background:var(--card);border-radius:12px;border:1px solid var(--border);border-left:3px solid ' + edgeAccent + ';margin-bottom:8px;';
     var info = document.createElement('div');
     info.style.flex='1';
     info.innerHTML =
       '<div style="font-size:13px;font-weight:500;color:var(--text-primary);">' + escHtml(sp.name) + ' → ' + escHtml(dp.name) + '</div>' +
-      '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">' + (REL_LABEL[e.relType]||e.relType) + '</div>';
+      '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">' + subHtml + '</div>';
     var delBtn = document.createElement('button');
     delBtn.style.cssText = 'width:26px;height:26px;border-radius:7px;background:var(--danger-bg);border:1px solid var(--danger-bd);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;';
     delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
@@ -1918,7 +1998,12 @@ function addMiniPerson() {
     showToast('인물이 수정됐습니다.');
   } else {
     // ── 추가 모드: 신규 인물 등록 ──
-    persons.push({id:uid(), name:name, role:miniSelectedRole, memo:memo});
+    var np = {id:uid(), name:name, role:miniSelectedRole, memo:memo};
+    persons.push(np);
+    if (popupCanvas && popupCanvas.width) {
+      np._px = popupCanvas.width / 2;
+      np._py = popupCanvas.height / 2;
+    }
     showToast('인물 추가 완료 — 저장 중...');
   }
 
@@ -1979,7 +2064,7 @@ function autoSaveBoard() {
               relType:e.relType,status:e.status,context:sanitizeContext(e.context)};
     }).filter(function(e){return e.srcName&&e.dstName;});
 
-    var boardJson = JSON.stringify({persons:persons, edges:edgesForJson});
+    var boardJson = JSON.stringify({persons:serializePersonsWithLayout(persons), edges:edgesForJson});
     fetch('boardApi?action=save', {
       method:'POST',
       headers:{'Content-Type':'application/json; charset=UTF-8'},
@@ -2021,7 +2106,7 @@ function saveBoardFromPopup(isUpdate) {
             relType:e.relType, status:e.status, context:sanitizeContext(e.context)};
   }).filter(function(e){return e.srcName&&e.dstName;});
 
-  var boardJson = JSON.stringify({persons:persons, edges:edgesForJson});
+  var boardJson = JSON.stringify({persons:serializePersonsWithLayout(persons), edges:edgesForJson});
 
   // 버튼 상태 저장 (innerHTML까지 보존)
   var saveBtnId = isUpdate ? 'btnPopupUpdate' : 'btnPopupSave';
@@ -2141,7 +2226,7 @@ function drawCanvas() {
   }
 
   var cx = canvas.width/2, cy = canvas.height/2;
-  var r  = Math.min(cx, cy) * 0.62;
+  var r  = Math.min(cx, cy) * 0.52;
 
   persons.forEach(function(p, i) {
     var a = (2*Math.PI*i/persons.length) - Math.PI/2;
@@ -2152,20 +2237,20 @@ function drawCanvas() {
 
   ctx.save();
 
-  // 관계선 그리기
-  edges.forEach(function(e) {
-    var sp = persons.find(function(p){return p.id===e.src;}),
-        dp = persons.find(function(p){return p.id===e.dst;});
+  var pairMapMini = groupEdgesByPair(edges);
+  Object.keys(pairMapMini).forEach(function(pk) {
+    var group = pairMapMini[pk];
+    var idsM = pk.split('\x1e');
+    var sp = persons.find(function(p){return p.id===idsM[0];}),
+        dp = persons.find(function(p){return p.id===idsM[1];});
     if (!sp||!dp) return;
-    var color = REL_COLOR[e.relType] || '#9ca3af';
+    var merged = mergeEdgeGroupForDraw(group);
     ctx.beginPath(); ctx.moveTo(sp._x,sp._y); ctx.lineTo(dp._x,dp._y);
     ctx.lineWidth = 2*scale;
-    if (e.status==='mismatch')     { ctx.setLineDash([6*scale,4*scale]); ctx.strokeStyle=EDGE_MISMATCH_STROKE; }
-    else if (e.status==='unknown') { ctx.setLineDash([4*scale,4*scale]); ctx.strokeStyle='#9ca3af'; }
-    else                           { ctx.setLineDash([]); ctx.strokeStyle=color; }
-    ctx.stroke(); ctx.setLineDash([]);
+    ctx.setLineDash([]);
+    ctx.strokeStyle = merged.strokeColor;
+    ctx.stroke();
 
-    // 화살표
     var ang=Math.atan2(dp._y-sp._y,dp._x-sp._x), nr=20*scale,
         ax=dp._x-Math.cos(ang)*nr, ay=dp._y-Math.sin(ang)*nr;
     ctx.beginPath();
@@ -2173,14 +2258,22 @@ function drawCanvas() {
     ctx.lineTo(ax-8*scale*Math.cos(ang-0.4), ay-8*scale*Math.sin(ang-0.4));
     ctx.lineTo(ax-8*scale*Math.cos(ang+0.4), ay-8*scale*Math.sin(ang+0.4));
     ctx.closePath();
-    ctx.fillStyle = e.status==='mismatch'?EDGE_MISMATCH_STROKE:(e.status==='unknown'?'#9ca3af':color);
+    ctx.fillStyle = merged.strokeColor;
     ctx.fill();
 
-    // 관계 레이블
     var mx=(sp._x+dp._x)/2, my=(sp._y+dp._y)/2;
-    ctx.font=(10*scale)+'px Noto Sans KR,sans-serif'; ctx.fillStyle='rgba(255,255,255,0.75)'; ctx.textAlign='center';
-    ctx.fillText(REL_LABEL[e.relType]||'', mx, my-5*scale);
-    if (e.status==='mismatch') { ctx.font=(13*scale)+'px sans-serif'; ctx.fillText('⚠', mx, my+12*scale); }
+    var perpX=-Math.sin(ang), perpY=Math.cos(ang);
+    mx += perpX*10*scale; my += perpY*10*scale;
+    ctx.textAlign='center';
+    if (merged.anyMis) {
+      paintMismatchEdgeLabel(ctx, mx, my, merged.subMis, scale, 'rgba(13,26,51,0.55)');
+    } else if (merged.lines.length > 1) {
+      paintMultilineRelLabels(ctx, mx, my, merged.lines, scale, 'rgba(13,26,51,0.55)');
+    } else if (merged.lines.length === 1) {
+      ctx.font=(10*scale)+'px Noto Sans KR,sans-serif';
+      ctx.fillStyle='rgba(255,255,255,0.75)';
+      ctx.fillText(merged.lines[0], mx, my);
+    }
   });
 
   // 인물 노드 그리기
@@ -2272,7 +2365,10 @@ window.addEventListener('resize', resizeCanvas);
         try { bj = JSON.parse(data.boardJson); } catch(e) { bj = {}; }
 
         var loadedPersons = (bj.persons || []).map(function(p) {
-          return {id:uid(), name:p.name||'', role:p.role||'reference', memo:p.memo||''};
+          var o = {id:uid(), name:p.name||'', role:p.role||'reference', memo:p.memo||''};
+          var lx = Number(p.layoutX), ly = Number(p.layoutY);
+          if (!isNaN(lx) && !isNaN(ly)) { o.layoutX = lx; o.layoutY = ly; }
+          return o;
         }).filter(function(p){ return p.name; });
 
         var loadedEdges = (bj.edges || []).map(function(e) {
