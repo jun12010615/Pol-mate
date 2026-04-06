@@ -1,6 +1,9 @@
 package Servlet;
 
 import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -28,6 +31,28 @@ import org.json.JSONObject;
 public class CaseServlet extends HttpServlet {
 
     private static final SimpleDateFormat DATE_FMT = new SimpleDateFormat("yyyy.MM.dd");
+
+    /** Pol-mate-Serv 베이스 URL (WEB-INF/config.properties 의 POL_MATE_SERV_BASE_URL) */
+    private String polMateServBaseUrl = "http://113.198.238.108:5001";
+
+    @Override
+    public void init() throws ServletException {
+        super.init();
+        try {
+            Properties props = new Properties();
+            InputStream is = getServletContext().getResourceAsStream("/WEB-INF/config.properties");
+            if (is != null) {
+                props.load(is);
+                String u = props.getProperty("POL_MATE_SERV_BASE_URL", "").trim();
+                if (!u.isEmpty()) {
+                    while (u.endsWith("/")) u = u.substring(0, u.length() - 1);
+                    polMateServBaseUrl = u;
+                }
+            }
+        } catch (IOException e) {
+            log("CaseServlet: config.properties 로드 실패 — 기본 Pol-mate-Serv URL 사용");
+        }
+    }
 
     // ═══════════════════════════════════════════════════════
     // GET
@@ -74,8 +99,9 @@ public class CaseServlet extends HttpServlet {
             case "caseCreate":     handleCaseCreate(req, res, loginUser);     break;
             case "caseDelete":     handleCaseDelete(req, res, loginUser);     break;
             case "caseStatus":     handleCaseStatus(req, res, loginUser);     break;
-            case "transcriptSave": handleTranscriptSave(req, res, loginUser); break;
-            default:               writeError(res, "알 수 없는 action");
+            case "transcriptSave":     handleTranscriptSave(req, res, loginUser);     break;
+            case "transcriptSummarize": handleTranscriptSummarize(req, res, loginUser); break;
+            default:                   writeError(res, "알 수 없는 action");
         }
     }
 
@@ -771,7 +797,7 @@ public class CaseServlet extends HttpServlet {
             conn = mgr.getConnection();
 
             ps = conn.prepareStatement(
-                "SELECT t.transcript_id, t.original_text, t.stmt_type, t.stmt_name " +
+                "SELECT t.transcript_id, t.original_text, t.stmt_type, t.stmt_name, t.ai_result " +
                 "FROM transcripts t " +
                 "JOIN cases c ON t.case_id = c.case_id " +
                 "WHERE t.transcript_id = ? " +
@@ -796,6 +822,8 @@ public class CaseServlet extends HttpServlet {
             result.put("text", nvl(rs.getString("original_text"), ""));
             result.put("type", nvl(rs.getString("stmt_type"),     ""));
             result.put("name", nvl(rs.getString("stmt_name"),     ""));
+            String ar = rs.getString("ai_result");
+            result.put("summary", (ar != null && !ar.isEmpty()) ? ar : "");
             res.getWriter().write(result.toString());
 
         } catch (Exception e) {
@@ -803,6 +831,144 @@ public class CaseServlet extends HttpServlet {
             writeError(res, "조서 원문 조회 중 오류가 발생했습니다.");
         } finally {
             mgr.freeConnection(conn, ps, rs);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // 조서 AI 요약 저장 (transcripts.ai_result)
+    // Pol-mate-Serv POST /summarize 호출 후 DB 반영
+    // ═══════════════════════════════════════════════════════
+    private void handleTranscriptSummarize(HttpServletRequest req, HttpServletResponse res, String loginUser)
+            throws IOException {
+
+        String idStr = req.getParameter("transcriptId");
+        if (isEmpty(idStr)) { writeError(res, "transcriptId가 필요합니다."); return; }
+
+        int transcriptId;
+        try { transcriptId = Integer.parseInt(idStr); }
+        catch (NumberFormatException e) { writeError(res, "잘못된 transcriptId"); return; }
+
+        DBConnectionMgr mgr = DBConnectionMgr.getInstance();
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        String caseId = null;
+        String originalText = null;
+        String stmtType = null;
+        String stmtName = null;
+
+        try {
+            conn = mgr.getConnection();
+
+            ps = conn.prepareStatement(
+                "SELECT t.case_id, t.original_text, t.stmt_type, t.stmt_name " +
+                "FROM transcripts t " +
+                "JOIN cases c ON t.case_id = c.case_id " +
+                "WHERE t.transcript_id = ? " +
+                "AND (c.user_id = ? " +
+                "   OR c.user_id IN ( " +
+                "       SELECT u2.user_id FROM users u2 " +
+                "       JOIN users me ON me.user_id = ? " +
+                "       WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
+                "   ))");
+            ps.setInt(1, transcriptId);
+            ps.setString(2, loginUser);
+            ps.setString(3, loginUser);
+            rs = ps.executeQuery();
+
+            if (!rs.next()) {
+                writeError(res, "조서를 찾을 수 없거나 접근 권한이 없습니다.");
+                return;
+            }
+
+            caseId = rs.getString("case_id");
+            originalText = rs.getString("original_text");
+            stmtType = rs.getString("stmt_type");
+            stmtName = rs.getString("stmt_name");
+            mgr.freeConnection(null, ps, rs);
+            ps = null;
+            rs = null;
+
+            if (originalText == null || originalText.trim().isEmpty()) {
+                writeResult(res, false, "요약할 진술 본문이 없습니다.");
+                return;
+            }
+
+            JSONObject body = new JSONObject();
+            body.put("caseNum", caseId != null ? caseId : "미입력");
+            body.put("text", originalText);
+            body.put("stmtType", stmtType != null && !stmtType.trim().isEmpty() ? stmtType.trim() : "진술자");
+            body.put("stmtName", stmtName != null && !stmtName.trim().isEmpty() ? stmtName.trim() : "미입력");
+
+            String structured = callPolMateSummarize(body);
+            if (structured == null) {
+                writeResult(res, false, "요약 서버 호출에 실패했습니다.");
+                return;
+            }
+
+            ps = conn.prepareStatement(
+                "UPDATE transcripts SET ai_result = ? WHERE transcript_id = ?");
+            ps.setString(1, structured);
+            ps.setInt(2, transcriptId);
+            int n = ps.executeUpdate();
+            mgr.freeConnection(null, ps);
+            ps = null;
+
+            JSONObject out = new JSONObject();
+            out.put("success", n > 0);
+            out.put("message", n > 0 ? "요약이 저장되었습니다." : "요약 저장에 실패했습니다.");
+            res.getWriter().write(out.toString());
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            writeResult(res, false, "요약 저장 중 DB 오류가 발생했습니다.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            writeResult(res, false, "요약 처리 중 오류가 발생했습니다.");
+        } finally {
+            mgr.freeConnection(conn, ps, rs);
+        }
+    }
+
+    /** Pol-mate-Serv /summarize — 성공 시 structured_summary 문자열, 실패 시 null */
+    private String callPolMateSummarize(JSONObject body) {
+        HttpURLConnection hc = null;
+        try {
+            URL url = new URL(polMateServBaseUrl + "/summarize");
+            hc = (HttpURLConnection) url.openConnection();
+            hc.setRequestMethod("POST");
+            hc.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+            hc.setDoOutput(true);
+            hc.setConnectTimeout(15000);
+            hc.setReadTimeout(120000);
+
+            byte[] bytes = body.toString().getBytes(StandardCharsets.UTF_8);
+            try (OutputStream os = hc.getOutputStream()) {
+                os.write(bytes);
+            }
+
+            int code = hc.getResponseCode();
+            InputStream inStream = (code >= 200 && code < 300) ? hc.getInputStream() : hc.getErrorStream();
+            if (inStream == null) return null;
+
+            StringBuilder sb = new StringBuilder();
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(inStream, StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = br.readLine()) != null) sb.append(line);
+            }
+
+            JSONObject j = new JSONObject(sb.toString());
+            if (!j.optBoolean("success", false)) return null;
+            String structured = j.optString("structured_summary", null);
+            if (structured == null || structured.isEmpty()) return null;
+            return structured;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (hc != null) hc.disconnect();
         }
     }
 
