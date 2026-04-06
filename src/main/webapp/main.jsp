@@ -269,9 +269,9 @@
     if (rs2.next()) cntContradiction = rs2.getInt(1);
     rs2.close(); ps2.close();
 
-    // ── 내가 작성한 조서 수  ─────────────────────────────
+    // ── 내가 작성한 조서 수 ───────────────────────────────────
     java.sql.PreparedStatement ps3 = conn.prepareStatement(
-      "SELECT COUNT(*) FROM transcripts t JOIN cases c ON t.case_id = c.case_id WHERE t.user_id = ?");
+      "SELECT COUNT(*) FROM transcripts WHERE user_id = ?");
     ps3.setString(1, loginUser);
     java.sql.ResultSet rs3 = ps3.executeQuery();
     if (rs3.next()) cntTranscript = rs3.getInt(1);
@@ -536,13 +536,16 @@
 <script>
 // ── 종 뱃지: 미읽음 알림이 있을 때만 빨간 점 표시 ──────────────
 (function() {
-  fetch('notifApi?action=unreadCount')
+  fetch('notifApi?action=unreadCount&_=' + Date.now())
     .then(function(r) { return r.json(); })
     .then(function(data) {
       var dot = document.getElementById('bellDot');
       if (dot) dot.style.display = (data.count > 0) ? '' : 'none';
     })
-    .catch(function() {});
+    .catch(function() {
+      var dot = document.getElementById('bellDot');
+      if (dot) dot.style.display = 'none';
+    });
 })();
 </script>
 </body>
