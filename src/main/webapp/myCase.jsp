@@ -343,6 +343,19 @@
       <button class="popup-close" onclick="closeContraPopup()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="popup-body" id="contraPopupBody"></div>
+    <!-- 결과 저장 버튼 (분석 완료 후 표시) -->
+    <div id="contraSaveFooter" style="display:none; padding:12px 18px 16px; border-top:1px solid var(--border);">
+      <button id="contraSaveBtn" onclick="saveContraResult()"
+        style="width:100%; background:var(--navy); color:#fff; border:none; border-radius:12px;
+               padding:13px; font-size:13px; font-weight:500; font-family:'Noto Sans KR',sans-serif;
+               cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px;">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+        </svg>
+        결과 저장하기
+      </button>
+    </div>
   </div>
 </div>
 
@@ -631,6 +644,7 @@ function consumeAnalyzeStream(response,session){
         }else if(ev.event==='done'){
           finished=true;
           removeContraCaret(caret);
+          document.getElementById('contraSaveFooter').style.display='block';
           resolve();
           return;
         }
@@ -649,6 +663,7 @@ function consumeAnalyzeStream(response,session){
           if(!finished){
             if(!outputStarted)ensureOutputPanel();
             removeContraCaret(caret);
+            document.getElementById('contraSaveFooter').style.display='block';
             resolve();
           }
           return;
@@ -678,6 +693,10 @@ function consumeAnalyzeStream(response,session){
 function runContradiction(){
   if(checkedDocs.length<2) return;
   contraTypeSession++;
+  // 저장 버튼 초기화
+  document.getElementById('contraSaveFooter').style.display='none';
+  var contraSaveBtn=document.getElementById('contraSaveBtn');
+  if(contraSaveBtn){contraSaveBtn.disabled=false;contraSaveBtn.textContent='결과 저장하기';}
   var caseId=currentCaseData.id||'';
   var titles=checkedDocs.map(function(id){var d=currentDocs.find(function(x){return x.id===id;});return d?d.name+' '+d.type+' 진술':'ID:'+id;});
   document.getElementById('contraPopupTitle').textContent='모순 분석 중...';
@@ -714,7 +733,62 @@ function closeContraPopup(e){
     if(contraStreamAbort)contraStreamAbort.abort();
     contraTypeSession++;
     document.getElementById('contraPopup').classList.remove('open');
+    document.getElementById('contraSaveFooter').style.display='none';
   }
+}
+
+// ── 모순탐지 결과 저장 ────────────────────────────────────────────
+function saveContraResult(){
+  var btn=document.getElementById('contraSaveBtn');
+  btn.disabled=true;
+  btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px;animation:contraSpin 0.7s linear infinite"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>&nbsp;저장 중...';
+
+  // 분석 결과 텍스트 수집
+  var bodyEl=document.getElementById('contraPopupBody');
+  var textSpan=bodyEl.querySelector('.contra-type-text');
+  var aiResult=textSpan?textSpan.textContent:(bodyEl?bodyEl.textContent:'');
+
+  // 선택된 조서들의 진술자/유형 수집
+  var stmtNames=checkedDocs.map(function(id){
+    var d=currentDocs.find(function(x){return x.id===id;});
+    return d?(d.name||'미입력'):'';
+  }).filter(Boolean).join(', ');
+  var stmtTypes=checkedDocs.map(function(id){
+    var d=currentDocs.find(function(x){return x.id===id;});
+    return d?(d.type||''):'';
+  }).filter(Boolean).join(', ');
+
+  // 모순 키워드 존재 여부로 탐지 판단
+  var contraKeywords=['모순','불일치','위반','거짓','허위','불명확','시간대','알리바이'];
+  var hasContradiction=contraKeywords.some(function(k){return aiResult.indexOf(k)>=0;});
+
+  var caseId=currentCaseData?currentCaseData.id||'':'';
+
+  var params=new URLSearchParams();
+  params.append('action','save');
+  params.append('caseId',caseId);
+  params.append('stmtName',stmtNames);
+  params.append('stmtType',stmtTypes);
+  params.append('hasContradiction',hasContradiction?'true':'false');
+  params.append('aiResult',aiResult);
+  params.append('stmtText','');
+
+  fetch('contradictionApi',{method:'POST',body:params})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.success){
+        location.href='contradictionList.jsp';
+      } else {
+        alert(data.error||'저장에 실패했습니다.');
+        btn.disabled=false;
+        btn.innerHTML='결과 저장하기';
+      }
+    })
+    .catch(function(){
+      alert('서버 연결 오류가 발생했습니다.');
+      btn.disabled=false;
+      btn.innerHTML='결과 저장하기';
+    });
 }
 
 function openNewCaseDrawer(){

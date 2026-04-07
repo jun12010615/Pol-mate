@@ -473,9 +473,9 @@
       </div>
 
       <!-- 저장 / 재시작 -->
-      <button class="btn-save" onclick="saveResult()">
+      <button class="btn-save" id="btnSaveResult" onclick="saveResult()">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        조서로 저장
+        결과 저장하기
       </button>
       <button class="btn-reset" onclick="resetAll()">새로 분석하기</button>
 
@@ -743,9 +743,47 @@ function copyText() {
   });
 }
 
+// ── 결과 저장하기 (DB 저장 → 모순탐지 목록으로 이동) ────────────
 function saveResult() {
-  alert('조서로 저장되었습니다.\n(DB 연동 후 실제 저장 기능이 활성화됩니다.)');
-  location.href = 'main.jsp';
+  var btn = document.getElementById('btnSaveResult');
+  btn.disabled = true;
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="width:16px;height:16px;animation:spin 0.7s linear infinite"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg> 저장 중...';
+
+  var caseId    = document.getElementById('caseNum')   ? document.getElementById('caseNum').value.trim()   : '';
+  var stmtName  = document.getElementById('stmtName')  ? document.getElementById('stmtName').value.trim()  : '';
+  var stmtType  = document.getElementById('stmtType')  ? document.getElementById('stmtType').value          : '';
+  var stmtText  = document.getElementById('transcriptBox') ? document.getElementById('transcriptBox').textContent : '';
+  var aiResult  = document.getElementById('aiResultBox')   ? document.getElementById('aiResultBox').textContent   : '';
+
+  // 모순 탐지 여부 — contraBanner 클래스로 판단
+  var banner = document.getElementById('contraBanner');
+  var hasContradiction = banner && banner.classList.contains('found');
+
+  var params = new URLSearchParams();
+  params.append('action',          'save');
+  params.append('caseId',          caseId);
+  params.append('stmtName',        stmtName);
+  params.append('stmtType',        stmtType);
+  params.append('hasContradiction', hasContradiction ? 'true' : 'false');
+  params.append('aiResult',        aiResult);
+  params.append('stmtText',        stmtText);
+
+  fetch('contradictionApi', { method: 'POST', body: params })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        location.href = 'contradictionList.jsp';
+      } else {
+        alert(data.error || '저장에 실패했습니다.');
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="width:16px;height:16px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> 결과 저장하기';
+      }
+    })
+    .catch(function() {
+      alert('서버 연결 오류가 발생했습니다.');
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="width:16px;height:16px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> 결과 저장하기';
+    });
 }
 
 function resetAll() {
