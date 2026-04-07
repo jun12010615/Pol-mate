@@ -27,7 +27,7 @@ public class BoardDAO {
 
         StringBuilder sql = new StringBuilder(
             "SELECT p.post_id, p.user_id, p.category, p.title, p.content, " +
-            "       p.view_count, p.like_count, p.created_at, p.updated_at, " +
+            "       p.view_count, p.like_count, p.created_at, p.updated_at, p.anonymous, " +
             "       u.user_name, " +
             "       (SELECT COUNT(*) FROM board_comments c WHERE c.post_id = p.post_id) AS comment_count " +
             "FROM board_posts p " +
@@ -90,7 +90,7 @@ public class BoardDAO {
 
         String sql =
             "SELECT p.post_id, p.user_id, p.category, p.title, p.content, " +
-            "       p.view_count, p.like_count, p.created_at, p.updated_at, " +
+            "       p.view_count, p.like_count, p.created_at, p.updated_at, p.anonymous, " +
             "       u.user_name " +
             "FROM board_posts p " +
             "LEFT JOIN users u ON p.user_id = u.user_id " +
@@ -153,12 +153,13 @@ public class BoardDAO {
             conn.setAutoCommit(false);
 
             ps = conn.prepareStatement(
-                "INSERT INTO board_posts (user_id, category, title, content) VALUES (?, ?, ?, ?)",
+                "INSERT INTO board_posts (user_id, category, title, content, anonymous) VALUES (?, ?, ?, ?, ?)",
                 Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, dto.getUserId());
             ps.setString(2, dto.getCategory());
             ps.setString(3, dto.getTitle());
             ps.setString(4, dto.getContent());
+            ps.setInt(5, dto.isAnonymous() ? 1 : 0);
             ps.executeUpdate();
 
             rs = ps.getGeneratedKeys();
@@ -600,6 +601,7 @@ public class BoardDAO {
         dto.setLikeCount(rs.getInt("like_count"));
         dto.setCreatedAt(rs.getTimestamp("created_at"));
         dto.setUserName(rs.getString("user_name"));
+        dto.setAnonymous(rs.getInt("anonymous") == 1);
         return dto;
     }
 }

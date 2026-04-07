@@ -113,7 +113,7 @@ public class BoardServlet extends HttpServlet {
             // 동적 쿼리 구성
             StringBuilder sql = new StringBuilder(
                 "SELECT p.post_id, p.category, p.title, p.content, " +
-                "p.view_count, p.like_count, p.created_at, " +
+                "p.view_count, p.like_count, p.created_at, p.anonymous, " +
                 "p.user_id, u.user_name, u.user_rank, " +
                 "(SELECT COUNT(*) FROM board_comments bc WHERE bc.post_id = p.post_id) AS comment_count " +
                 "FROM board_posts p " +
@@ -155,6 +155,7 @@ public class BoardServlet extends HttpServlet {
             JSONArray arr = new JSONArray();
             while (rs.next()) {
                 int postId = rs.getInt("post_id");
+                boolean anon = rs.getInt("anonymous") == 1;
                 JSONObject p = new JSONObject();
                 p.put("id",           postId);
                 p.put("cat",          rs.getString("category"));
@@ -169,9 +170,10 @@ public class BoardServlet extends HttpServlet {
                 p.put("likes",        rs.getInt("like_count"));
                 p.put("commentCount", rs.getInt("comment_count"));
                 p.put("hot",          rs.getInt("like_count") >= 20);
-                p.put("userId",       rs.getString("user_id"));
-                p.put("author",       rs.getString("user_name"));
-                p.put("authorRank",   rs.getString("user_rank"));
+                p.put("anonymous",    anon ? 1 : 0);
+                p.put("userId",       anon ? "" : rs.getString("user_id"));
+                p.put("author",       anon ? "익명" : rs.getString("user_name"));
+                p.put("authorRank",   anon ? "" : rs.getString("user_rank"));
                 p.put("isMine",       loginUser.equals(rs.getString("user_id")));
 
                 // 날짜 포맷 (yyyy.MM.dd)
@@ -232,7 +234,7 @@ public class BoardServlet extends HttpServlet {
             // 게시글 조회
             pstmt = conn.prepareStatement(
                 "SELECT p.post_id, p.category, p.title, p.content, " +
-                "p.view_count, p.like_count, p.created_at, " +
+                "p.view_count, p.like_count, p.created_at, p.anonymous, " +
                 "p.user_id, u.user_name, u.user_rank, u.user_org " +
                 "FROM board_posts p " +
                 "LEFT JOIN users u ON p.user_id = u.user_id " +
@@ -247,16 +249,18 @@ public class BoardServlet extends HttpServlet {
             }
 
             JSONObject p = new JSONObject();
+            boolean anon = rs.getInt("anonymous") == 1;
             p.put("id",          rs.getInt("post_id"));
             p.put("cat",         rs.getString("category"));
             p.put("title",       rs.getString("title"));
             p.put("content",     rs.getString("content"));
             p.put("views",       rs.getInt("view_count"));
             p.put("likes",       rs.getInt("like_count"));
-            p.put("userId",      rs.getString("user_id"));
-            p.put("author",      rs.getString("user_name"));
-            p.put("authorRank",  rs.getString("user_rank"));
-            p.put("authorOrg",   rs.getString("user_org"));
+            p.put("anonymous",   anon ? 1 : 0);
+            p.put("userId",      anon ? "" : rs.getString("user_id"));
+            p.put("author",      anon ? "익명" : rs.getString("user_name"));
+            p.put("authorRank",  anon ? "" : rs.getString("user_rank"));
+            p.put("authorOrg",   anon ? "" : rs.getString("user_org"));
             p.put("isMine",      loginUser.equals(rs.getString("user_id")));
 
             Timestamp ts = rs.getTimestamp("created_at");
@@ -337,6 +341,7 @@ public class BoardServlet extends HttpServlet {
         String title    = req.getParameter("title");
         String content  = req.getParameter("content");
         String tagsRaw  = req.getParameter("tags");
+        int    anonymous = "1".equals(req.getParameter("anonymous")) ? 1 : 0;
 
         if (category == null || category.isEmpty() ||
             title    == null || title.trim().isEmpty() ||
@@ -356,13 +361,14 @@ public class BoardServlet extends HttpServlet {
 
             // 게시글 삽입
             pstmt = conn.prepareStatement(
-                "INSERT INTO board_posts (user_id, category, title, content) VALUES (?,?,?,?)",
+                "INSERT INTO board_posts (user_id, category, title, content, anonymous) VALUES (?,?,?,?,?)",
                 Statement.RETURN_GENERATED_KEYS
             );
             pstmt.setString(1, loginUser);
             pstmt.setString(2, category);
             pstmt.setString(3, title.trim());
             pstmt.setString(4, content.trim());
+            pstmt.setInt(5, anonymous);
             pstmt.executeUpdate();
 
             rs = pstmt.getGeneratedKeys();
@@ -435,6 +441,7 @@ public class BoardServlet extends HttpServlet {
 	     String title   = req.getParameter("title");
 	     String content = req.getParameter("content");
 	     String tagsRaw = req.getParameter("tags");
+	     int    anonymous = "1".equals(req.getParameter("anonymous")) ? 1 : 0;
 	
 	     if (idStr == null || title == null || title.trim().isEmpty()
 	                       || content == null || content.trim().isEmpty()) {
@@ -471,12 +478,13 @@ public class BoardServlet extends HttpServlet {
 	         mgr.freeConnection(null, pstmt, rs);
 	         pstmt = null; rs = null;
 	
-	         // 제목·내용 UPDATE
+	         // 제목·내용·익명여부 UPDATE
 	         pstmt = conn.prepareStatement(
-	             "UPDATE board_posts SET title=?, content=?, updated_at=NOW() WHERE post_id=?");
+	             "UPDATE board_posts SET title=?, content=?, anonymous=?, updated_at=NOW() WHERE post_id=?");
 	         pstmt.setString(1, title.trim());
 	         pstmt.setString(2, content.trim());
-	         pstmt.setInt(3, postId);
+	         pstmt.setInt(3, anonymous);
+	         pstmt.setInt(4, postId);
 	         pstmt.executeUpdate();
 	         mgr.freeConnection(null, pstmt);
 	         pstmt = null;
