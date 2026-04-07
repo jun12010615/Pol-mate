@@ -18,8 +18,10 @@ public class BoardPostDTO {
     private int likeCount;        // 추천수 캐시 (기본값 0) - 정렬 성능용
     private Timestamp createdAt;  // 작성 일시
     private Timestamp updatedAt;  // 수정 일시
+    private boolean anonymous;  //익명글
 
-    // 조회 시 함께 가져오는 연관 데이터 (DB 컬럼 아님)
+
+	// 조회 시 함께 가져오는 연관 데이터 (DB 컬럼 아님)
     private String userName;              // 작성자 실명 (USERS.user_name)
     private boolean isHot;               // 런타임 계산: likeCount >= 40
     private boolean likedByCurrentUser;  // 현재 로그인 수사관의 추천 여부
@@ -34,6 +36,10 @@ public class BoardPostDTO {
     public int getPostId() { return postId; }
     public void setPostId(int postId) { this.postId = postId; }
 
+    public boolean isAnonymous() {return anonymous;}
+  	public void setAnonymous(boolean anonymous) {this.anonymous = anonymous;}
+
+    
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
 

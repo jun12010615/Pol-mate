@@ -389,6 +389,16 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--bg)
   color:#f97316;cursor:pointer;
   font-family:'Noto Sans KR',sans-serif;padding:0;
 }
+/* 익명 체크박스 */
+.anon-check-wrap{
+  display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;
+  user-select:none;padding:4px 0;
+}
+.anon-check-wrap input[type="checkbox"]{
+  width:16px;height:16px;cursor:pointer;accent-color:var(--deep);flex-shrink:0;
+}
+.anon-check-label{font-size:15px;font-weight:400;color:var(--tp);}
+.anon-check-field{display:flex;justify-content:center;}
 </style>
 </head>
 <body>
@@ -574,6 +584,13 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--bg)
           링크 추가
         </button>
       </div>
+      <!-- 익명 글쓰기 -->
+      <div class="write-field anon-check-field">
+        <label class="anon-check-wrap">
+          <input type="checkbox" id="anonCheck">
+          <span class="anon-check-label">익명으로 작성하기</span>
+        </label>
+      </div>
     </div>
   </div>
 </div>
@@ -590,6 +607,8 @@ var ME = {
   rank:  '<%= userRank %>',
   color: '#1a2744'
 };
+
+
 
 /* ── 샘플 데이터 제거됨: DB에서 로드 ── */
 var posts = []; // DB에서 로드된 게시글 캐시
@@ -662,7 +681,11 @@ function renderList() {
     var tags = Array.isArray(p.tags) ? p.tags : [];
     var hotLabel = p.hot ? '<div class="hot-label">🔥 인기글</div>' : '';
     var tagHtml  = tags.map(function(t){ return '<span style="font-size:11px;color:var(--ts);background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:2px 7px;">#'+escHtml(t)+'</span>'; }).join('');
-    var authorInitial = (p.author && p.author.length) ? p.author.charAt(0) : '?';
+    var isAnon = p.anonymous == 1 || p.anonymous === true;
+    var displayName = isAnon ? '익명' : (p.author || '탈퇴한 수사관');
+    var displayRank = isAnon ? '' : escHtml(p.authorRank || '');
+    var authorInitial = isAnon ? '익' : ((p.author && p.author.length) ? p.author.charAt(0) : '?');
+    var avatarBg = 'background:var(--navy)';
     var commentCount = p.commentCount !== undefined ? p.commentCount : (p.comments ? p.comments.length : 0);
     return '<div class="post-card'+(p.hot?' hot-post':'')+'" onclick="openDetail('+p.id+')" style="animation-delay:'+(i*0.04)+'s">'+
       hotLabel+
@@ -674,8 +697,8 @@ function renderList() {
       (tagHtml ? '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">'+tagHtml+'</div>' : '')+
       '<div class="post-footer">'+
         '<div class="post-author">'+
-          '<div class="author-avatar" style="background:var(--navy)">'+authorInitial+'</div>'+
-          '<span class="author-name">'+escHtml(p.author||'탈퇴한 수사관')+' '+escHtml(p.authorRank||'')+'</span>'+
+          '<div class="author-avatar" style="'+avatarBg+'">'+authorInitial+'</div>'+
+          '<span class="author-name">'+escHtml(displayName)+' '+displayRank+'</span>'+
           '<span class="author-date">· '+escHtml(p.date||'')+'</span>'+
         '</div>'+
         '<div class="post-stats">'+
@@ -764,14 +787,21 @@ function renderDetail(p) {
     '&nbsp;<button onclick="deletePost('+p.id+')" style="border:none;background:none;font-size:12px;color:var(--danger);cursor:pointer;font-family:\'Noto Sans KR\',sans-serif;padding:0;">삭제</button>'
   : '';
 
+  var detailIsAnon = p.anonymous == 1 || p.anonymous === true;
+  var detailDisplayName = detailIsAnon ? '익명' : escHtml(p.author || '탈퇴한 수사관');
+  var detailDisplayRank = detailIsAnon ? '' : escHtml(p.authorRank || '');
+  var detailInitial = detailIsAnon ? '익' : (p.author ? p.author.charAt(0) : '?');
+  var detailAvatarBg = 'background:var(--navy)';
+  var detailAnonBadge = '';
+
   document.getElementById('detailBody').innerHTML =
     '<span class="post-cat-badge '+(CAT_BADGE[p.cat]||'')+' detail-cat-badge">'+CAT_LABEL[p.cat]+'</span>'+
     '<div class="detail-title">'+escHtml(p.title||'')+'</div>'+
     '<div class="detail-meta">'+
       '<div class="detail-author-row">'+
-        '<div class="detail-avatar" style="background:var(--navy)">'+(p.author?p.author.charAt(0):'?')+'</div>'+
+        '<div class="detail-avatar" style="'+detailAvatarBg+'">'+detailInitial+'</div>'+
         '<div>'+
-          '<div class="detail-author-name">'+escHtml(p.author||'탈퇴한 수사관')+' '+escHtml(p.authorRank||'')+'</div>'+
+          '<div class="detail-author-name">'+detailDisplayName+' '+detailDisplayRank+detailAnonBadge+'</div>'+
           '<div class="detail-author-info">'+escHtml(p.date||'')+'&nbsp;'+deleteBtnHtml+'</div>'+
         '</div>'+
       '</div>'+
@@ -874,6 +904,9 @@ existLinks.forEach(function(lk, i) {
 });
 document.getElementById('linkAddBtn').style.display = existLinks.length >= 3 ? 'none' : 'flex';
 
+// 익명 체크박스: 기존 게시글의 anonymous 값 반영
+document.getElementById('anonCheck').checked = (p.anonymous == 1 || p.anonymous === true);
+
 // 헤더 텍스트·버튼 변경 (등록 → 수정)
 document.querySelector('.write-modal-header span').textContent = '게시글 수정';
 var submitBtn = document.querySelector('.write-submit-btn');
@@ -892,11 +925,12 @@ if (!title)   { showToast('제목을 입력하세요.'); return; }
 if (!content) { showToast('내용을 입력하세요.'); return; }
 
 var params = new URLSearchParams();
-params.append('action',  'edit');
-params.append('postId',  id);
-params.append('title',   title);
-params.append('content', content);
-params.append('tags',    tagsRaw);
+params.append('action',    'edit');
+params.append('postId',    id);
+params.append('title',     title);
+params.append('content',   content);
+params.append('tags',      tagsRaw);
+params.append('anonymous', document.getElementById('anonCheck').checked ? '1' : '0');
 
 if (writeCat === 'gear') {
     document.querySelectorAll('#linkInputGroup .link-input-row').forEach(function(row) {
@@ -996,6 +1030,7 @@ function submitComment() {
 ═══════════════════════════════════════════════════════ */
 function openWrite() {
   writeCat = '';
+  document.getElementById('anonCheck').checked = false;
   document.getElementById('wTitle').value = '';
   document.getElementById('wContent').value = '';
   document.getElementById('wTags').value = '';
@@ -1029,11 +1064,12 @@ function submitPost() {
   if (!content)   { showToast('내용을 입력하세요.'); return; }
 
   var params = new URLSearchParams();
-  params.append('action',   'write');
-  params.append('category', writeCat);
-  params.append('title',    title);
-  params.append('content',  content);
-  params.append('tags',     tagsRaw);
+  params.append('action',    'write');
+  params.append('category',  writeCat);
+  params.append('title',     title);
+  params.append('content',   content);
+  params.append('tags',      tagsRaw);
+  params.append('anonymous', document.getElementById('anonCheck').checked ? '1' : '0');
 
   // 구매링크 수집 (gear 전용, 최대 3개)
   if (writeCat === 'gear') {
