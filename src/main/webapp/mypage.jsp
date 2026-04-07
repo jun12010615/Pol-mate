@@ -586,6 +586,23 @@
           </div>
         </div>
 
+        <a class="menu-row" href="contradictionList.jsp" style="text-decoration:none;">
+          <div class="menu-icon-wrap bg-red">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" class="stroke-red">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <div class="menu-text">
+            <div class="menu-name">모순탐지 목록</div>
+            <div class="menu-sub">저장된 AI 모순탐지 결과 조회</div>
+          </div>
+          <div class="menu-right">
+            <span class="menu-value" id="menuContraCount">-</span>
+            <div class="menu-arrow"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>
+          </div>
+        </a>
+
       </div>
     </div>
 
@@ -1151,6 +1168,9 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     })
     .catch(function(e) { console.error('초기 로드 실패', e); });
+
+  // 모순탐지 목록 카운트 로드
+  loadContraCount();
 });
 
 // ── 기관 변경 시 부서 동적 로드 ──────────────────────────────────
@@ -1374,6 +1394,25 @@ function loadHistory() {
       container.innerHTML = '<p style="padding:20px; text-align:center; color:var(--danger); font-size:13px;">불러오기에 실패했습니다.</p>';
       console.error(e);
     });
+}
+
+// ── 모순탐지 목록 카운트 로드 ─────────────────────────────────────
+function loadContraCount() {
+  fetch('contradictionApi?action=list')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var el = document.getElementById('menuContraCount');
+      if (!el) return;
+      if (Array.isArray(data)) {
+        var contraCount = data.filter(function(d) { return d.hasContradiction; }).length;
+        el.textContent = data.length + '건';
+        if (contraCount > 0) {
+          el.style.color = '#dc2626';
+          el.textContent = data.length + '건 (' + contraCount + '모순)';
+        }
+      }
+    })
+    .catch(function() { /* 카운트 로드 실패 시 '-' 유지 */ });
 }
 
 // ── 활동 통계 로드 ────────────────────────────────────────────────
