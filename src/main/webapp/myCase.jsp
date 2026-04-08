@@ -758,9 +758,28 @@ function saveContraResult(){
     return d?(d.type||''):'';
   }).filter(Boolean).join(', ');
 
-  // 모순 키워드 존재 여부로 탐지 판단
-  var contraKeywords=['모순','불일치','위반','거짓','허위','불명확','시간대','알리바이'];
-  var hasContradiction=contraKeywords.some(function(k){return aiResult.indexOf(k)>=0;});
+  // 모순 탐지 여부 판단
+  // 1) 명확한 "이상 없음" 표현이 있으면 → false
+  var cleanPatterns = [
+    '모순이 없', '모순은 없', '모순 없', '모순이 발견되지', '모순이 탐지되지',
+    '이상 없', '이상이 없', '불일치 없', '불일치가 없', '불일치는 없',
+    '명확한 모순', '모순이 없습니다', '이상없음', '모순없음',
+    '모순이 탐지되지 않', '모순이 발견되지 않'
+  ];
+  var isClean = cleanPatterns.some(function(p){ return aiResult.indexOf(p) >= 0; });
+
+  // 2) 이상 없음이 아닌 경우에만 모순 키워드 체크
+  var contraKeywords = ['모순 발견', '모순이 탐지', '모순이 확인', '모순이 존재',
+    '불일치가 발견', '불일치가 확인', '불일치가 존재', '불일치를 발견',
+    '거짓 진술', '허위 진술', '위반이 확인', '시간대가 맞지', '알리바이가 맞지'];
+  var hasContradiction = !isClean && contraKeywords.some(function(k){ return aiResult.indexOf(k) >= 0; });
+
+  // 3) 위 패턴으로 판단 안 될 경우: AI 원문에서 직접 판단 (fallback)
+  if (!isClean && !hasContradiction) {
+    // "탐지됨", "발견됨", "있음" 등 긍정 표현 확인
+    var posPat = ['모순이 있', '모순을 발견', '모순을 탐지', '불일치가 있', '허위가 있'];
+    hasContradiction = posPat.some(function(p){ return aiResult.indexOf(p) >= 0; });
+  }
 
   var caseId=currentCaseData?currentCaseData.id||'':'';
 
