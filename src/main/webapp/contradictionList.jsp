@@ -369,6 +369,8 @@ function loadList() {
       allData = Array.isArray(data) ? data : [];
       updateSummary();
       renderList();
+      // 이 페이지에서 목록이 갱신됐음을 main/mypage에 알림
+      localStorage.setItem('contradictionUpdated', Date.now().toString());
     })
     .catch(function() {
       document.getElementById('listArea').innerHTML =
@@ -536,6 +538,8 @@ function deleteResult(resultId) {
         updateSummary();
         renderList();
         showToast('삭제되었습니다.');
+        // main.jsp / mypage.jsp에 카운트 변경 알림
+        localStorage.setItem('contradictionUpdated', Date.now().toString());
       } else {
         alert(data.error || '삭제에 실패했습니다.');
       }
