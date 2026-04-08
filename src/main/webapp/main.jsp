@@ -455,8 +455,8 @@
                   <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                 </svg>
               </div>
-              <div class="menu-name mn-red">CCTV 분석</div>
-              <div class="menu-desc">영상 · AI 분석</div>
+              <div class="menu-name mn-red">영상 분석</div>
+              <div class="menu-desc">번호판 탐지</div>
             </a>
 
           </div>
