@@ -1151,7 +1151,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!data.user) return;
       var s = data.stats;
       document.getElementById('statActiveCases').textContent  = s.activeCases;
-      document.getElementById('statContradiction').textContent = s.contradictionCount;
+      // statContradiction은 loadContraCount()추원이 contradiction_results 기준으로 업레이트 (여기서 덮어쓰지 않음)
       document.getElementById('statCompleted').textContent    = s.totalTranscripts;
       document.getElementById('menuHistoryCount').textContent = s.totalTranscripts + '건';
 
@@ -1171,6 +1171,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // 모순탐지 목록 카운트 로드
   loadContraCount();
+
+  // BroadcastChannel: contradictionList페이지에서 추가/삭제 시 실시간 업레이트
+  try {
+    var _mypageContraCh = new BroadcastChannel('contradictionCount');
+    _mypageContraCh.onmessage = function(e) {
+      if (e.data && e.data.type === 'update') {
+        var statEl = document.getElementById('statContradiction');
+        if (statEl) statEl.textContent = e.data.count;
+        var menuEl = document.getElementById('menuContraCount');
+        if (menuEl) {
+          menuEl.textContent = e.data.count + '건';
+          menuEl.style.color = e.data.count > 0 ? '#dc2626' : '';
+        }
+      }
+    };
+  } catch(e) {}
 });
 
 // ── 기관 변경 시 부서 동적 로드 ──────────────────────────────────
@@ -1398,21 +1414,33 @@ function loadHistory() {
 
 // ── 모순탐지 목록 카운트 로드 ─────────────────────────────────────
 function loadContraCount() {
-  fetch('contradictionApi?action=list')
+  fetch('contradictionApi?action=list&_=' + Date.now())
     .then(function(r) { return r.json(); })
     .then(function(data) {
+      if (!Array.isArray(data)) return;
+
+      var totalCount = data.length;
+      var contraCount = data.filter(function(d) { return d.hasContradiction; }).length;
+
+      // 메뉴 카운트 뱃지 업레이트
       var el = document.getElementById('menuContraCount');
-      if (!el) return;
-      if (Array.isArray(data)) {
-        var contraCount = data.filter(function(d) { return d.hasContradiction; }).length;
-        el.textContent = data.length + '건';
+      if (el) {
+        el.textContent = totalCount + '건';
         if (contraCount > 0) {
           el.style.color = '#dc2626';
-          el.textContent = data.length + '건 (' + contraCount + '모순)';
+          el.textContent = totalCount + '건 (' + contraCount + '모순)';
+        } else {
+          el.style.color = '';
         }
       }
+
+      // 상단 통계 란 '모순 탐지' 숫자 업레이트
+      var statEl = document.getElementById('statContradiction');
+      if (statEl) {
+        statEl.textContent = totalCount;
+      }
     })
-    .catch(function() { /* 카운트 로드 실패 시 '-' 유지 */ });
+    .catch(function() { /* 카운트 로드 실패 시 기존 값 유지 */ });
 }
 
 // ── 활동 통계 로드 ────────────────────────────────────────────────

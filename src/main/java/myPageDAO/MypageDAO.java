@@ -595,4 +595,70 @@ public class MypageDAO {
         }
         return false;
     }
+    
+    // ════════════════════════════════════════════════════════════════
+    // 9. 기관별 부서 목록 조회 (새로 분리됨)
+    // ════════════════════════════════════════════════════════════════
+    public List<Map<String, Object>> getDepartmentsByOrg(String org) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        List<Map<String, Object>> list = new ArrayList<>();
+        
+        try {
+            conn = mgr.getConnection();
+            String sql = "SELECT dept_id, dept_name FROM departments WHERE org_name = ? ORDER BY dept_name";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, org.trim());
+            rs = pstmt.executeQuery();
+            
+            while (rs.next()) {
+                Map<String, Object> map = new java.util.HashMap<>();
+                map.put("dept_id", rs.getInt("dept_id"));
+                map.put("dept_name", rs.getString("dept_name"));
+                list.add(map);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            mgr.freeConnection(conn, pstmt, rs);
+        }
+        return list;
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // 10. 모순탐지 참 총 건수 조회 (새로 분리됨)
+    // ════════════════════════════════════════════════════════════════
+    public int getContradictionCount(String userId, String period) {
+        int count = 0;
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        
+        try {
+            conn = mgr.getConnection();
+            String sql;
+            if ("week".equals(period)) {
+                sql = "SELECT COUNT(*) FROM contradiction_results WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+            } else if ("month".equals(period)) {
+                sql = "SELECT COUNT(*) FROM contradiction_results WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)";
+            } else if ("year".equals(period)) {
+                sql = "SELECT COUNT(*) FROM contradiction_results WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)";
+            } else {
+                sql = "SELECT COUNT(*) FROM contradiction_results WHERE user_id = ?";
+            }
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, userId);
+            rs = pstmt.executeQuery();
+            
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            mgr.freeConnection(conn, pstmt, rs);
+        }
+        return count;
+    }
 }

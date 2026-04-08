@@ -459,7 +459,7 @@
         <div class="stat-lbl">진행 사건</div>
       </div>
       <div class="stat-card">
-        <div class="stat-val red"><%= cntContradiction %></div>
+        <div class="stat-val red" id="mainStatContradiction"><%= cntContradiction %></div>
         <div class="stat-lbl">모순 탐지</div>
       </div>
       <div class="stat-card">
@@ -546,6 +546,31 @@
       var dot = document.getElementById('bellDot');
       if (dot) dot.style.display = 'none';
     });
+})();
+
+// ── 모순 탐지 카운트: contradiction_results 테이블 기준으로 동적 로드 ──
+(function() {
+  fetch('contradictionApi?action=list&_=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var el = document.getElementById('mainStatContradiction');
+      if (!el || !Array.isArray(data)) return;
+      el.textContent = data.length;
+    })
+    .catch(function() { /* 실패 시 서버사이드 값 유지 */ });
+})();
+
+// BroadcastChannel: contradictionList 페이지에서 추가/삭제 시 실시간 업레이트
+(function() {
+  try {
+    var ch = new BroadcastChannel('contradictionCount');
+    ch.onmessage = function(e) {
+      if (e.data && e.data.type === 'update') {
+        var el = document.getElementById('mainStatContradiction');
+        if (el) el.textContent = e.data.count;
+      }
+    };
+  } catch(e) {}
 })();
 </script>
 </body>

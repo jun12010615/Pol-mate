@@ -11,6 +11,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,35 +86,12 @@ public class MypageServlet extends HttpServlet {
             case "getDepts": {
                 String org = req.getParameter("org");
                 if (org == null || org.trim().isEmpty()) {
-                    resp.getWriter().print("[]");
+                    sendJson(resp, new ArrayList<>()); // 빈 배열 반환
                     return;
                 }
-                DBConnectionMgr mgr2 = DBConnectionMgr.getInstance();
-                java.sql.Connection conn2 = null;
-                java.sql.PreparedStatement ps2 = null;
-                java.sql.ResultSet rs2 = null;
-                try {
-                    conn2 = mgr2.getConnection();
-                    ps2 = conn2.prepareStatement(
-                        "SELECT dept_id, dept_name FROM departments WHERE org_name = ? ORDER BY dept_name");
-                    ps2.setString(1, org.trim());
-                    rs2 = ps2.executeQuery();
-                    StringBuilder sb = new StringBuilder("[");
-                    boolean first = true;
-                    while (rs2.next()) {
-                        if (!first) sb.append(",");
-                        sb.append("{\"dept_id\":").append(rs2.getInt("dept_id"))
-                          .append(",\"dept_name\":\"").append(rs2.getString("dept_name").replace("\"","\\\"")).append("\"}");
-                        first = false;
-                    }
-                    sb.append("]");
-                    resp.getWriter().print(sb.toString());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    resp.getWriter().print("[]");
-                } finally {
-                    mgr2.freeConnection(conn2, ps2, rs2);
-                }
+                
+                List<Map<String, Object>> depts = dao.getDepartmentsByOrg(org);
+                sendJson(resp, depts);
                 break;
             }
 
@@ -137,13 +115,17 @@ public class MypageServlet extends HttpServlet {
 
                 java.util.Map<String, Integer> monthly = dao.getMonthlyTranscripts(userId);
 
+                // 분리된 DAO 메서드를 통해 모순탐지 건수 조회
+                int contraResultCount = dao.getContradictionCount(userId, period);
+
                 java.util.Map<String, Object> result = new java.util.HashMap<>();
                 result.put("totalCases",         stats.getTotalCases());
                 result.put("activeCases",        stats.getActiveCases());
                 result.put("totalTranscripts",   stats.getTotalTranscripts());
-                result.put("contradictionCount", stats.getContradictionCount());
+                result.put("contradictionCount", contraResultCount); 
                 result.put("relationEdges",      stats.getRelationEdges());
                 result.put("monthly",            monthly);
+                
                 sendJson(resp, result);
                 break;
             }
