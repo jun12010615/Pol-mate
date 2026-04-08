@@ -3,6 +3,7 @@ package Servlet;
 
 import java.io.*;
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -25,6 +26,9 @@ import org.json.JSONObject;
  */
 @WebServlet("/board")
 public class BoardServlet extends HttpServlet {
+
+    private static final SimpleDateFormat DATE_FMT = new SimpleDateFormat("yyyy.MM.dd");
+    static { DATE_FMT.setTimeZone(TimeZone.getTimeZone("Asia/Seoul")); }
 
     /* ═══════════════════════════════════════════════
        GET  →  list / detail
@@ -179,7 +183,7 @@ public class BoardServlet extends HttpServlet {
                 // 날짜 포맷 (yyyy.MM.dd)
                 Timestamp ts = rs.getTimestamp("created_at");
                 p.put("date", ts != null
-                        ? new java.text.SimpleDateFormat("yyyy.MM.dd").format(ts) : "");
+                        ? DATE_FMT.format(ts) : "");
 
                 // 태그 조회
                 p.put("tags", getTagsForPost(conn, postId));
@@ -265,7 +269,7 @@ public class BoardServlet extends HttpServlet {
 
             Timestamp ts = rs.getTimestamp("created_at");
             p.put("date", ts != null
-                    ? new java.text.SimpleDateFormat("yyyy.MM.dd").format(ts) : "");
+                    ? DATE_FMT.format(ts) : "");
 
             mgr.freeConnection(null, pstmt, rs);
             pstmt = null; rs = null;
