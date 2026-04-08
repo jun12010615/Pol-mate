@@ -19,8 +19,15 @@
   }
   html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(--bg); overflow-x:hidden; }
 
-  .screen { width:100%; max-width:420px; min-height:100vh; margin:0 auto; background:var(--bg); display:flex; flex-direction:column; }
-
+.screen { 
+  width: 100%; 
+  max-width: 420px; 
+  min-height: 100dvh; /* 100vh -> 100dvh 로 변경 */
+  margin: 0 auto; 
+  background: var(--bg); 
+  display: flex; 
+  flex-direction: column; 
+}
   /* ── 헤더 ── */
   .top-header {
     background:var(--navy); padding:52px 20px 16px;
@@ -52,8 +59,12 @@
   .filter-btn.active { background:#fff; color:var(--navy); font-weight:500; }
 
   /* ── 스크롤 콘텐츠 ── */
-  .content { flex:1; overflow-y:auto; padding:16px 16px calc(var(--bottom-nav-h)+20px); }
-
+.content { 
+  flex: 1; 
+  overflow-y: auto; 
+  /* 기존 패딩에 기기 하단 안전영역(env) 두께를 더해줍니다 */
+  padding: 16px 16px calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 20px); 
+}
   /* ── 요약 배너 ── */
   .summary-card {
     background:var(--card); border-radius:14px; border:1px solid var(--border);
@@ -129,16 +140,28 @@
 
   /* ── 상세 드로어 ── */
   .overlay {
-    position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:200;
-    display:none; align-items:flex-end; justify-content:center;
-  }
+  position: fixed;
+  inset: 0;
+  height: 100dvh; /* vh 대신 동적 높이인 dvh 사용 */
+  background: rgba(0,0,0,0.45);
+  z-index: 200;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
   .overlay.open { display:flex; }
 
-  .drawer {
-    background:var(--card); border-radius:20px 20px 0 0;
-    width:100%; max-width:420px; padding:0 0 32px;
-    animation:slideUp 0.28s ease both; max-height:88vh; overflow-y:auto;
-  }
+ .drawer {
+  background: var(--card);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 420px;
+  /* padding: 0 0 32px;  <-- 이 줄을 지워주세요 (body로 이동) */
+  animation: slideUp 0.28s ease both;
+  max-height: 85dvh; /* 모바일 대응을 위해 dvh로 변경 */
+  display: flex;          /* 추가: 내부 요소 배치를 위해 */
+  flex-direction: column; /* 추가: 세로 방향 배치 */
+}
   .drawer-handle {
     width:36px; height:4px; background:var(--border);
     border-radius:2px; margin:12px auto 0;
@@ -155,7 +178,11 @@
   }
   .drawer-close svg { width:14px; height:14px; stroke:var(--text-secondary); }
 
-  .drawer-body { padding:20px; }
+ .drawer-body {
+  /* 하단에 안전 영역(safe-area)과 여백을 추가하여 버튼이 잘리지 않게 함 */
+  padding: 20px 20px calc(32px + env(safe-area-inset-bottom, 0px)); 
+  overflow-y: auto; /* 본문 내용이 길면 여기서 스크롤되도록 추가 */
+}
 
   .detail-badge {
     display:inline-flex; align-items:center; gap:6px;
@@ -197,11 +224,20 @@
 
   /* ── 하단 네비 ── */
   .bottom-nav {
-    position:fixed; bottom:0; left:50%; transform:translateX(-50%);
-    width:100%; max-width:420px; height:64px;
-    background:#ffffff; border-top:1px solid #e2e5ee;
-    display:flex; z-index:100;
-  }
+  position: fixed;
+  bottom: 0; 
+  left: 50%; 
+  transform: translateX(-50%);
+  width: 100%; 
+  max-width: 420px;
+  /* 높이와 하단 패딩에 기기 안전영역(env) 두께를 추가합니다 */
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: #ffffff; 
+  border-top: 1px solid #e2e5ee;
+  display: flex; 
+  z-index: 100;
+}
   .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; text-decoration:none; color:#9ca3af; cursor:pointer; border:none; background:none; font-family:'Noto Sans KR',sans-serif; }
   .nav-item.active { color:#0d1a33; }
   .nav-item.active .nav-label { font-weight:600; }
