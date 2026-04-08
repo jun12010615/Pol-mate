@@ -157,6 +157,8 @@
   .mn-purple{color:#5b21b6;}
   .mi-teal  {background:#f0fdfa;}
   .mn-teal  {color:#0f766e;}
+  .mi-red   {background:#fef2f2;}
+  .mn-red   {color:#991b1b;}
 
   /* ══ 통계 ══ */
   .stats-row{
@@ -415,8 +417,8 @@
 
           </div>
 
-          <!-- 2행: 사건관계망 · 보드조회 (2열) -->
-          <div class="menu-row row2">
+          <!-- 2행: 사건관계망 · 보드조회 · CCTV분석 (3열) -->
+          <div class="menu-row row3">
 
             <a href="caseRelationMap.jsp" class="menu-card">
               <div class="menu-icon-wrap mi-green">
@@ -444,6 +446,17 @@
               </div>
               <div class="menu-name mn-teal">보드 조회</div>
               <div class="menu-desc">사건별 관계망 보드</div>
+            </a>
+
+            <a href="cctvAnalysis.jsp" class="menu-card">
+              <div class="menu-icon-wrap mi-red">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#991b1b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M23 7 16 12 23 17V7z"/>
+                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                </svg>
+              </div>
+              <div class="menu-name mn-red">CCTV 분석</div>
+              <div class="menu-desc">영상 · AI 분석</div>
             </a>
 
           </div>
