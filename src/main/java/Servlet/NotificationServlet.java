@@ -28,6 +28,7 @@ import org.json.JSONObject;
 public class NotificationServlet extends HttpServlet {
 
     private static final SimpleDateFormat DATE_FMT = new SimpleDateFormat("yyyy.MM.dd HH:mm");
+    static { DATE_FMT.setTimeZone(TimeZone.getTimeZone("Asia/Seoul")); }
     // 비밀번호 변경 권고 주기 (일)
     private static final int PW_WARN_DAYS = 90;
 
@@ -354,7 +355,9 @@ public class NotificationServlet extends HttpServlet {
         if (hour < 24) return hour + "시간 전";
         long day = hour / 24;
         if (day < 7)   return day + "일 전";
-        return new SimpleDateFormat("MM.dd").format(ts);
+        SimpleDateFormat sdf = new SimpleDateFormat("MM.dd");
+        sdf.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
+        return sdf.format(ts);
     }
 
     // ═══════════════════════════════════════════════════════

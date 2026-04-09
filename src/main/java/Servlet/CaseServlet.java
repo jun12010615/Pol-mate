@@ -31,6 +31,7 @@ import org.json.JSONObject;
 public class CaseServlet extends HttpServlet {
 
     private static final SimpleDateFormat DATE_FMT = new SimpleDateFormat("yyyy.MM.dd");
+    static { DATE_FMT.setTimeZone(TimeZone.getTimeZone("Asia/Seoul")); }
 
     /** Pol-mate-Serv 베이스 URL (WEB-INF/config.properties 의 POL_MATE_SERV_BASE_URL) */
     private String polMateServBaseUrl = "http://113.198.238.108:5001";
