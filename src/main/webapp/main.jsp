@@ -568,7 +568,8 @@
     .then(function(data) {
       var el = document.getElementById('mainStatContradiction');
       if (!el || !Array.isArray(data)) return;
-      el.textContent = data.length;
+      var contraOnly = data.filter(function(d) { return d.hasContradiction; }).length;
+      el.textContent = contraOnly;
     })
     .catch(function() { /* 실패 시 서버사이드 값 유지 */ });
 })();

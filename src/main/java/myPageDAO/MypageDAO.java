@@ -638,14 +638,15 @@ public class MypageDAO {
         try {
             conn = mgr.getConnection();
             String sql;
+            // has_contradiction = 1 참 모순탐지된 건수만 카운트
             if ("week".equals(period)) {
-                sql = "SELECT COUNT(*) FROM contradiction_results WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+                sql = "SELECT COUNT(*) FROM contradiction_results WHERE user_id = ? AND has_contradiction = 1 AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
             } else if ("month".equals(period)) {
-                sql = "SELECT COUNT(*) FROM contradiction_results WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)";
+                sql = "SELECT COUNT(*) FROM contradiction_results WHERE user_id = ? AND has_contradiction = 1 AND created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)";
             } else if ("year".equals(period)) {
-                sql = "SELECT COUNT(*) FROM contradiction_results WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)";
+                sql = "SELECT COUNT(*) FROM contradiction_results WHERE user_id = ? AND has_contradiction = 1 AND created_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)";
             } else {
-                sql = "SELECT COUNT(*) FROM contradiction_results WHERE user_id = ?";
+                sql = "SELECT COUNT(*) FROM contradiction_results WHERE user_id = ? AND has_contradiction = 1";
             }
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, userId);
