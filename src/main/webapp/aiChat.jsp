@@ -224,7 +224,13 @@
   java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH:mm");
   String nowTime = sdf.format(new java.util.Date());
 
-  String userName = "김민준"; // 임시 (세션 연동 후 교체)
+  // 세션에서 사용자 이름 가져오기
+  HttpSession userSession = request.getSession(false);
+  String userName = "";
+  if (userSession != null) {
+    Object nameObj = userSession.getAttribute("userName");
+    if (nameObj != null) userName = nameObj.toString();
+  }
   String userInitial = userName.length() >= 1 ? String.valueOf(userName.charAt(0)) : "U";
 %>
 

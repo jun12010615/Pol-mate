@@ -1395,7 +1395,14 @@ function loadHistory() {
         '완료':     'h-badge-done'
       };
       container.innerHTML = list.map(function(t) {
-        var date   = t.createdAt ? t.createdAt.substring(0, 10).replace(/-/g, '.') : '';
+    	  var date = t.createdAt 
+    	    ? new Date(t.createdAt).toLocaleDateString('ko-KR', {
+    	        year: 'numeric',
+    	        month: '2-digit',
+    	        day: '2-digit',
+    	        timeZone: 'Asia/Seoul'
+    	      }).replace(/\. /g, '.').replace(/\.$/, '') 
+    	    : '';
         var badge  = BADGE_MAP[t.caseStatus] || 'h-badge-done';
         return '<div class="history-item">' +
           '<div>' +
