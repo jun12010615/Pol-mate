@@ -121,6 +121,11 @@ public class AiChatServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        // 세션에서 userName을 읽어 JSP에서 사용할 수 있도록 attribute 설정
+        HttpSession session = request.getSession(false);
+        if (session != null && session.getAttribute("userName") != null) {
+            request.setAttribute("userName", session.getAttribute("userName"));
+        }
         request.getRequestDispatcher("aiChat.jsp").forward(request, response);
     }
     
