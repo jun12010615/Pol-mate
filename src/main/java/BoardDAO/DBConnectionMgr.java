@@ -38,9 +38,9 @@ import java.util.Vector;
 public class DBConnectionMgr {
     private Vector connections = new Vector(10);
     private String _driver = "com.mysql.cj.jdbc.Driver",
-    	    _url = "jdbc:mysql:// cdn.ditanet.duckdns.org:8306/pol-mate?characterEncoding=UTF-8&serverTimezone=UTC",
-    	    _user = "root",
-    	    _password = "dita2414";
+	    _url = "jdbc:mysql:// cdn.ditanet.duckdns.org:8306/pol-mate?characterEncoding=UTF-8&serverTimezone=Asia/Seoul",
+	    _user = "root",
+	    _password = "dita2414";
     
     private boolean _traceOn = false;
     private boolean initialized = false;

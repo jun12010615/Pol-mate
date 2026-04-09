@@ -1422,10 +1422,10 @@ function loadContraCount() {
       var totalCount = data.length;
       var contraCount = data.filter(function(d) { return d.hasContradiction; }).length;
 
-      // 메뉴 카운트 뱃지 업레이트
+      // 메뉴 카운트 뱃지 업레이트 (모순 탐지된 건수만)
       var el = document.getElementById('menuContraCount');
       if (el) {
-        el.textContent = totalCount + '건';
+        el.textContent = contraCount + '건';
         if (contraCount > 0) {
           el.style.color = '#dc2626';
           el.textContent = totalCount + '건 (' + contraCount + '모순)';
@@ -1434,10 +1434,10 @@ function loadContraCount() {
         }
       }
 
-      // 상단 통계 란 '모순 탐지' 숫자 업레이트
+      // 상단 통계 란 '모순 탐지' 숫자 업레이트 (모순 탐지된 건수만)
       var statEl = document.getElementById('statContradiction');
       if (statEl) {
-        statEl.textContent = totalCount;
+        statEl.textContent = contraCount;
       }
     })
     .catch(function() { /* 카운트 로드 실패 시 기존 값 유지 */ });
