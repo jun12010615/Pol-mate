@@ -56,14 +56,14 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--bg)
 .header-title{font-size:17px;font-weight:700;color:#fff;letter-spacing:-0.3px;}
 .header-sub{font-size:10px;color:rgba(255,255,255,0.45);margin-top:2px;}
 .write-btn{
+  background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.28);
+  color:#fff;border-radius:20px;padding:7px 15px;font-size:12px;font-weight:500;
+  font-family:'Noto Sans KR',sans-serif;cursor:pointer;
   display:flex;align-items:center;gap:5px;
-  background:var(--gold);border:none;border-radius:20px;
-  padding:8px 14px;font-size:12px;font-weight:700;
-  color:var(--deep);cursor:pointer;font-family:'Noto Sans KR',sans-serif;
-  transition:transform 0.1s;flex-shrink:0;
+  transition:background 0.15s;flex-shrink:0;
 }
-.write-btn:active{transform:scale(0.95);}
-.write-btn svg{width:13px;height:13px;stroke:var(--deep);stroke-width:2.5;}
+.write-btn:active{background:rgba(255,255,255,0.25);}
+.write-btn svg{width:13px;height:13px;stroke:#fff;stroke-width:2;}
 .header-gold-line{height:1.5px;background:linear-gradient(90deg,transparent,var(--gold) 30%,var(--gold) 70%,transparent);opacity:0.25;margin:0 -20px;}
 
 /* ── 카테고리 탭 ── */
@@ -312,49 +312,173 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--bg)
 .comment-submit svg{width:16px;height:16px;stroke:#fff;stroke-width:2;}
 
 /* ── 글쓰기 모달 ── */
-.write-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:none;overflow-y:auto;}
-.write-modal-overlay.open{display:block;}
-.write-modal{background:var(--bg);min-height:100vh;max-width:420px;margin:0 auto;}
-.write-modal-header{background:var(--deep);padding:52px 20px 18px;position:sticky;top:0;z-index:5;}
-.write-modal-title{display:flex;align-items:center;justify-content:space-between;}
-.write-close-btn{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.12);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;}
-.write-close-btn svg{width:17px;height:17px;stroke:#fff;}
+.write-modal-overlay{
+  position:fixed;inset:0;
+  background:rgba(10,20,40,0.55);
+  backdrop-filter:blur(2px);
+  z-index:200;display:none;
+  align-items:flex-end;justify-content:center;
+  overflow:hidden;
+}
+.write-modal-overlay.open{display:flex;}
+
+.write-modal{
+  background:var(--bg);
+  width:100%;max-width:420px;
+  max-height:92vh;
+  border-radius:22px 22px 0 0;
+  display:flex;flex-direction:column;
+  animation:sheetUp 0.3s cubic-bezier(0.32,0.72,0,1);
+  overflow:hidden;
+}
+@keyframes sheetUp{
+  from{transform:translateY(100%);}
+  to{transform:translateY(0);}
+}
+
+/* 핸들 바 */
+.write-modal-handle{
+  flex-shrink:0;
+  padding:12px 0 4px;
+  display:flex;justify-content:center;
+  background:var(--bg);
+}
+.write-modal-handle::after{
+  content:'';display:block;
+  width:36px;height:4px;border-radius:3px;
+  background:var(--bd);
+}
+
+/* 모달 헤더 */
+.write-modal-header{
+  flex-shrink:0;
+  background:var(--bg);
+  padding:4px 18px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--bd);
+}
+.write-modal-title-text{
+  font-size:16px;font-weight:700;color:var(--tp);letter-spacing:-0.2px;
+}
+.write-close-btn{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--bd);border:none;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+.write-close-btn svg{width:14px;height:14px;stroke:var(--ts);}
 .write-submit-btn{
-  background:var(--gold);border:none;border-radius:20px;
-  padding:8px 16px;font-size:13px;font-weight:700;
-  color:var(--deep);cursor:pointer;font-family:'Noto Sans KR',sans-serif;
+  background:var(--deep);border:none;border-radius:20px;
+  padding:8px 18px;font-size:13px;font-weight:700;
+  color:#fff;cursor:pointer;font-family:'Noto Sans KR',sans-serif;
+  letter-spacing:-0.1px;transition:opacity 0.15s;
 }
-.write-body{padding:18px 16px 40px;}
-.write-field{margin-bottom:14px;}
-.write-label{font-size:11px;font-weight:600;color:var(--ts);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;}
-.write-input{
-  width:100%;padding:12px 14px;background:var(--card);
-  border:1px solid var(--bd);border-radius:12px;
-  font-size:14px;font-family:'Noto Sans KR',sans-serif;
-  color:var(--tp);outline:none;transition:border-color 0.2s;
+.write-submit-btn:active{opacity:0.8;}
+
+/* 모달 바디 스크롤 영역 */
+.write-body{
+  flex:1;overflow-y:auto;
+  padding:20px 18px 40px;
+  -webkit-overflow-scrolling:touch;
 }
-.write-input:focus{border-color:var(--blue);}
-.write-textarea{
-  width:100%;padding:12px 14px;background:var(--card);
-  border:1px solid var(--bd);border-radius:12px;
-  font-size:14px;font-family:'Noto Sans KR',sans-serif;
-  color:var(--tp);outline:none;resize:none;line-height:1.7;
-  min-height:200px;transition:border-color 0.2s;
+
+/* 필드 */
+.write-field{margin-bottom:18px;}
+.write-label{
+  font-size:11px;font-weight:700;color:var(--ts);
+  display:block;margin-bottom:8px;
+  text-transform:uppercase;letter-spacing:0.6px;
 }
-.write-textarea:focus{border-color:var(--blue);}
+
+/* 카테고리 셀렉터 — 가로 3칸 균등 배치 */
 .cat-selector{display:flex;gap:8px;}
 .cat-sel-btn{
-  flex:1;padding:11px 8px;border-radius:12px;border:2px solid var(--bd);
+  flex:1;padding:11px 6px;border-radius:12px;
+  border:1.5px solid var(--bd);
   background:var(--card);font-size:12px;font-weight:600;
   font-family:'Noto Sans KR',sans-serif;cursor:pointer;
-  display:flex;flex-direction:column;align-items:center;gap:5px;
-  transition:all 0.15s;color:var(--ts);
+  display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;
+  transition:all 0.15s;color:var(--ts);white-space:nowrap;
 }
-.cat-sel-btn .sel-icon{font-size:20px;}
-.cat-sel-btn.sel-tip{border-color:var(--tip-icon);background:var(--tip-bg);color:var(--tip-text);}
+.cat-sel-btn .sel-icon{
+  width:15px;height:15px;flex-shrink:0;
+  stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;
+}
+.cat-sel-btn.sel-tip {border-color:var(--tip-icon);background:var(--tip-bg);color:var(--tip-text);}
+.cat-sel-btn.sel-tip  .sel-icon{stroke:var(--tip-icon);}
 .cat-sel-btn.sel-gear{border-color:var(--gear-icon);background:var(--gear-bg);color:var(--gear-text);}
+.cat-sel-btn.sel-gear .sel-icon{stroke:var(--gear-icon);}
 .cat-sel-btn.sel-free{border-color:var(--free-icon);background:var(--free-bg);color:var(--free-text);}
+.cat-sel-btn.sel-free .sel-icon{stroke:var(--free-icon);}
 
+/* 인풋·텍스트에어리어 */
+.write-input{
+  width:100%;padding:13px 15px;
+  background:var(--card);border:1px solid var(--bd);border-radius:13px;
+  font-size:14px;font-family:'Noto Sans KR',sans-serif;
+  color:var(--tp);outline:none;transition:border-color 0.2s,box-shadow 0.2s;
+}
+.write-input::placeholder{color:var(--tm);}
+.write-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(74,124,220,0.1);}
+
+.write-textarea{
+  width:100%;padding:13px 15px;
+  background:var(--card);border:1px solid var(--bd);border-radius:13px;
+  font-size:14px;font-family:'Noto Sans KR',sans-serif;
+  color:var(--tp);outline:none;resize:none;line-height:1.75;
+  min-height:160px;transition:border-color 0.2s,box-shadow 0.2s;
+}
+.write-textarea::placeholder{color:var(--tm);}
+.write-textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(74,124,220,0.1);}
+
+/* 구매 링크 */
+.link-input-group{display:flex;flex-direction:column;gap:8px;}
+.link-input-row{display:flex;gap:6px;align-items:center;}
+.link-input-row .write-input{flex:1;}
+.link-del-btn{
+  width:36px;height:42px;border-radius:10px;border:1px solid var(--bd);
+  background:var(--bg);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;
+}
+.link-del-btn svg{width:14px;height:14px;stroke:var(--danger);}
+.link-add-btn{
+  display:flex;align-items:center;gap:6px;
+  background:var(--gear-bg);border:1px solid var(--gear-bd);
+  border-radius:10px;padding:10px 14px;font-size:12px;
+  font-weight:600;color:var(--gear-text);cursor:pointer;
+  font-family:'Noto Sans KR',sans-serif;transition:background 0.15s;
+  width:100%;justify-content:center;
+}
+.link-add-btn svg{width:13px;height:13px;stroke:var(--gear-icon);}
+#gearLinkSection{display:none;margin-top:0;}
+
+/* 익명 토글 — 스위치 스타일 */
+.anon-row{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--card);border:1px solid var(--bd);border-radius:13px;
+  padding:14px 16px;
+}
+.anon-row-left{display:flex;flex-direction:column;gap:2px;}
+.anon-row-title{font-size:14px;font-weight:500;color:var(--tp);}
+.anon-row-sub{font-size:11px;color:var(--tm);}
+.toggle-wrap{position:relative;width:44px;height:24px;flex-shrink:0;}
+.toggle-wrap input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-slider{
+  position:absolute;inset:0;border-radius:24px;
+  background:var(--bd);cursor:pointer;transition:background 0.2s;
+}
+.toggle-slider::after{
+  content:'';position:absolute;
+  width:18px;height:18px;border-radius:50%;
+  background:#fff;top:3px;left:3px;
+  transition:transform 0.2s;
+  box-shadow:0 1px 4px rgba(0,0,0,0.2);
+}
+.toggle-wrap input:checked + .toggle-slider{background:var(--deep);}
+.toggle-wrap input:checked + .toggle-slider::after{transform:translateX(20px);}
+
+/* 기존 anon 호환 (숨김) */
+.anon-check-wrap{display:none;}
+.anon-check-field{display:none;}
 /* ── 하단 네비 ── */
 .bottom-nav{
   position:fixed;bottom:0;left:50%;transform:translateX(-50%);
@@ -528,71 +652,96 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--bg)
 </div>
 
 <!-- ══════════════════════════════════════════════ -->
-<!-- 글쓰기 모달 -->
+<!-- 글쓰기 모달 (바텀 시트) -->
 <!-- ══════════════════════════════════════════════ -->
-<div class="write-modal-overlay" id="writeModal">
+<div class="write-modal-overlay" id="writeModal" onclick="if(event.target===this)closeWrite()">
   <div class="write-modal">
+
+    <!-- 핸들 -->
+    <div class="write-modal-handle"></div>
+
+    <!-- 헤더 -->
     <div class="write-modal-header">
-      <div class="write-modal-title">
-        <button class="write-close-btn" onclick="closeWrite()">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-        <span style="font-size:16px;font-weight:600;color:#fff;">새 게시글</span>
-        <button class="write-submit-btn" onclick="submitPost()">등록</button>
-      </div>
+      <button class="write-close-btn" onclick="closeWrite()">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <span class="write-modal-title-text">새 게시글</span>
+      <button class="write-submit-btn" onclick="submitPost()">등록</button>
     </div>
+
+    <!-- 바디 -->
     <div class="write-body">
+
+      <!-- 카테고리 -->
       <div class="write-field">
         <label class="write-label">카테고리</label>
         <div class="cat-selector">
           <button class="cat-sel-btn" onclick="selectCat('tip',this)" id="selTip">
-            <span class="sel-icon">👮</span>수사 노하우
+            <svg class="sel-icon" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 3-1.8 5.4-4 6.6V17a1 1 0 0 1-1 1H10a1 1 0 0 1-1-1v-1.4C6.8 14.4 5 12 5 9a7 7 0 0 1 7-7z"/><line x1="10" y1="21" x2="14" y2="21"/></svg>
+            수사 노하우
           </button>
           <button class="cat-sel-btn" onclick="selectCat('gear',this)" id="selGear">
-            <span class="sel-icon">🧰</span>수사 장비
+            <svg class="sel-icon" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            수사 장비
           </button>
           <button class="cat-sel-btn" onclick="selectCat('free',this)" id="selFree">
-            <span class="sel-icon">💬</span>자유게시판
+            <svg class="sel-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            자유게시판
           </button>
         </div>
       </div>
+
+      <!-- 제목 -->
       <div class="write-field">
         <label class="write-label">제목</label>
         <input class="write-input" id="wTitle" placeholder="제목을 입력하세요" maxlength="60">
       </div>
+
+      <!-- 내용 -->
       <div class="write-field">
         <label class="write-label">내용</label>
         <textarea class="write-textarea" id="wContent" placeholder="현장에서 유용했던 팁이나 장비를 공유해보세요.&#10;&#10;개인정보(피의자·피해자 성명 등)는 반드시 제외해 주세요."></textarea>
       </div>
+
+      <!-- 첨부 태그 -->
       <div class="write-field">
-        <label class="write-label">첨부 태그 (선택)</label>
+        <label class="write-label">첨부 태그 <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--tm);">(선택)</span></label>
         <input class="write-input" id="wTags" placeholder="예) 엑셀서식, 바디캠, 조서템플릿 (쉼표 구분)">
       </div>
+
       <!-- 수사 장비 전용: 구매 링크 -->
       <div class="write-field" id="gearLinkSection">
         <label class="write-label" style="color:var(--gear-text);">
-          🛒 구매 링크 (선택 · 최대 3개)
+          🛒 구매 링크 <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--tm);">(선택 · 최대 3개)</span>
         </label>
         <div class="link-input-group" id="linkInputGroup">
           <div class="link-input-row" data-idx="0">
-            <input class="write-input" placeholder="링크 이름 (예: 쿠팡, 네이버쇼핑)" style="flex:0.9" data-role="name">
+            <input class="write-input" placeholder="링크 이름 (예: 쿠팡)" style="flex:0.9" data-role="name">
             <input class="write-input" placeholder="https://..." data-role="url">
           </div>
         </div>
-        <button class="link-add-btn" id="linkAddBtn" onclick="addLinkRow()" style="margin-top:8px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <button class="link-add-btn" id="linkAddBtn" onclick="addLinkRow()" style="margin-top:8px;" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           링크 추가
         </button>
       </div>
-      <!-- 익명 글쓰기 -->
-      <div class="write-field anon-check-field">
-        <label class="anon-check-wrap">
-          <input type="checkbox" id="anonCheck">
-          <span class="anon-check-label">익명으로 작성하기</span>
-        </label>
+
+      <!-- 익명 토글 -->
+      <div class="write-field">
+        <div class="anon-row">
+          <div class="anon-row-left">
+            <span class="anon-row-title">익명으로 작성하기</span>
+            <span class="anon-row-sub">이름 대신 '익명'으로 표시됩니다</span>
+          </div>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="anonCheck">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
       </div>
-    </div>
-  </div>
+
+    </div><!-- /write-body -->
+  </div><!-- /write-modal -->
 </div>
 
 <div id="toast"></div>
@@ -908,7 +1057,7 @@ document.getElementById('linkAddBtn').style.display = existLinks.length >= 3 ? '
 document.getElementById('anonCheck').checked = (p.anonymous == 1 || p.anonymous === true);
 
 // 헤더 텍스트·버튼 변경 (등록 → 수정)
-document.querySelector('.write-modal-header span').textContent = '게시글 수정';
+document.querySelector('.write-modal-title-text').textContent = '게시글 수정';
 var submitBtn = document.querySelector('.write-submit-btn');
 submitBtn.textContent = '수정';
 submitBtn.onclick = function(){ submitEdit(id); };
@@ -952,7 +1101,7 @@ fetch('board', { method:'POST', headers:{'Content-Type':'application/x-www-form-
    var submitBtn = document.querySelector('.write-submit-btn');
    submitBtn.textContent = '등록';
    submitBtn.onclick = submitPost;
-   document.querySelector('.write-modal-header span').textContent = '새 게시글';
+   document.querySelector('.write-modal-title-text').textContent = '새 게시글';
    showToast('✓ 게시글이 수정됐습니다');
    openDetail(id);
  })
