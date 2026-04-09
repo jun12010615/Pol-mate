@@ -2159,6 +2159,11 @@ function saveBoardFromPopup(isUpdate) {
     document.getElementById('btnPopupUpdate').innerHTML =
       '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px;stroke:#fff"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>보드 업데이트';
     document.getElementById('btnPopupUpdate').disabled = false;
+    if (isUpdate) {
+      setTimeout(function() {
+        location.href = 'main.jsp';
+      }, 500);
+    }
   })
   .catch(function(err) {
     clearTimeout(timeoutId);

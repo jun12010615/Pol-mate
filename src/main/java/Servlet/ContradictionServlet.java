@@ -28,6 +28,27 @@ public class ContradictionServlet extends HttpServlet {
     private final DBConnectionMgr mgr = DBConnectionMgr.getInstance();
     private final Gson gson = new Gson();
 
+    /** MySQL TEXT 상한(65535)에 맞춰 과도한 본문으로 인한 저장 실패를 방지 */
+    private static final int MAX_AI_OR_STMT_CHARS = 65000;
+
+    private static String clipForDb(String s, int max) {
+        if (s == null) return "";
+        if (s.length() <= max) return s;
+        return s.substring(0, max) + "\n…(이하 생략)";
+    }
+
+    private static String saveErrorMessage(SQLException e) {
+        int code = e.getErrorCode();
+        String m = e.getMessage();
+        if (code == 1452 || (m != null && m.toLowerCase().contains("foreign key")))
+            return "등록되지 않은 사건입니다. 사건 관리에서 해당 사건을 만든 뒤, 그 화면에서 모순탐지를 실행·저장하세요.";
+        if (code == 1146 || (m != null && m.contains("doesn't exist")))
+            return "DB에 contradiction_results 테이블이 없습니다. 관리자에게 문의하세요.";
+        if (code == 1406 || (m != null && (m.contains("Data too long") || m.contains("too long"))))
+            return "저장할 분석 결과가 너무 깁니다. 분석 결과 일부를 줄인 뒤 다시 시도하세요.";
+        return "저장 중 오류가 발생했습니다.";
+    }
+
     // ══════════════════════════════════════════════════════
     // GET
     // ══════════════════════════════════════════════════════
@@ -209,6 +230,9 @@ public class ContradictionServlet extends HttpServlet {
 
         boolean hasContradiction = "true".equalsIgnoreCase(hasContraStr) || "1".equals(hasContraStr);
 
+        String aiStored = clipForDb(aiResult, MAX_AI_OR_STMT_CHARS);
+        String stmtStored = clipForDb(stmtText, MAX_AI_OR_STMT_CHARS);
+
         Connection conn = null;
         PreparedStatement pstmt = null;
 
@@ -225,8 +249,8 @@ public class ContradictionServlet extends HttpServlet {
             pstmt.setString(3, stmtName != null ? stmtName.trim() : "");
             pstmt.setString(4, stmtType != null ? stmtType.trim() : "");
             pstmt.setBoolean(5, hasContradiction);
-            pstmt.setString(6, aiResult != null ? aiResult : "");
-            pstmt.setString(7, stmtText != null ? stmtText : "");
+            pstmt.setString(6, aiStored);
+            pstmt.setString(7, stmtStored);
             pstmt.executeUpdate();
 
             ResultSet generatedKeys = pstmt.getGeneratedKeys();
@@ -240,6 +264,12 @@ public class ContradictionServlet extends HttpServlet {
             result.put("resultId", newId);
             out.write(result.toString());
 
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JSONObject err = new JSONObject();
+            err.put("success", false);
+            err.put("error", saveErrorMessage(e));
+            out.write(err.toString());
         } catch (Exception e) {
             e.printStackTrace();
             out.write("{\"success\":false,\"error\":\"저장 중 오류가 발생했습니다.\"}");

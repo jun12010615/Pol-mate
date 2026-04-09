@@ -249,13 +249,13 @@
   </div>
 
   <div class="content">
-    <div class="filter-row">
-      <button class="chip active" onclick="setFilter(this,'all')">전체</button>
-      <button class="chip" onclick="setFilter(this,'검토필요')">검토필요</button>
-      <button class="chip" onclick="setFilter(this,'진행중')">진행중</button>
-      <button class="chip" onclick="setFilter(this,'완료')">완료</button>
-      <button class="chip" onclick="setFilter(this,'모순탐지')">모순탐지</button>
-    </div>
+      <div class="filter-row">
+        <button class="chip active" onclick="setFilter(this,'all')">전체</button>
+        <button class="chip" onclick="setFilter(this,'검토필요')">검토필요</button>
+        <button class="chip" onclick="setFilter(this,'진행중')">진행중</button>
+        <button class="chip" onclick="setFilter(this,'완료')">완료</button>
+        <button class="chip" onclick="setFilter(this,'모순탐지')">모순탐지</button>
+      </div>
     <div class="sort-bar">
       <button class="sort-btn active" id="sortDateDesc" onclick="setSort('date_desc')">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -268,18 +268,18 @@
 
     </div>
     <div class="case-list" id="caseList"></div>
-  </div>
+    </div>
 
   <nav class="bottom-nav">
-  <a href="main.jsp" class="nav-item">
+    <a href="main.jsp" class="nav-item">
     <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-    <span class="nav-label">홈</span>
-  </a>
-  <a href="myCase.jsp" class="nav-item active">
+      <span class="nav-label">홈</span>
+    </a>
+    <a href="myCase.jsp" class="nav-item active">
     <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
     <span class="nav-label">사건</span>
-  </a>
-  <a href="askAI" class="nav-item">
+    </a>
+    <a href="askAI" class="nav-item">
       <div class="nav-icon">
         <svg width="22" height="22" viewBox="0 0 86 86" fill="none">
           <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="currentColor" stroke-width="5"/>
@@ -294,16 +294,16 @@
       </div>
       <span class="nav-label">AI</span>
     </a>
-  <a href="board.jsp" class="nav-item">
+    <a href="board.jsp" class="nav-item">
     <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-    <span class="nav-label">커뮤니티</span>
-  </a>
-  <a href="mypage.jsp" class="nav-item">
+      <span class="nav-label">커뮤니티</span>
+    </a>
+    <a href="mypage.jsp" class="nav-item">
     <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-    <span class="nav-label">마이페이지</span>
-  </a>
-</nav>
-  </div>
+      <span class="nav-label">마이페이지</span>
+    </a>
+  </nav>
+</div>
 
 <!-- 사건 상세 드로어 -->
 <div class="overlay" id="caseDrawer" onclick="closeOnBg(event,'caseDrawer')">
@@ -343,8 +343,9 @@
       <button class="popup-close" onclick="closeContraPopup()"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="popup-body" id="contraPopupBody"></div>
-    <!-- 결과 저장 버튼 (분석 완료 후 표시) -->
+    <!-- 자동 저장 실패 시에만 표시 (다시 시도) -->
     <div id="contraSaveFooter" style="display:none; padding:12px 18px 16px; border-top:1px solid var(--border);">
+      <div id="contraSaveHint" style="display:none;font-size:11px;color:var(--danger);text-align:center;margin-bottom:10px;line-height:1.5;">목록에 자동 저장되지 않았습니다. 아래를 눌러 다시 시도하세요.</div>
       <button id="contraSaveBtn" onclick="saveContraResult()"
         style="width:100%; background:var(--navy); color:#fff; border:none; border-radius:12px;
                padding:13px; font-size:13px; font-weight:500; font-family:'Noto Sans KR',sans-serif;
@@ -353,7 +354,7 @@
           <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
           <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
         </svg>
-        결과 저장하기
+        다시 저장하기
       </button>
     </div>
   </div>
@@ -533,7 +534,7 @@ function renderDrawerDocs(docs) {
         '<div class="drawer-doc-meta" style="margin-top:2px;display:flex;align-items:center;gap:3px;">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:10px;height:10px;flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
           escHtml((d.writerRank?d.writerRank+' ':'')+d.writerName) +
-        '</div>' +
+      '</div>' +
       '</div>' +
       '<div class="drawer-doc-badge"><span class="badge '+bc+'">'+bt+'</span></div>' +
     '</div>';
@@ -644,7 +645,6 @@ function consumeAnalyzeStream(response,session){
         }else if(ev.event==='done'){
           finished=true;
           removeContraCaret(caret);
-          document.getElementById('contraSaveFooter').style.display='block';
           resolve();
           return;
         }
@@ -663,7 +663,6 @@ function consumeAnalyzeStream(response,session){
           if(!finished){
             if(!outputStarted)ensureOutputPanel();
             removeContraCaret(caret);
-            document.getElementById('contraSaveFooter').style.display='block';
             resolve();
           }
           return;
@@ -693,10 +692,16 @@ function consumeAnalyzeStream(response,session){
 function runContradiction(){
   if(checkedDocs.length<2) return;
   contraTypeSession++;
-  // 저장 버튼 초기화
+  contraSavePosting=false;
+  // 저장 푸터 초기화 (자동 저장 실패 시에만 표시)
   document.getElementById('contraSaveFooter').style.display='none';
+  var hint=document.getElementById('contraSaveHint');
+  if(hint)hint.style.display='none';
   var contraSaveBtn=document.getElementById('contraSaveBtn');
-  if(contraSaveBtn){contraSaveBtn.disabled=false;contraSaveBtn.textContent='결과 저장하기';}
+  if(contraSaveBtn){
+    contraSaveBtn.disabled=false;
+    contraSaveBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>다시 저장하기';
+  }
   var caseId=currentCaseData.id||'';
   var titles=checkedDocs.map(function(id){var d=currentDocs.find(function(x){return x.id===id;});return d?d.name+' '+d.type+' 진술':'ID:'+id;});
   document.getElementById('contraPopupTitle').textContent='모순 분석 중...';
@@ -720,7 +725,16 @@ function runContradiction(){
     if(!r.ok) throw new Error('HTTP '+r.status);
     document.getElementById('contraPopupTitle').textContent='모순 분석 결과';
     var sess=contraTypeSession;
-    return consumeAnalyzeStream(r,sess);
+    return consumeAnalyzeStream(r,sess).then(function(){ return sess; });
+  })
+  .then(function(sess){
+    if(sess!==contraTypeSession) return;
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        if(sess!==contraTypeSession) return;
+        attemptAutoPersistContra(sess);
+      });
+    });
   })
   .catch(function(err){
     if(err.name==='AbortError')return;
@@ -734,21 +748,45 @@ function closeContraPopup(e){
     contraTypeSession++;
     document.getElementById('contraPopup').classList.remove('open');
     document.getElementById('contraSaveFooter').style.display='none';
+    var h=document.getElementById('contraSaveHint');
+    if(h)h.style.display='none';
   }
 }
 
-// ── 모순탐지 결과 저장 ────────────────────────────────────────────
-function saveContraResult(){
-  var btn=document.getElementById('contraSaveBtn');
-  btn.disabled=true;
-  btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px;animation:contraSpin 0.7s linear infinite"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>&nbsp;저장 중...';
+var contraSavePosting=false;
 
-  // 분석 결과 텍스트 수집
+/** 분석 출력의 statement_a/b 표기를 조서A/B로 통일 */
+function normalizeStatementLabels(s){
+  return String(s||'').replace(/statement_a/gi,'조서A').replace(/statement_b/gi,'조서B');
+}
+
+/** contradictionList.jsp·writeTranscript.jsp와 동일 기준 (저장 시 플래그 정확도) */
+function inferHasContradictionFromAiText(ai){
+  var s=String(ai||'');
+  if(!s.trim())return false;
+  var strong=[
+    '【모순','모순점','모순 항목','모순이 발생','모순이 있습니다','모순입니다',
+    '모순 발견','모순이 탐지','모순이 확인','모순이 존재','진술 불일치',
+    '진술 간에','진술 간 모순','진술에 모순','상충','엇갈린','앞뒤가 맞지',
+    '일치하지 않','일치가 없','주장이 다름','서로 다른','행동 불일치','알리바이 불일치',
+    '불일치가 발견','불일치를 발견','불일치합니다','조서A','조서B','조서 A','조서 B',
+    '거짓 진술','허위 진술','시간대가 맞지','알리바이가 맞지','위반이 확인'
+  ];
+  if(strong.some(function(p){ return s.indexOf(p)>=0; }))return true;
+  if(s.indexOf('모순')<0)return false;
+  var neg=[
+    '모순이 없','모순은 없','모순 없','모순이 발견되지','모순이 탐지되지',
+    '모순이 없습니다','특별한 모순이 없','명확한 모순이 탐지되지','명확한 모순이 발견되지'
+  ];
+  if(neg.some(function(p){ return s.indexOf(p)>=0; }))return false;
+  return true;
+}
+
+function buildContraSavePayload(){
   var bodyEl=document.getElementById('contraPopupBody');
   var textSpan=bodyEl.querySelector('.contra-type-text');
   var aiResult=textSpan?textSpan.textContent:(bodyEl?bodyEl.textContent:'');
-
-  // 선택된 조서들의 진술자/유형 수집
+  aiResult=normalizeStatementLabels(aiResult);
   var stmtNames=checkedDocs.map(function(id){
     var d=currentDocs.find(function(x){return x.id===id;});
     return d?(d.name||'미입력'):'';
@@ -757,57 +795,85 @@ function saveContraResult(){
     var d=currentDocs.find(function(x){return x.id===id;});
     return d?(d.type||''):'';
   }).filter(Boolean).join(', ');
-
-  // 모순 탐지 여부 판단
-  // 1) 명확한 "이상 없음" 표현이 있으면 → false
-  var cleanPatterns = [
-    '모순이 없', '모순은 없', '모순 없', '모순이 발견되지', '모순이 탐지되지',
-    '이상 없', '이상이 없', '불일치 없', '불일치가 없', '불일치는 없',
-    '명확한 모순', '모순이 없습니다', '이상없음', '모순없음',
-    '모순이 탐지되지 않', '모순이 발견되지 않'
-  ];
-  var isClean = cleanPatterns.some(function(p){ return aiResult.indexOf(p) >= 0; });
-
-  // 2) 이상 없음이 아닌 경우에만 모순 키워드 체크
-  var contraKeywords = ['모순 발견', '모순이 탐지', '모순이 확인', '모순이 존재',
-    '불일치가 발견', '불일치가 확인', '불일치가 존재', '불일치를 발견',
-    '거짓 진술', '허위 진술', '위반이 확인', '시간대가 맞지', '알리바이가 맞지'];
-  var hasContradiction = !isClean && contraKeywords.some(function(k){ return aiResult.indexOf(k) >= 0; });
-
-  // 3) 위 패턴으로 판단 안 될 경우: AI 원문에서 직접 판단 (fallback)
-  if (!isClean && !hasContradiction) {
-    // "탐지됨", "발견됨", "있음" 등 긍정 표현 확인
-    var posPat = ['모순이 있', '모순을 발견', '모순을 탐지', '불일치가 있', '허위가 있'];
-    hasContradiction = posPat.some(function(p){ return aiResult.indexOf(p) >= 0; });
-  }
-
+  var hasContradiction=inferHasContradictionFromAiText(aiResult);
   var caseId=currentCaseData?currentCaseData.id||'':'';
+  return { aiResult:aiResult, stmtNames:stmtNames, stmtTypes:stmtTypes, hasContradiction:hasContradiction, caseId:caseId };
+}
 
+function postContraSaveFromMyCase(fields, opts){
+  var opt=opts||{};
+  if(contraSavePosting)return;
+  contraSavePosting=true;
+  var btn=opt.btn||null;
+  var redirect=!!opt.redirect;
+  var streamSession=opt.streamSession;
+  if(btn){
+    btn.disabled=true;
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px;animation:contraSpin 0.7s linear infinite"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>&nbsp;저장 중...';
+  }
   var params=new URLSearchParams();
   params.append('action','save');
-  params.append('caseId',caseId);
-  params.append('stmtName',stmtNames);
-  params.append('stmtType',stmtTypes);
-  params.append('hasContradiction',hasContradiction?'true':'false');
-  params.append('aiResult',aiResult);
+  params.append('caseId',fields.caseId);
+  params.append('stmtName',fields.stmtNames);
+  params.append('stmtType',fields.stmtTypes);
+  params.append('hasContradiction',fields.hasContradiction?'true':'false');
+  params.append('aiResult',fields.aiResult);
   params.append('stmtText','');
-
-  fetch('contradictionApi',{method:'POST',body:params})
-    .then(function(r){return r.json();})
+  fetch('contradictionApi',{
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+    body:params.toString()
+  })
+    .then(function(r){ return r.text().then(function(t){
+      try{ return JSON.parse(t);}catch(e){
+        throw new Error(t.indexOf('<html')>=0||t.indexOf('<!DOCTYPE')>=0?'로그인이 만료되었거나 서버 오류입니다. 다시 로그인 후 시도하세요.':(t.substring(0,120)||'응답 해석 실패'));
+      }
+    });})
     .then(function(data){
+      contraSavePosting=false;
+      if(streamSession!=null&&streamSession!==contraTypeSession)return;
       if(data.success){
-        location.href='contradictionList.jsp';
-      } else {
+        localStorage.setItem('contradictionUpdated',Date.now().toString());
+        if(redirect)location.href='contradictionList.jsp';
+        else showToast('모순탐지 목록에 저장되었습니다.');
+        document.getElementById('contraSaveFooter').style.display='none';
+        var hint=document.getElementById('contraSaveHint');
+        if(hint)hint.style.display='none';
+      }else{
         alert(data.error||'저장에 실패했습니다.');
-        btn.disabled=false;
-        btn.innerHTML='결과 저장하기';
+        document.getElementById('contraSaveFooter').style.display='block';
+        var hint2=document.getElementById('contraSaveHint');
+        if(hint2)hint2.style.display='block';
+        if(btn){
+          btn.disabled=false;
+          btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>다시 저장하기';
+        }
       }
     })
-    .catch(function(){
-      alert('서버 연결 오류가 발생했습니다.');
-      btn.disabled=false;
-      btn.innerHTML='결과 저장하기';
+    .catch(function(err){
+      contraSavePosting=false;
+      if(streamSession!=null&&streamSession!==contraTypeSession)return;
+      alert(err&&err.message?err.message:'서버 연결 오류가 발생했습니다.');
+      document.getElementById('contraSaveFooter').style.display='block';
+      var hint3=document.getElementById('contraSaveHint');
+      if(hint3)hint3.style.display='block';
+      if(btn){
+        btn.disabled=false;
+        btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>다시 저장하기';
+      }
     });
+}
+
+function attemptAutoPersistContra(streamSession){
+  if(streamSession!==contraTypeSession)return;
+  var fields=buildContraSavePayload();
+  postContraSaveFromMyCase(fields,{ redirect:false, streamSession:streamSession, btn:null });
+}
+
+// ── 모순탐지 결과 수동 재저장 ─────────────────────────────────────
+function saveContraResult(){
+  var btn=document.getElementById('contraSaveBtn');
+  postContraSaveFromMyCase(buildContraSavePayload(),{ redirect:true, btn:btn, streamSession:null });
 }
 
 function openNewCaseDrawer(){
