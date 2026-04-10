@@ -88,13 +88,13 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 
 /* ── 인물 리스트 ── */
 .person-list { padding:8px 12px 12px; display:flex; flex-direction:column; gap:7px; }
-.person-item { display:flex; align-items:center; gap:11px; padding:10px 12px; background:var(--bg); border-radius:12px; border:1px solid var(--border); }
-.person-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; flex-shrink:0; }
-.person-info { flex:1; min-width:0; }
+.person-item { display:flex; align-items:flex-start; gap:11px; padding:10px 12px; background:var(--bg); border-radius:12px; border:1px solid var(--border); overflow:hidden; min-width:0; }
+.person-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; flex-shrink:0; margin-top:2px; }
+.person-info { flex:1; min-width:0; overflow:hidden; }
 .person-name { font-size:13px; font-weight:500; color:var(--text-primary); }
 .person-role-label { font-size:11px; margin-top:2px; }
-.person-memo { font-size:10px; color:var(--text-muted); white-space:pre-wrap; word-break:keep-all; line-height:1.5; margin-top:1px; }
-.item-actions { display:flex; gap:5px; }
+.person-memo { font-size:10px; color:var(--text-muted); word-break:break-all; overflow-wrap:anywhere; line-height:1.5; margin-top:1px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; max-width:100%; }
+.item-actions { display:flex; gap:5px; flex-shrink:0; align-self:flex-start; margin-top:2px; }
 .item-btn { width:27px; height:27px; border-radius:8px; background:var(--card); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; }
 .item-btn svg { width:12px; height:12px; stroke:var(--text-secondary); }
 .item-btn.del svg { stroke:var(--danger); }
@@ -188,10 +188,9 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
   border:1px solid rgba(255,255,255,0.18);
   border-radius:8px; padding:6px 9px;
   font-size:10px; line-height:1.5;
-  max-width:150px; word-break:keep-all;
+  max-width:160px; width:max-content; word-break:break-all; overflow-wrap:break-word; white-space:pre-wrap;
   box-shadow:0 3px 10px rgba(0,0,0,0.4);
   opacity:0; transition:opacity 0.15s;
-  white-space:pre-wrap;
 }
 .node-tooltip.visible { opacity:1; }
 </style>
@@ -561,6 +560,8 @@ window.addEventListener('load', function() {
   }
 
   initCanvas();
+  // 레이아웃 완성 후 캔버스 크기 재조정 (clientWidth가 0으로 읽히는 타이밍 이슈 방지)
+  setTimeout(function(){ resizeCanvas(); }, 50);
 
   if (!loaded && currentCaseId) {
     if (urlFromAi) {
@@ -1150,8 +1151,10 @@ function initCanvas() {
 function resizeCanvas() {
   var w = document.getElementById('canvasWrap');
   if (!w||!canvas) return;
+  var newW = w.clientWidth || w.offsetWidth || 320;
+  if (newW < 10) newW = 320;
   var prevW = canvas.width, prevH = canvas.height;
-  canvas.width=w.clientWidth; canvas.height=360;
+  canvas.width=newW; canvas.height=360;
   if (_fdInit && persons.length && prevW > 0 && (canvas.width !== prevW || canvas.height !== prevH)) {
     var sx = canvas.width / prevW, sy = canvas.height / prevH;
     persons.forEach(function(p) {

@@ -9,8 +9,10 @@
   // URL 파라미터: 보드뷰에서 직접 편집 진입
   String paramCaseId   = request.getParameter("caseId")   != null ? request.getParameter("caseId")   : "";
   String paramOpenBoard= request.getParameter("openBoard") != null ? request.getParameter("openBoard") : "";
+  String paramDocIds   = request.getParameter("docIds")   != null ? request.getParameter("docIds")   : "";
   String safeCaseIdAttr = paramCaseId.replace("&", "&amp;").replace("\"", "&quot;").replace("'", "&#39;").replace("<", "&lt;");
   String safeOpenBoardAttr = "true".equalsIgnoreCase(paramOpenBoard) ? "true" : "false";
+  String safeDocIdsAttr = paramDocIds.replace("&", "&amp;").replace("\"", "&quot;").replace("'", "&#39;").replace("<", "&lt;");
 
   // ── 팀 사건 목록 조회 ────────────────────────────────────────────
   DBConnectionMgr mgr = DBConnectionMgr.getInstance();
@@ -653,7 +655,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 </div>
 
 <div id="toast"></div>
-<div id="_relationPageBoot" hidden data-case-id="<%= safeCaseIdAttr %>" data-open-board="<%= safeOpenBoardAttr %>"></div>
+<div id="_relationPageBoot" hidden data-case-id="<%= safeCaseIdAttr %>" data-open-board="<%= safeOpenBoardAttr %>" data-doc-ids="<%= safeDocIdsAttr %>"></div>
 
 <script>
 // ── 전역 상태 ──────────────────────────────────────────────────────
@@ -2350,6 +2352,7 @@ window.addEventListener('resize', resizeCanvas);
   if (!boot) return;
   var initCaseId    = boot.getAttribute('data-case-id') || '';
   var initOpenBoard = boot.getAttribute('data-open-board') === 'true';
+  var initDocIds    = (boot.getAttribute('data-doc-ids') || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
 
   if (!initCaseId) return;
 
@@ -2364,6 +2367,28 @@ window.addEventListener('resize', resizeCanvas);
 
   // 사건 선택 (조서 목록 로드)
   selectCase(initCaseId, caseName);
+
+  // 선택된 조서 자동 체크
+  if (initDocIds.length > 0) {
+    var maxTry = 30, tried = 0;
+    var checkTimer = setInterval(function() {
+      tried++;
+      var allFound = initDocIds.every(function(id) {
+        return document.getElementById('tr_' + id) !== null;
+      });
+      if (allFound) {
+        clearInterval(checkTimer);
+        initDocIds.forEach(function(id) {
+          var el = document.getElementById('tr_' + id);
+          if (el && !el.classList.contains('checked')) {
+            el.click();
+          }
+        });
+      } else if (tried >= maxTry) {
+        clearInterval(checkTimer);
+      }
+    }, 150);
+  }
 
   if (initOpenBoard) {
     // 보드 직접 편집: AI 분석 없이 기존 DB 보드 불러와서 팝업 오픈
