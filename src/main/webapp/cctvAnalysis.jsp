@@ -230,7 +230,7 @@
           <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
-      <div class="plate-hint">번호판 <strong>일부만</strong> 입력해도 검색됩니다 · 비우면 영상 내 <strong>모든 번호판</strong>을 추출합니다</div>
+      <div class="plate-hint">번호판 <strong>일부만</strong> 입력해도 검색됩니다 · 번호판 입력 후 분석이 가능합니다</div>
     </div>
 
     <!-- ② 영상 업로드 -->
@@ -292,6 +292,7 @@ var uidSeq = 0;
 /* ── 번호판 입력 ─────────────────────── */
 function onPlateInput(el) {
   document.getElementById('plateClear').style.display = el.value ? 'flex' : 'none';
+  syncUI();
 }
 function clearPlate() {
   var el = document.getElementById('plateInput');
@@ -364,14 +365,34 @@ function removeVideo(id) {
 
 function syncUI() {
   document.getElementById('videoCount').textContent = videoFiles.length + '개 선택됨';
-  var canStart = videoFiles.length > 0 && videoFiles.some(function(v){return v.status==='idle'||v.status==='vierror';});
+  var plate = document.getElementById('plateInput').value.trim();
+  var canStart = videoFiles.length > 0 && plate;
   document.getElementById('analyzeBtn').disabled = !canStart;
 }
 
 /* ── 분석 시작 ─────────────────────── */
 function startAnalysis() {
   var plate = document.getElementById('plateInput').value.trim();
-  var targets = videoFiles.filter(function(v){return v.status==='idle'||v.status==='vierror';});
+  if (!plate) {
+    alert('번호판을 입력해주세요.');
+    document.getElementById('plateInput').focus();
+    return;
+  }
+
+  // 완료/오류 영상을 idle로 리셋
+  videoFiles.forEach(function(vf) {
+    if (vf.status === 'done' || vf.status === 'vierror') {
+      if (vf.pollTimer) clearInterval(vf.pollTimer);
+      vf.jobId = null; vf.results = null; vf.pollTimer = null;
+      setStatus(vf, 'idle', '대기 중');
+      var pg = document.getElementById('vp_' + vf.id);
+      if (pg) pg.classList.remove('show');
+      var pf = document.getElementById('vf_' + vf.id);
+      if (pf) pf.style.width = '0%';
+    }
+  });
+
+  var targets = videoFiles.filter(function(v){return v.status==='idle';});
   if (!targets.length) return;
 
   document.getElementById('analyzeBtn').disabled = true;
