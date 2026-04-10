@@ -34,18 +34,16 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 :root{
-  --deep:#0d1a33;--navy:#1a2744;--mid:#243358;
-  --gold:#f0c040;--blue:#4a7cdc;--danger:#dc2626;
-  --tp:#1a1a2e;--ts:#6b7280;--tm:#9ca3af;
-  --bg:#f0f2f8;--card:#ffffff;--bd:#e2e5ee;
-  --success:#16a34a;--success-bg:#f0fdf4;
-  --bnav:64px;
-
-  /* 카테고리 테마 */
-  --tip-bg:#fff7ed;--tip-bd:#fed7aa;--tip-text:#c2410c;--tip-icon:#f97316;
-  --gear-bg:#f0fdf4;--gear-bd:#bbf7d0;--gear-text:#166534;--gear-icon:#16a34a;
-  --free-bg:#eff6ff;--free-bd:#bfdbfe;--free-text:#1e40af;--free-icon:#4a7cdc;
-}
+    --deep:#0d1a33; --navy:#1a2744; --mid:#243358;
+    --gold:#f0c040; --gold2:#e6b830;
+    --blue:#4a7cdc; --accent:#4a7cdc; --danger:#dc2626;
+    --tp:#1a1a2e; --ts:#6b7280; --tm:#9ca3af;
+    --bg:#f0f2f8; --card:#ffffff; --bd:#e2e5ee;
+    --success:#16a34a; --success-bg:#f0fdf4; --success-bd:#bbf7d0;
+    --warn-bg:#fffbeb; --warn-text:#92400e;
+    --danger-bg:#fef2f2; --danger-bd:#fecaca;
+    --info-bg:#eff6ff; --info-text:#1e40af;
+  }
 html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--bg);overflow-x:hidden;}
 .screen{width:100%;max-width:420px;min-height:100vh;margin:0 auto;background:var(--bg);display:flex;flex-direction:column;}
 

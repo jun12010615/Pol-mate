@@ -45,21 +45,22 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-:root {
-  --navy:#1a2744; --navy-light:#243358; --accent:#4a7cdc; --danger:#dc2626;
-  --text-primary:#1a1a2e; --text-secondary:#6b7280; --text-muted:#9ca3af;
-  --bg:#f4f6fb; --card:#ffffff; --border:#e5e7eb;
-  --success:#16a34a; --success-bg:#f0fdf4;
-  --warn-bg:#fffbeb; --warn-text:#92400e;
-  --danger-bg:#fef2f2; --danger-bd:#fecaca;
-  --bottom-nav-h:64px;
-  --c-suspect:#dc2626; --c-victim:#f97316; --c-witness:#4a7cdc; --c-reference:#8b5cf6;
-}
+:root{
+    --deep:#0d1a33; --navy:#1a2744; --mid:#243358;
+    --gold:#f0c040; --gold2:#e6b830;
+    --blue:#4a7cdc; --accent:#4a7cdc; --danger:#dc2626;
+    --tp:#1a1a2e; --ts:#6b7280; --tm:#9ca3af;
+    --bg:#f0f2f8; --card:#ffffff; --bd:#e2e5ee;
+    --success:#16a34a; --success-bg:#f0fdf4; --success-bd:#bbf7d0;
+    --warn-bg:#fffbeb; --warn-text:#92400e;
+    --danger-bg:#fef2f2; --danger-bd:#fecaca;
+    --info-bg:#eff6ff; --info-text:#1e40af;
+  }
 html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(--bg); overflow-x:hidden; }
 .screen { width:100%; max-width:420px; min-height:100vh; margin:0 auto; background:var(--bg); display:flex; flex-direction:column; }
 
 /* ── 헤더 ── */
-.top-header { background:var(--navy); padding:52px 20px 0; position:sticky; top:0; z-index:20; }
+.top-header { background:var(--deep); padding:52px 20px 0; position:sticky; top:0; z-index:20; }
 .header-row { display:flex; align-items:center; gap:12px; padding-bottom:16px; }
 .back-btn { width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.12); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
 .back-btn svg { width:18px; height:18px; stroke:#fff; }
@@ -69,51 +70,51 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 .header-gold-line { height:1.5px; background:linear-gradient(90deg,transparent,#f0c040 30%,#f0c040 70%,transparent); opacity:0.25; margin:0 -20px; }
 
 /* ── 스크롤 콘텐츠 ── */
-.content { flex:1; overflow-y:auto; padding:20px 16px calc(var(--bottom-nav-h) + 24px); }
+.content { flex:1; overflow-y:auto; padding:20px 16px calc(var(--bnav) + 24px); }
 
 /* ── 섹션 라벨 ── */
-.section-label { font-size:10px; font-weight:500; color:var(--text-muted); letter-spacing:0.8px; text-transform:uppercase; margin-bottom:8px; padding-left:2px; }
+.section-label { font-size:10px; font-weight:500; color:var(--tm); letter-spacing:0.8px; text-transform:uppercase; margin-bottom:8px; padding-left:2px; }
 
 /* ── 사건 선택 카드 ── */
-.case-select-card { background:var(--card); border-radius:16px; border:1px solid var(--border); overflow:hidden; margin-bottom:16px; }
-.case-item { display:flex; align-items:center; padding:14px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.15s; gap:12px; }
+.case-select-card { background:var(--card); border-radius:16px; border:1px solid var(--bd); overflow:hidden; margin-bottom:16px; }
+.case-item { display:flex; align-items:center; padding:14px 16px; border-bottom:1px solid var(--bd); cursor:pointer; transition:background 0.15s; gap:12px; }
 .case-item:last-child { border-bottom:none; }
 .case-item:active { background:var(--bg); }
 .case-item.selected { background:#eff6ff; border-left:3px solid var(--accent); padding-left:13px; }
 .case-icon { width:38px; height:38px; border-radius:10px; background:#f0f3f9; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 .case-icon svg { width:18px; height:18px; stroke:var(--navy); }
 .case-info { flex:1; min-width:0; }
-.case-id { font-size:11px; color:var(--text-muted); margin-bottom:2px; }
-.case-name { font-size:14px; font-weight:500; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.case-id { font-size:11px; color:var(--tm); margin-bottom:2px; }
+.case-name { font-size:14px; font-weight:500; color:var(--tp); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .case-badge { font-size:10px; padding:3px 9px; border-radius:20px; white-space:nowrap; flex-shrink:0; }
 .badge-active { background:var(--success-bg); color:var(--success); }
 .badge-done   { background:#eff6ff; color:#1e40af; }
 .badge-warn   { background:var(--warn-bg); color:var(--warn-text); }
 .badge-danger { background:var(--danger-bg); color:var(--danger); }
-.case-arrow svg { width:16px; height:16px; stroke:var(--text-muted); }
+.case-arrow svg { width:16px; height:16px; stroke:var(--tm); }
 
 /* ── 빈 상태 ── */
-.empty-box { background:var(--card); border-radius:16px; border:1px solid var(--border); padding:48px 20px; text-align:center; margin-bottom:16px; }
+.empty-box { background:var(--card); border-radius:16px; border:1px solid var(--bd); padding:48px 20px; text-align:center; margin-bottom:16px; }
 .empty-icon-wrap { width:60px; height:60px; border-radius:50%; background:#f0f3f9; margin:0 auto 14px; display:flex; align-items:center; justify-content:center; }
-.empty-icon-wrap svg { width:28px; height:28px; stroke:var(--text-secondary); }
-.empty-title { font-size:14px; font-weight:500; color:var(--text-primary); margin-bottom:6px; }
-.empty-desc  { font-size:12px; color:var(--text-muted); line-height:1.7; }
+.empty-icon-wrap svg { width:28px; height:28px; stroke:var(--ts); }
+.empty-title { font-size:14px; font-weight:500; color:var(--tp); margin-bottom:6px; }
+.empty-desc  { font-size:12px; color:var(--tm); line-height:1.7; }
 
 /* ── AI 분석 섹션 ── */
-.ai-section { background:var(--card); border-radius:16px; border:1px solid var(--border); padding:16px; margin-bottom:16px; }
-.ai-section-title { font-size:13px; font-weight:500; color:var(--text-primary); margin-bottom:4px; display:flex; align-items:center; gap:7px; }
+.ai-section { background:var(--card); border-radius:16px; border:1px solid var(--bd); padding:16px; margin-bottom:16px; }
+.ai-section-title { font-size:13px; font-weight:500; color:var(--tp); margin-bottom:4px; display:flex; align-items:center; gap:7px; }
 .ai-section-title svg { width:16px; height:16px; }
-.ai-section-desc { font-size:11px; color:var(--text-muted); margin-bottom:14px; line-height:1.6; }
+.ai-section-desc { font-size:11px; color:var(--tm); margin-bottom:14px; line-height:1.6; }
 .transcript-list { display:flex; flex-direction:column; gap:7px; margin-bottom:14px; }
-.transcript-item { display:flex; align-items:center; gap:10px; padding:11px 13px; background:var(--bg); border-radius:11px; border:1px solid var(--border); cursor:pointer; transition:border-color 0.15s; }
+.transcript-item { display:flex; align-items:center; gap:10px; padding:11px 13px; background:var(--bg); border-radius:11px; border:1px solid var(--bd); cursor:pointer; transition:border-color 0.15s; }
 .transcript-item.checked { border-color:var(--accent); background:#eff6ff; }
-.transcript-chk { width:18px; height:18px; border-radius:5px; border:1.5px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
+.transcript-chk { width:18px; height:18px; border-radius:5px; border:1.5px solid var(--bd); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
 .transcript-item.checked .transcript-chk { background:var(--accent); border-color:var(--accent); }
 .transcript-chk svg { width:10px; height:10px; stroke:#fff; display:none; }
 .transcript-item.checked .transcript-chk svg { display:block; }
 .transcript-info { flex:1; min-width:0; }
-.transcript-title { font-size:13px; font-weight:500; color:var(--text-primary); }
-.transcript-meta  { font-size:10px; color:var(--text-muted); margin-top:2px; }
+.transcript-title { font-size:13px; font-weight:500; color:var(--tp); }
+.transcript-meta  { font-size:10px; color:var(--tm); margin-top:2px; }
 .transcript-badge { font-size:10px; padding:2px 8px; border-radius:20px; white-space:nowrap; flex-shrink:0; }
 .tb-contradiction { background:var(--danger-bg); color:var(--danger); }
 .tb-normal        { background:var(--success-bg); color:var(--success); }
@@ -130,24 +131,24 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 .ai-loading-dot { width:7px; height:7px; border-radius:50%; background:var(--accent); animation:aiBounce 1.2s infinite; flex-shrink:0; }
 .ai-loading-dot:nth-child(2) { animation-delay:0.2s; }
 .ai-loading-dot:nth-child(3) { animation-delay:0.4s; }
-.ai-loading-text { font-size:12px; color:var(--text-secondary); }
+.ai-loading-text { font-size:12px; color:var(--ts); }
 
 /* AI 결과 */
 .ai-result-box { background:#f0f3f9; border-radius:12px; padding:12px 14px; margin-top:10px; display:none; }
 .ai-result-box.show { display:block; }
 .ai-result-label { font-size:10px; font-weight:500; color:var(--accent); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px; }
-.ai-result-text { font-size:12px; color:var(--text-secondary); line-height:1.7; }
+.ai-result-text { font-size:12px; color:var(--ts); line-height:1.7; }
 
 /* ── 관계망 보드 섹션 ── */
-.board-section { background:var(--card); border-radius:16px; border:1px solid var(--border); padding:16px; margin-bottom:16px; }
-.board-section-title { font-size:13px; font-weight:500; color:var(--text-primary); margin-bottom:14px; display:flex; align-items:center; gap:7px; }
-.board-section-title svg { width:16px; height:16px; stroke:var(--text-primary); }
+.board-section { background:var(--card); border-radius:16px; border:1px solid var(--bd); padding:16px; margin-bottom:16px; }
+.board-section-title { font-size:13px; font-weight:500; color:var(--tp); margin-bottom:14px; display:flex; align-items:center; gap:7px; }
+.board-section-title svg { width:16px; height:16px; stroke:var(--tp); }
 
 /* 인물 그리드 */
 .person-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:14px; }
-.person-card { background:var(--bg); border-radius:12px; border:1px solid var(--border); padding:12px; display:flex; align-items:center; gap:10px; }
+.person-card { background:var(--bg); border-radius:12px; border:1px solid var(--bd); padding:12px; display:flex; align-items:center; gap:10px; }
 .person-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; flex-shrink:0; }
-.person-card-name { font-size:13px; font-weight:500; color:var(--text-primary); }
+.person-card-name { font-size:13px; font-weight:500; color:var(--tp); }
 .person-card-role { font-size:10px; margin-top:2px; }
 .role-suspect  { color:var(--c-suspect); }
 .role-victim   { color:var(--c-victim); }
@@ -156,15 +157,15 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 
 /* 관계선 리스트 */
 .edge-list { display:flex; flex-direction:column; gap:7px; margin-bottom:14px; }
-.edge-item { padding:10px 13px; background:var(--bg); border-radius:11px; border:1px solid var(--border); border-left:3px solid var(--border); }
+.edge-item { padding:10px 13px; background:var(--bg); border-radius:11px; border:1px solid var(--bd); border-left:3px solid var(--bd); }
 .edge-item.accomplice { border-left-color:#dc2626; }
 .edge-item.harm       { border-left-color:#f97316; }
 .edge-item.witness    { border-left-color:#4a7cdc; }
 .edge-item.acquaint   { border-left-color:#9ca3af; }
 .edge-item.family     { border-left-color:#16a34a; }
-.edge-names { font-size:13px; font-weight:500; color:var(--text-primary); }
-.edge-rel   { font-size:11px; color:var(--text-muted); margin-top:3px; }
-.edge-arrow { color:var(--text-muted); margin:0 4px; }
+.edge-names { font-size:13px; font-weight:500; color:var(--tp); }
+.edge-rel   { font-size:11px; color:var(--tm); margin-top:3px; }
+.edge-arrow { color:var(--tm); margin:0 4px; }
 
 /* 보드 그리기 버튼 */
 .btn-draw { width:100%; padding:14px; border-radius:13px; border:none; background:var(--accent); color:#fff; font-size:14px; font-weight:500; font-family:'Noto Sans KR',sans-serif; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:transform 0.1s; margin-bottom:12px; }
@@ -172,7 +173,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 .btn-draw svg { width:16px; height:16px; stroke:#fff; }
 
 /* 캔버스 */
-.canvas-wrap { position:relative; width:100%; background:#0d1a33; border-radius:14px; overflow:hidden; border:1px solid var(--border); margin-bottom:10px; }
+.canvas-wrap { position:relative; width:100%; background:#0d1a33; border-radius:14px; overflow:hidden; border:1px solid var(--bd); margin-bottom:10px; }
 .canvas-toolbar { position:absolute; top:10px; right:10px; z-index:5; display:flex; flex-direction:column; gap:6px; }
 .canvas-tool-btn { width:32px; height:32px; border-radius:8px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center; cursor:pointer; }
 .canvas-tool-btn svg { width:15px; height:15px; stroke:#fff; }
@@ -181,7 +182,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 
 /* 범례 */
 .legend-wrap { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-.legend-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-secondary); }
+.legend-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--ts); }
 .legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
 .legend-line { width:18px; height:2px; flex-shrink:0; }
 
@@ -189,17 +190,17 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 .overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:200; display:none; align-items:flex-end; justify-content:center; }
 .overlay.open { display:flex; }
 .drawer { background:var(--card); border-radius:20px 20px 0 0; width:100%; max-width:420px; padding:0 0 32px; animation:slideUp 0.28s ease both; max-height:90vh; overflow-y:auto; }
-.drawer-handle { width:36px; height:4px; background:var(--border); border-radius:2px; margin:12px auto 20px; }
-.drawer-title { font-size:16px; font-weight:500; color:var(--text-primary); padding:0 20px 16px; border-bottom:1px solid var(--border); }
+.drawer-handle { width:36px; height:4px; background:var(--bd); border-radius:2px; margin:12px auto 20px; }
+.drawer-title { font-size:16px; font-weight:500; color:var(--tp); padding:0 20px 16px; border-bottom:1px solid var(--bd); }
 .drawer-body { padding:20px; }
 .d-btn { width:100%; background:var(--navy); color:#fff; border:none; border-radius:12px; padding:14px; font-size:14px; font-weight:500; font-family:'Noto Sans KR',sans-serif; cursor:pointer; margin-top:6px; transition:transform 0.1s; }
 .d-btn:active { transform:scale(0.98); }
-.d-btn-cancel { width:100%; background:var(--bg); color:var(--text-secondary); border:1px solid var(--border); border-radius:12px; padding:13px; font-size:14px; font-family:'Noto Sans KR',sans-serif; cursor:pointer; margin-top:8px; }
+.d-btn-cancel { width:100%; background:var(--bg); color:var(--ts); border:1px solid var(--bd); border-radius:12px; padding:13px; font-size:14px; font-family:'Noto Sans KR',sans-serif; cursor:pointer; margin-top:8px; }
 
 /* ── 하단 네비 ── */
-.bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; height:var(--bottom-nav-h); background:#fff; border-top:1px solid #e2e5ee; display:flex; z-index:100; }
+.bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; height:var(--bnav); background:#fff; border-top:1px solid #e2e5ee; display:flex; z-index:100; }
 .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; text-decoration:none; color:#9ca3af; cursor:pointer; border:none; background:none; font-family:'Noto Sans KR',sans-serif; }
-.nav-item.active { color:#0d1a33; }
+.nav-item.active { color:var(--deep); }
 .nav-item.active .nav-label { font-weight:600; }
 .nav-icon { width:22px; height:22px; display:flex; align-items:center; justify-content:center; }
 .nav-icon svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; }
@@ -242,17 +243,17 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 /* 팝업 내 탭 */
 .popup-tabs {
   display:flex; background:var(--card); border-radius:12px;
-  border:1px solid var(--border); padding:4px; gap:4px; margin-bottom:14px;
+  border:1px solid var(--bd); padding:4px; gap:4px; margin-bottom:14px;
 }
 .popup-tab {
   flex:1; padding:9px; border-radius:9px; border:none; cursor:pointer;
   font-size:12px; font-weight:500; font-family:'Noto Sans KR',sans-serif;
-  color:var(--text-muted); background:none; transition:all 0.15s;
+  color:var(--tm); background:none; transition:all 0.15s;
 }
 .popup-tab.active { background:var(--navy); color:#fff; }
 /* 팝업 하단 버튼 영역 */
 .board-popup-footer {
-  background:var(--card); border-top:1px solid var(--border);
+  background:var(--card); border-top:1px solid var(--bd);
   padding:12px 16px 24px; flex-shrink:0; display:flex; gap:8px;
 }
 .btn-popup-save {
@@ -275,21 +276,21 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 .popup-person-item {
   display:flex; align-items:center; gap:10px;
   padding:11px 13px; background:var(--card); border-radius:12px;
-  border:1px solid var(--border); margin-bottom:8px;
+  border:1px solid var(--bd); margin-bottom:8px;
 }
 .popup-person-item .person-avatar { width:34px; height:34px; font-size:12px; }
 .popup-person-actions { display:flex; gap:5px; margin-left:auto; }
 .popup-person-btn {
   width:26px; height:26px; border-radius:7px; background:var(--bg);
-  border:1px solid var(--border); display:flex; align-items:center;
+  border:1px solid var(--bd); display:flex; align-items:center;
   justify-content:center; cursor:pointer;
 }
-.popup-person-btn svg { width:12px; height:12px; stroke:var(--text-secondary); }
+.popup-person-btn svg { width:12px; height:12px; stroke:var(--ts); }
 .popup-person-btn.del svg { stroke:var(--danger); }
 /* 팝업 내 관계선 편집 아이템 */
 .popup-edge-item {
   padding:10px 13px; background:var(--card); border-radius:12px;
-  border:1px solid var(--border); border-left:3px solid var(--border);
+  border:1px solid var(--bd); border-left:3px solid var(--bd);
   margin-bottom:8px; display:flex; align-items:center; gap:8px;
 }
 .popup-edge-item.accomplice { border-left-color:#dc2626; }
@@ -298,19 +299,19 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 .popup-edge-item.acquaint   { border-left-color:#9ca3af; }
 .popup-edge-item.family     { border-left-color:#16a34a; }
 /* 인물 추가 미니 폼 */
-.mini-form { background:var(--card); border-radius:14px; border:1px solid var(--border); padding:14px; margin-bottom:12px; }
-.mini-form-title { font-size:12px; font-weight:500; color:var(--text-primary); margin-bottom:10px; }
+.mini-form { background:var(--card); border-radius:14px; border:1px solid var(--bd); padding:14px; margin-bottom:12px; }
+.mini-form-title { font-size:12px; font-weight:500; color:var(--tp); margin-bottom:10px; }
 .mini-input {
-  width:100%; padding:9px 12px; background:var(--bg); border:1px solid var(--border);
+  width:100%; padding:9px 12px; background:var(--bg); border:1px solid var(--bd);
   border-radius:9px; font-size:13px; font-family:'Noto Sans KR',sans-serif;
-  color:var(--text-primary); outline:none; margin-bottom:8px;
+  color:var(--tp); outline:none; margin-bottom:8px;
 }
 .mini-input:focus { border-color:var(--accent); background:#fff; }
 .mini-role-row { display:grid; grid-template-columns:repeat(4,1fr); gap:5px; margin-bottom:10px; }
 .mini-role-btn {
-  padding:7px 4px; border-radius:8px; border:1.5px solid var(--border);
+  padding:7px 4px; border-radius:8px; border:1.5px solid var(--bd);
   font-size:10px; font-weight:500; cursor:pointer; text-align:center;
-  background:none; font-family:'Noto Sans KR',sans-serif; color:var(--text-muted);
+  background:none; font-family:'Noto Sans KR',sans-serif; color:var(--tm);
   transition:all 0.15s;
 }
 .mini-role-btn.sel-suspect  { border-color:var(--c-suspect);  background:#fef2f2; color:var(--c-suspect); }
@@ -325,7 +326,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 }
 .mini-btn:active { transform:scale(0.97); }
 .mini-btn.primary { background:var(--navy); color:#fff; }
-.mini-btn.secondary { background:var(--bg); color:var(--text-secondary); border:1px solid var(--border); }
+.mini-btn.secondary { background:var(--bg); color:var(--ts); border:1px solid var(--bd); }
 </style>
 </head>
 <body>
@@ -402,7 +403,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
         <div class="ai-section-desc">조서를 1개 이상 선택하면 AI가 등장인물과 관계를 자동으로 분석합니다.</div>
 
         <div class="transcript-list" id="transcriptList">
-          <div style="text-align:center;padding:20px;font-size:12px;color:var(--text-muted);">사건을 선택하면 조서 목록이 표시됩니다.</div>
+          <div style="text-align:center;padding:20px;font-size:12px;color:var(--tm);">사건을 선택하면 조서 목록이 표시됩니다.</div>
         </div>
 
         <button class="btn-ai-analyze" id="btnAnalyze" onclick="analyzeWithAI()" disabled>
@@ -441,7 +442,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
           등록 인물 &nbsp;<span id="personCountBadge" style="font-size:11px;background:#f0f3f9;color:var(--navy);padding:2px 8px;border-radius:20px;font-weight:400;">0명</span>
         </div>
         <div class="person-grid" id="personGrid">
-          <div style="grid-column:span 2;text-align:center;padding:16px 0;font-size:12px;color:var(--text-muted);">분석 완료 후 인물이 표시됩니다.</div>
+          <div style="grid-column:span 2;text-align:center;padding:16px 0;font-size:12px;color:var(--tm);">분석 완료 후 인물이 표시됩니다.</div>
         </div>
       </div>
 
@@ -454,7 +455,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
           관계선 &nbsp;<span id="edgeCountBadge" style="font-size:11px;background:#f0f3f9;color:var(--navy);padding:2px 8px;border-radius:20px;font-weight:400;">0개</span>
         </div>
         <div class="edge-list" id="edgeListView">
-          <div style="text-align:center;padding:12px 0;font-size:12px;color:var(--text-muted);">분석 완료 후 관계선이 표시됩니다.</div>
+          <div style="text-align:center;padding:12px 0;font-size:12px;color:var(--tm);">분석 완료 후 관계선이 표시됩니다.</div>
         </div>
       </div>
 
@@ -486,7 +487,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
         </div>
 
         <!-- 범례 -->
-        <div style="background:var(--card);border-radius:14px;border:1px solid var(--border);padding:14px 16px;margin-bottom:12px;">
+        <div style="background:var(--card);border-radius:14px;border:1px solid var(--bd);padding:14px 16px;margin-bottom:12px;">
           <div class="legend-wrap">
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-suspect)"></div>피의자</div>
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-victim)"></div>피해자</div>
@@ -549,7 +550,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
           <canvas id="boardPopupCanvas" height="360"></canvas>
           <div class="canvas-hint">노드 끌어 배치 · 빈 곳 드래그로 이동 · 핀치 확대</div>
         </div>
-        <div style="background:var(--card);border-radius:12px;border:1px solid var(--border);padding:12px 14px;margin-top:10px;">
+        <div style="background:var(--card);border-radius:12px;border:1px solid var(--bd);padding:12px 14px;margin-top:10px;">
           <div class="legend-wrap">
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-suspect)"></div>피의자</div>
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-victim)"></div>피해자</div>
@@ -695,7 +696,7 @@ function selectCase(caseId, caseName) {
 // ── 조서 목록 로드 (caseApi action=caseDetail) ──────────────────
 function loadTranscripts(caseId) {
   var list = document.getElementById('transcriptList');
-  list.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--text-muted);">불러오는 중...</div>';
+  list.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--tm);">불러오는 중...</div>';
   document.getElementById('btnAnalyze').disabled = true;
 
   fetch('caseApi?action=caseDetail&caseId=' + encodeURIComponent(caseId))
@@ -707,7 +708,7 @@ function loadTranscripts(caseId) {
       }
       var docs = data.docs || [];
       if (!docs.length) {
-        list.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--text-muted);">이 사건에 등록된 조서가 없습니다.</div>';
+        list.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--tm);">이 사건에 등록된 조서가 없습니다.</div>';
         return;
       }
       // 조서 아이템을 DOM으로 직접 생성 (innerHTML onclick은 따옴표 충돌 위험)
@@ -1222,7 +1223,7 @@ function renderPersonGrid() {
   document.getElementById('personCountBadge').textContent = persons.length + '명';
   var el = document.getElementById('personGrid');
   if (!persons.length) {
-    el.innerHTML = '<div style="grid-column:span 2;text-align:center;padding:16px 0;font-size:12px;color:var(--text-muted);">등록된 인물이 없습니다.</div>';
+    el.innerHTML = '<div style="grid-column:span 2;text-align:center;padding:16px 0;font-size:12px;color:var(--tm);">등록된 인물이 없습니다.</div>';
     return;
   }
   el.innerHTML = persons.map(function(p) {
@@ -1241,7 +1242,7 @@ function renderEdgeList() {
   document.getElementById('edgeCountBadge').textContent = edges.length + '개';
   var el = document.getElementById('edgeListView');
   if (!edges.length) {
-    el.innerHTML = '<div style="text-align:center;padding:12px 0;font-size:12px;color:var(--text-muted);">관계선이 없습니다.</div>';
+    el.innerHTML = '<div style="text-align:center;padding:12px 0;font-size:12px;color:var(--tm);">관계선이 없습니다.</div>';
     return;
   }
   el.innerHTML = edges.map(function(e) {
@@ -1830,7 +1831,7 @@ function popupResetView() { popupScale=1; popupOffsetX=0; popupOffsetY=0; popupD
 function renderPopupPersonList() {
   var el = document.getElementById('popupPersonList');
   if (!persons.length) {
-    el.innerHTML = '<div style="text-align:center;padding:16px;font-size:12px;color:var(--text-muted);">등록된 인물이 없습니다.</div>';
+    el.innerHTML = '<div style="text-align:center;padding:16px;font-size:12px;color:var(--tm);">등록된 인물이 없습니다.</div>';
     return;
   }
   el.innerHTML = '';
@@ -1847,7 +1848,7 @@ function renderPopupPersonList() {
     var info = document.createElement('div');
     info.style.cssText = 'flex:1;min-width:0;';
     info.innerHTML =
-      '<div style="font-size:13px;font-weight:500;color:var(--text-primary);">' + escHtml(p.name) + '</div>' +
+      '<div style="font-size:13px;font-weight:500;color:var(--tp);">' + escHtml(p.name) + '</div>' +
       '<div style="font-size:11px;color:' + (ROLE_COLOR[p.role]||'#4a7cdc') + ';">' + (ROLE_LABEL[p.role]||p.role) + (p.memo ? ' · ' + escHtml(p.memo) : '') + '</div>';
 
     // 버튼 영역
@@ -1858,7 +1859,7 @@ function renderPopupPersonList() {
     var editBtn = document.createElement('button');
     editBtn.className = 'popup-person-btn';
     editBtn.title = '편집';
-    editBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" width="13" height="13" stroke="var(--text-secondary)"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+    editBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" width="13" height="13" stroke="var(--ts)"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
 
     // 삭제 버튼
     var delBtn = document.createElement('button');
@@ -1910,7 +1911,7 @@ function renderPopupPersonList() {
 function renderPopupEdgeList() {
   var el = document.getElementById('popupEdgeList');
   if (!edges.length) {
-    el.innerHTML = '<div style="text-align:center;padding:16px;font-size:12px;color:var(--text-muted);">관계선이 없습니다.</div>';
+    el.innerHTML = '<div style="text-align:center;padding:16px;font-size:12px;color:var(--tm);">관계선이 없습니다.</div>';
     return;
   }
   el.innerHTML = '';
@@ -1922,17 +1923,17 @@ function renderPopupEdgeList() {
     var edgeAccent = st === 'mismatch' ? EDGE_MISMATCH_STROKE : (REL_COLOR[rt]||'#9ca3af');
     var subRel = REL_LABEL[rt] || e.relType || '';
     var subHtml = st === 'mismatch'
-      ? ('<span style="display:block;color:var(--text-primary)">진술 불일치</span>' +
-         (subRel ? '<span style="display:block;font-size:10px;color:var(--text-muted);margin-top:2px">' + escHtml(subRel) + '</span>' : ''))
+      ? ('<span style="display:block;color:var(--tp)">진술 불일치</span>' +
+         (subRel ? '<span style="display:block;font-size:10px;color:var(--tm);margin-top:2px">' + escHtml(subRel) + '</span>' : ''))
       : escHtml(subRel + (st === 'match' ? ' · 일치' : ''));
     var item = document.createElement('div');
     item.className = 'popup-edge-item ' + e.relType;
-    item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 13px;background:var(--card);border-radius:12px;border:1px solid var(--border);border-left:3px solid ' + edgeAccent + ';margin-bottom:8px;';
+    item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 13px;background:var(--card);border-radius:12px;border:1px solid var(--bd);border-left:3px solid ' + edgeAccent + ';margin-bottom:8px;';
     var info = document.createElement('div');
     info.style.flex='1';
     info.innerHTML =
-      '<div style="font-size:13px;font-weight:500;color:var(--text-primary);">' + escHtml(sp.name) + ' → ' + escHtml(dp.name) + '</div>' +
-      '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">' + subHtml + '</div>';
+      '<div style="font-size:13px;font-weight:500;color:var(--tp);">' + escHtml(sp.name) + ' → ' + escHtml(dp.name) + '</div>' +
+      '<div style="font-size:11px;color:var(--tm);margin-top:2px;">' + subHtml + '</div>';
     var delBtn = document.createElement('button');
     delBtn.style.cssText = 'width:26px;height:26px;border-radius:7px;background:var(--danger-bg);border:1px solid var(--danger-bd);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;';
     delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';

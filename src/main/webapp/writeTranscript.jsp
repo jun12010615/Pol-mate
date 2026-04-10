@@ -44,21 +44,23 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  :root {
-    --navy:#1a2744; --accent:#4a7cdc; --danger:#e74c3c;
-    --text-primary:#1a1a2e; --text-secondary:#6b7280; --text-muted:#9ca3af;
-    --bg:#f4f6fb; --card:#ffffff; --border:#e5e7eb;
-    --success:#16a34a; --success-bg:#f0fdf4; --success-border:#bbf7d0;
-    --warn-bg:#fffbeb; --warn-border:#fde68a;
-    --danger-bg:#fef2f2; --danger-border:#fecaca;
-    --bottom-nav-h:64px;
+  :root{
+    --deep:#0d1a33; --navy:#1a2744; --mid:#243358;
+    --gold:#f0c040; --gold2:#e6b830;
+    --blue:#4a7cdc; --accent:#4a7cdc; --danger:#dc2626;
+    --tp:#1a1a2e; --ts:#6b7280; --tm:#9ca3af;
+    --bg:#f0f2f8; --card:#ffffff; --bd:#e2e5ee;
+    --success:#16a34a; --success-bg:#f0fdf4; --success-bd:#bbf7d0;
+    --warn-bg:#fffbeb; --warn-text:#92400e;
+    --danger-bg:#fef2f2; --danger-bd:#fecaca;
+    --info-bg:#eff6ff; --info-text:#1e40af;
   }
   html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(--bg); overflow-x:hidden; }
   .screen { width:100%; max-width:420px; min-height:100vh; margin:0 auto; background:var(--bg); display:flex; flex-direction:column; }
 
   /* ── 헤더 ── */
   .top-header {
-    background:var(--navy); padding:52px 20px 20px;
+    background:var(--deep); padding:52px 20px 20px;
     display:flex; align-items:center; gap:12px;
     position:sticky; top:0; z-index:10;
   }
@@ -75,54 +77,54 @@
   /* ── 진행 단계 ── */
   .step-flow {
     display:flex; align-items:center;
-    background:var(--card); border-radius:14px; border:1px solid var(--border);
+    background:var(--card); border-radius:14px; border:1px solid var(--bd);
     padding:14px 16px; margin-bottom:14px;
   }
   .step-node { display:flex; flex-direction:column; align-items:center; flex:1; gap:5px; }
   .step-circle {
-    width:32px; height:32px; border-radius:50%; border:2px solid var(--border);
+    width:32px; height:32px; border-radius:50%; border:2px solid var(--bd);
     display:flex; align-items:center; justify-content:center;
-    font-size:12px; font-weight:500; color:var(--text-muted);
+    font-size:12px; font-weight:500; color:var(--tm);
     background:var(--bg); transition:all 0.3s;
   }
   .step-circle.active { background:var(--navy); border-color:var(--navy); color:#fff; }
   .step-circle.done   { background:var(--accent); border-color:var(--accent); color:#fff; }
   .step-circle svg    { width:14px; height:14px; }
-  .step-name          { font-size:9px; color:var(--text-muted); text-align:center; }
+  .step-name          { font-size:9px; color:var(--tm); text-align:center; }
   .step-name.active   { color:var(--navy); font-weight:500; }
-  .step-line          { flex:1; height:1px; background:var(--border); margin-bottom:14px; }
+  .step-line          { flex:1; height:1px; background:var(--bd); margin-bottom:14px; }
 
   /* ── 카드 ── */
-  .content { flex:1; overflow-y:auto; padding:20px 16px calc(var(--bottom-nav-h)+20px); }
+  .content { flex:1; overflow-y:auto; padding:20px 16px calc(var(--bnav)+20px); }
   .card {
-    background:var(--card); border-radius:16px; border:1px solid var(--border);
+    background:var(--card); border-radius:16px; border:1px solid var(--bd);
     padding:20px; margin-bottom:14px; animation:fadeUp 0.35s ease both;
   }
   .card-title {
-    font-size:12px; font-weight:500; color:var(--text-secondary);
+    font-size:12px; font-weight:500; color:var(--ts);
     text-transform:uppercase; letter-spacing:0.6px;
     margin-bottom:14px; display:flex; align-items:center; gap:7px;
   }
-  .card-title svg { width:14px; height:14px; stroke:var(--text-muted); }
+  .card-title svg { width:14px; height:14px; stroke:var(--tm); }
 
   /* ── 폼 필드 ── */
   .field-row   { display:flex; gap:10px; margin-bottom:10px; }
   .field-half  { flex:1; }
-  .field-label { font-size:11px; font-weight:500; color:var(--text-secondary); display:block; margin-bottom:5px; }
+  .field-label { font-size:11px; font-weight:500; color:var(--ts); display:block; margin-bottom:5px; }
   .field-req   { color:var(--danger); }
   .field-input {
     width:100%; padding:10px 12px; background:var(--bg);
-    border:1px solid var(--border); border-radius:10px;
+    border:1px solid var(--bd); border-radius:10px;
     font-size:13px; font-family:'Noto Sans KR',sans-serif;
-    color:var(--text-primary); outline:none; transition:border-color 0.2s;
+    color:var(--tp); outline:none; transition:border-color 0.2s;
   }
   .field-input:focus { border-color:var(--accent); background:#fff; }
-  .field-input::placeholder { color:var(--text-muted); font-size:12px; }
+  .field-input::placeholder { color:var(--tm); font-size:12px; }
   select.field-input { appearance:none; }
 
   /* ── 음성 업로드 ── */
   .upload-zone {
-    border:2px dashed var(--border); border-radius:14px;
+    border:2px dashed var(--bd); border-radius:14px;
     padding:28px 20px; text-align:center; cursor:pointer;
     transition:border-color 0.2s,background 0.2s; position:relative;
   }
@@ -133,9 +135,9 @@
     margin:0 auto 10px; display:flex; align-items:center; justify-content:center;
   }
   .upload-icon svg { width:22px; height:22px; stroke:var(--accent); }
-  .upload-title { font-size:13px; font-weight:500; color:var(--text-primary); margin-bottom:3px; }
-  .upload-desc  { font-size:11px; color:var(--text-muted); }
-  .upload-hint  { font-size:10px; color:var(--text-muted); margin-top:8px; }
+  .upload-title { font-size:13px; font-weight:500; color:var(--tp); margin-bottom:3px; }
+  .upload-desc  { font-size:11px; color:var(--tm); }
+  .upload-hint  { font-size:10px; color:var(--tm); margin-top:8px; }
 
   .file-selected {
     background:var(--success-bg); border:1px solid var(--success-border);
@@ -145,26 +147,26 @@
   .file-icon { width:34px; height:34px; background:#dcfce7; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .file-icon svg { width:16px; height:16px; stroke:var(--success); }
   .file-meta { flex:1; min-width:0; }
-  .file-name { font-size:13px; font-weight:500; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .file-size { font-size:10px; color:var(--text-muted); margin-top:2px; }
+  .file-name { font-size:13px; font-weight:500; color:var(--tp); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .file-size { font-size:10px; color:var(--tm); margin-top:2px; }
   .file-remove { width:24px; height:24px; border-radius:50%; background:#fef2f2; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; }
   .file-remove svg { width:12px; height:12px; stroke:var(--danger); }
 
   /* ── OR 구분선 ── */
   .divider { display:flex; align-items:center; gap:10px; margin:14px 0; }
-  .divider span { font-size:11px; color:var(--text-muted); white-space:nowrap; }
-  .divider::before,.divider::after { content:''; flex:1; height:1px; background:var(--border); }
+  .divider span { font-size:11px; color:var(--tm); white-space:nowrap; }
+  .divider::before,.divider::after { content:''; flex:1; height:1px; background:var(--bd); }
 
   /* ── 텍스트 영역 ── */
   .text-area {
     width:100%; min-height:160px; padding:13px 14px;
-    background:var(--bg); border:1px solid var(--border); border-radius:12px;
+    background:var(--bg); border:1px solid var(--bd); border-radius:12px;
     font-size:13px; font-family:'Noto Sans KR',sans-serif;
-    color:var(--text-primary); outline:none; resize:vertical; line-height:1.8;
+    color:var(--tp); outline:none; resize:vertical; line-height:1.8;
     transition:border-color 0.2s;
   }
   .text-area:focus { border-color:var(--accent); background:#fff; }
-  .text-area::placeholder { color:var(--text-muted); font-size:12px; }
+  .text-area::placeholder { color:var(--tm); font-size:12px; }
 
   /* ── 저장 버튼 ── */
   .btn-save {
@@ -178,8 +180,8 @@
   .btn-save svg { width:18px; height:18px; stroke:#fff; }
 
   .btn-reset {
-    width:100%; background:var(--bg); color:var(--text-secondary);
-    border:1px solid var(--border); border-radius:14px; padding:14px;
+    width:100%; background:var(--bg); color:var(--ts);
+    border:1px solid var(--bd); border-radius:14px; padding:14px;
     font-size:14px; font-family:'Noto Sans KR',sans-serif; cursor:pointer;
   }
 
@@ -207,7 +209,7 @@
   display:flex;z-index:100;
 }
 .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:#9ca3af;cursor:pointer;border:none;background:none;font-family:'Noto Sans KR',sans-serif;}
-.nav-item.active{color:#0d1a33;}
+.nav-item.active{color:var(--deep);}
 .nav-item.active .nav-label{font-weight:600;}
 .nav-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
 .nav-icon svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;}
@@ -219,13 +221,13 @@
 
   .case-detail-box {
     margin-top:12px; padding:12px 14px; background:var(--bg); border-radius:10px;
-    border:1px solid var(--border); font-size:12px; display:none;
+    border:1px solid var(--bd); font-size:12px; display:none;
   }
   .case-detail-box.show { display:block; }
   .case-detail-row { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; }
   .case-detail-row:last-child { margin-bottom:0; }
-  .case-detail-key { color:var(--text-muted); flex-shrink:0; font-size:11px; }
-  .case-detail-val { color:var(--text-primary); text-align:right; word-break:break-word; flex:1; }
+  .case-detail-key { color:var(--tm); flex-shrink:0; font-size:11px; }
+  .case-detail-val { color:var(--tp); text-align:right; word-break:break-word; flex:1; }
 </style>
 </head>
 <body>
@@ -358,7 +360,7 @@
         <textarea class="text-area" id="stmtText"
           placeholder="진술 내용을 입력하거나 위에서 음성 변환 후 자동으로 채워집니다.&#10;&#10;예) 저는 3월 15일 오후 2시에 집에 있었습니다..."></textarea>
         <div style="display:flex;justify-content:flex-end;margin-top:6px;">
-          <span style="font-size:10px;color:var(--text-muted);" id="charCount">0자</span>
+          <span style="font-size:10px;color:var(--tm);" id="charCount">0자</span>
         </div>
       </div>
 
@@ -377,8 +379,8 @@
         <div class="save-done-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
-        <div style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:8px;">조서가 저장됐습니다</div>
-        <div id="doneSummary" style="font-size:12px;color:var(--text-muted);line-height:1.8;margin-bottom:24px;"></div>
+        <div style="font-size:16px;font-weight:600;color:var(--tp);margin-bottom:8px;">조서가 저장됐습니다</div>
+        <div id="doneSummary" style="font-size:12px;color:var(--tm);line-height:1.8;margin-bottom:24px;"></div>
 
         <div style="display:flex;flex-direction:column;gap:10px;">
           <button onclick="location.href='myCase.jsp'" class="btn-save" style="margin-bottom:0;">
@@ -468,7 +470,7 @@ function loadCaseDetailForSelect() {
   }
   var box = document.getElementById('caseDetailBox');
   box.classList.add('show');
-  box.innerHTML = '<div style="color:var(--text-muted);font-size:11px;">사건 정보를 불러오는 중...</div>';
+  box.innerHTML = '<div style="color:var(--tm);font-size:11px;">사건 정보를 불러오는 중...</div>';
   fetch('caseApi?action=caseDetail&caseId=' + encodeURIComponent(id))
     .then(function(r) { return r.json(); })
     .then(function(c) {

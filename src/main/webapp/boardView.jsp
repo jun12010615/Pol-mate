@@ -18,20 +18,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-:root {
-  --navy:#1a2744; --accent:#4a7cdc; --danger:#dc2626;
-  --text-primary:#1a1a2e; --text-secondary:#6b7280; --text-muted:#9ca3af;
-  --bg:#f4f6fb; --card:#ffffff; --border:#e5e7eb;
-  --success:#16a34a; --success-bg:#f0fdf4;
-  --warn-bg:#fffbeb; --warn-text:#92400e;
-  --danger-bg:#fef2f2; --danger-bd:#fecaca;
-  --bottom-nav-h:64px;
-  --c-suspect:#dc2626; --c-victim:#f97316; --c-witness:#4a7cdc; --c-reference:#8b5cf6;
-}
+:root{
+    --deep:#0d1a33; --navy:#1a2744; --mid:#243358;
+    --gold:#f0c040; --gold2:#e6b830;
+    --blue:#4a7cdc; --accent:#4a7cdc; --danger:#dc2626;
+    --tp:#1a1a2e; --ts:#6b7280; --tm:#9ca3af;
+    --bg:#f0f2f8; --card:#ffffff; --bd:#e2e5ee;
+    --success:#16a34a; --success-bg:#f0fdf4; --success-bd:#bbf7d0;
+    --warn-bg:#fffbeb; --warn-text:#92400e;
+    --danger-bg:#fef2f2; --danger-bd:#fecaca;
+    --info-bg:#eff6ff; --info-text:#1e40af;
+  }
 html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(--bg); overflow-x:hidden; }
 .screen { width:100%; max-width:420px; min-height:100vh; margin:0 auto; background:var(--bg); display:flex; flex-direction:column; }
 
-.top-header { background:var(--navy); padding:52px 20px 0; position:sticky; top:0; z-index:20; }
+.top-header { background:var(--deep); padding:52px 20px 0; position:sticky; top:0; z-index:20; }
 .header-row { display:flex; align-items:center; gap:12px; padding-bottom:16px; }
 .back-btn { width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.12); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
 .back-btn svg { width:18px; height:18px; stroke:#fff; }
@@ -40,11 +41,11 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 .header-sub { font-size:10px; color:rgba(255,255,255,0.5); margin-top:2px; }
 .header-gold-line { height:1.5px; background:linear-gradient(90deg,transparent,#f0c040 30%,#f0c040 70%,transparent); opacity:0.25; margin:0 -20px; }
 
-.content { flex:1; overflow-y:auto; padding:20px 16px calc(var(--bottom-nav-h) + 24px); }
+.content { flex:1; overflow-y:auto; padding:20px 16px calc(var(--bnav) + 24px); }
 
 /* 보드 카드 */
 .board-card {
-  background:var(--card); border-radius:16px; border:1px solid var(--border);
+  background:var(--card); border-radius:16px; border:1px solid var(--bd);
   overflow:hidden; margin-bottom:12px; cursor:pointer;
   transition:border-color 0.15s; animation:fadeUp 0.35s ease both;
 }
@@ -53,8 +54,8 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
   padding:14px 16px 10px;
   display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
 }
-.board-case-id   { font-size:10px; color:var(--text-muted); margin-bottom:3px; }
-.board-case-name { font-size:15px; font-weight:500; color:var(--text-primary); }
+.board-case-id   { font-size:10px; color:var(--tm); margin-bottom:3px; }
+.board-case-name { font-size:15px; font-weight:500; color:var(--tp); }
 .board-badge { font-size:10px; padding:3px 9px; border-radius:20px; white-space:nowrap; flex-shrink:0; margin-top:2px; }
 .badge-active { background:var(--success-bg); color:var(--success); }
 .badge-done   { background:#eff6ff; color:#1e40af; }
@@ -63,20 +64,20 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 .board-meta-row {
   padding:10px 16px 14px;
   display:flex; align-items:center; justify-content:space-between;
-  border-top:1px solid var(--border); background:#fafbfd;
+  border-top:1px solid var(--bd); background:#fafbfd;
 }
-.board-meta-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-secondary); }
-.board-meta-item svg { width:12px; height:12px; stroke:var(--text-muted); flex-shrink:0; }
+.board-meta-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--ts); }
+.board-meta-item svg { width:12px; height:12px; stroke:var(--tm); flex-shrink:0; }
 .board-preview { padding:0 16px 14px; }
 /* 미니 캔버스 */
 .board-mini-canvas { background:#0d1a33; border-radius:10px; width:100%; }
 
 /* 빈 상태 */
-.empty-box { background:var(--card); border-radius:16px; border:1px solid var(--border); padding:56px 20px; text-align:center; }
+.empty-box { background:var(--card); border-radius:16px; border:1px solid var(--bd); padding:56px 20px; text-align:center; }
 .empty-icon-wrap { width:60px; height:60px; border-radius:50%; background:#f0f3f9; margin:0 auto 14px; display:flex; align-items:center; justify-content:center; }
-.empty-icon-wrap svg { width:28px; height:28px; stroke:var(--text-secondary); }
-.empty-title { font-size:14px; font-weight:500; color:var(--text-primary); margin-bottom:6px; }
-.empty-desc  { font-size:12px; color:var(--text-muted); line-height:1.7; }
+.empty-icon-wrap svg { width:28px; height:28px; stroke:var(--ts); }
+.empty-title { font-size:14px; font-weight:500; color:var(--tp); margin-bottom:6px; }
+.empty-desc  { font-size:12px; color:var(--tm); line-height:1.7; }
 
 /* 팝업 오버레이 (보드 상세) */
 .detail-overlay {
@@ -115,9 +116,9 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 .btn-go-edit svg { width:16px; height:16px; stroke:#fff; }
 
 /* 하단 네비 */
-.bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; height:var(--bottom-nav-h); background:#fff; border-top:1px solid #e2e5ee; display:flex; z-index:100; }
+.bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; height:var(--bnav); background:#fff; border-top:1px solid #e2e5ee; display:flex; z-index:100; }
 .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; text-decoration:none; color:#9ca3af; cursor:pointer; border:none; background:none; font-family:'Noto Sans KR',sans-serif; }
-.nav-item.active { color:#0d1a33; }
+.nav-item.active { color:var(--deep); }
 .nav-item.active .nav-label { font-weight:600; }
 .nav-icon { width:22px; height:22px; display:flex; align-items:center; justify-content:center; }
 .nav-icon svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; }
@@ -145,7 +146,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
   </div>
 
   <div class="content" id="boardListContent">
-    <div style="text-align:center;padding:48px 0;font-size:13px;color:var(--text-muted);">불러오는 중...</div>
+    <div style="text-align:center;padding:48px 0;font-size:13px;color:var(--tm);">불러오는 중...</div>
   </div>
 
     <nav class="bottom-nav">
