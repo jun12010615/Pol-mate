@@ -551,12 +551,20 @@ function toggleDocCheck(docId,idx){
   if(btn){var a=checkedDocs.length>=2;btn.classList.toggle('disabled',!a);btn.classList.toggle('contra-active',a);}
 }
 
+function goToRelationMap(caseId) {
+  var url = 'caseRelationMap.jsp?caseId=' + encodeURIComponent(caseId);
+  if (checkedDocs.length > 0) {
+    url += '&docIds=' + checkedDocs.map(function(id){ return encodeURIComponent(id); }).join(',');
+  }
+  location.href = url;
+}
+
 function renderDrawerActions(c){
   var del=c.isMine?'<button class="action-btn" onclick="confirmDeleteCase(\''+escStr(c.id)+'\')" style="border:none;cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.8" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg><span style="color:var(--danger)">삭제</span></button>':'';
   document.getElementById('drawerActions').innerHTML=
     '<a href="writeTranscript.jsp?caseId='+encodeURIComponent(c.id)+'" class="action-btn primary"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg><span>조서 추가</span></a>' +
     '<button class="action-btn" onclick="openEditDrawer(\''+escStr(c.id)+'\',\''+escStr(c.status)+'\')" style="border:1px solid var(--bd);cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.8" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><span>상태 수정</span></button>' +
-    '<a href="caseRelationMap.jsp" class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="18" cy="19" r="2.5"/><line x1="8.4" y1="11.0" x2="15.6" y2="6.5"/><line x1="8.4" y1="13.0" x2="15.6" y2="17.5"/></svg><span>관계망</span></a>' +
+    '<a href="javascript:void(0)" class="action-btn" onclick="goToRelationMap(\''+escStr(c.id)+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="18" cy="19" r="2.5"/><line x1="8.4" y1="11.0" x2="15.6" y2="6.5"/><line x1="8.4" y1="13.0" x2="15.6" y2="17.5"/></svg><span>관계망</span></a>' +
     '<button type="button" class="action-btn disabled" id="contraBtn" onclick="runContradiction()" style="border:1px solid var(--bd);"><svg viewBox="0 0 24 24" fill="none" stroke="var(--tm)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>모순탐지</span></button>' +
     del +
     '<button class="action-btn" onclick="closeDrawer(\'caseDrawer\')" style="border:none;cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--tm)" stroke-width="1.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>닫기</span></button>';
