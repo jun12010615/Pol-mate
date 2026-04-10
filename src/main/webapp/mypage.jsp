@@ -169,7 +169,7 @@
   .content {
     flex: 1;
     overflow-y: auto;
-    padding-bottom: calc(var(--bnav) + 16px);
+    padding-bottom: 80px;
     background: var(--bg);
   }
 
