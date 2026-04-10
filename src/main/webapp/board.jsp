@@ -484,7 +484,7 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--bg)
   position:fixed;bottom:0;left:50%;transform:translateX(-50%);
   width:100%;max-width:420px;height:var(--bnav);
   background:var(--card);border-top:1px solid var(--bd);
-  display:flex;z-index:10;
+  display:flex;z-index:100;
 }
 .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:var(--tm);cursor:pointer;border:none;background:none;font-family:'Noto Sans KR',sans-serif;}
 .nav-item.active{color:var(--deep);}
@@ -592,38 +592,12 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--bg)
   </button>
 
   <!-- ── 하단 네비 ── -->
-  <nav class="bottom-nav">
-    <a href="main.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-      <span class="nav-label">홈</span>
-    </a>
-    <a href="myCase.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-      <span class="nav-label">사건</span>
-    </a>
-    <a href="askAI" class="nav-item">
-      <div class="nav-icon">
-        <svg width="22" height="22" viewBox="0 0 86 86" fill="none">
-          <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="currentColor" stroke-width="5"/>
-          <circle cx="43" cy="40" r="11" fill="none" stroke="currentColor" stroke-width="3"/>
-          <circle cx="43" cy="40" r="5" fill="currentColor"/>
-          <circle cx="43" cy="40" r="2.5" fill="white"/>
-          <circle cx="43" cy="22" r="2.8" fill="currentColor"/>
-          <circle cx="43" cy="58" r="2.8" fill="currentColor"/>
-          <circle cx="28" cy="40" r="2.8" fill="currentColor"/>
-          <circle cx="58" cy="40" r="2.8" fill="currentColor"/>
-        </svg>
-      </div>
-      <span class="nav-label">AI</span>
-    </a>
-    <a href="board.jsp" class="nav-item active">
-      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-      <span class="nav-label">커뮤니티</span>
-    </a>
-    <a href="mypage.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-      <span class="nav-label">마이페이지</span>
-    </a>
+    <nav class="bottom-nav">
+    <a href="main.jsp" class="nav-item"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><span class="nav-label">홈</span></a>
+    <a href="myCase.jsp" class="nav-item"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><span class="nav-label">사건</span></a>
+    <a href="askAI" class="nav-item"><div class="nav-icon"><svg width="22" height="22" viewBox="0 0 86 86" fill="none"><path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="currentColor" stroke-width="5"/><circle cx="43" cy="40" r="11" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="43" cy="40" r="5" fill="currentColor"/><circle cx="43" cy="40" r="2.5" fill="white"/><circle cx="43" cy="22" r="2.8" fill="currentColor"/><circle cx="43" cy="58" r="2.8" fill="currentColor"/><circle cx="28" cy="40" r="2.8" fill="currentColor"/><circle cx="58" cy="40" r="2.8" fill="currentColor"/></svg></div><span class="nav-label">AI</span></a>
+    <a href="board.jsp" class="nav-item active"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><span class="nav-label">커뮤니티</span></a>
+    <a href="mypage.jsp" class="nav-item"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="nav-label">마이페이지</span></a>
   </nav>
 </div>
 

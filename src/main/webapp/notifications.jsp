@@ -8,21 +8,22 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  :root {
-    --navy:#1a2744; --accent:#4a7cdc; --danger:#dc2626;
-    --text-primary:#1a1a2e; --text-secondary:#6b7280; --text-muted:#9ca3af;
-    --bg:#f4f6fb; --card:#fff; --border:#e5e7eb;
-    --success:#16a34a; --success-bg:#f0fdf4;
+  :root{
+    --deep:#0d1a33; --navy:#1a2744; --mid:#243358;
+    --gold:#f0c040; --gold2:#e6b830;
+    --blue:#4a7cdc; --accent:#4a7cdc; --danger:#dc2626;
+    --tp:#1a1a2e; --ts:#6b7280; --tm:#9ca3af;
+    --bg:#f0f2f8; --card:#ffffff; --bd:#e2e5ee;
+    --success:#16a34a; --success-bg:#f0fdf4; --success-bd:#bbf7d0;
     --warn-bg:#fffbeb; --warn-text:#92400e;
-    --danger-bg:#fef2f2; --danger-border:#fecaca;
+    --danger-bg:#fef2f2; --danger-bd:#fecaca;
     --info-bg:#eff6ff; --info-text:#1e40af;
-    --bottom-nav-h:64px;
   }
   html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(--bg); overflow-x:hidden; }
   .screen { width:100%; max-width:420px; min-height:100vh; margin:0 auto; background:var(--bg); display:flex; flex-direction:column; }
 
   /* 헤더 */
-  .top-header { background:var(--navy); padding:52px 20px 16px; position:sticky; top:0; z-index:10; }
+  .top-header { background:var(--deep); padding:52px 20px 16px; position:sticky; top:0; z-index:10; }
   .header-row { display:flex; align-items:center; gap:12px; }
   .back-btn { width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.12); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
   .back-btn svg { width:18px; height:18px; stroke:#fff; }
@@ -36,22 +37,22 @@
   .tab-btn.active { color:#fff; border-bottom-color:#fff; font-weight:500; }
 
   /* 콘텐츠 */
-  .content { flex:1; overflow-y:auto; padding-bottom:calc(var(--bottom-nav-h) + 16px); }
+  .content { flex:1; overflow-y:auto; padding-bottom:calc(var(--bnav) + 16px); }
 
   .tab-panel { display:none; }
   .tab-panel.active { display:block; }
 
   /* 알림 그룹 */
   .notif-group { margin-bottom:4px; }
-  .group-label { font-size:10px; font-weight:500; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.6px; padding:14px 16px 8px; }
+  .group-label { font-size:10px; font-weight:500; color:var(--tm); text-transform:uppercase; letter-spacing:0.6px; padding:14px 16px 8px; }
 
   /* 알림 아이템 */
   .notif-item {
-    background:var(--card); border-bottom:1px solid var(--border);
+    background:var(--card); border-bottom:1px solid var(--bd);
     padding:15px 16px; display:flex; gap:13px; align-items:flex-start;
     cursor:pointer; transition:background 0.15s; position:relative;
   }
-  .notif-item:first-child { border-top:1px solid var(--border); }
+  .notif-item:first-child { border-top:1px solid var(--bd); }
   .notif-item.unread { background:#f8faff; }
   .notif-item:active { background:var(--bg); }
 
@@ -69,11 +70,11 @@
   .ni-navy   { background:#f0f3f9; }
 
   .notif-body { flex:1; min-width:0; }
-  .notif-title { font-size:13px; font-weight:500; color:var(--text-primary); margin-bottom:3px; line-height:1.4; }
+  .notif-title { font-size:13px; font-weight:500; color:var(--tp); margin-bottom:3px; line-height:1.4; }
   .notif-item.unread .notif-title { font-weight:700; }
-  .notif-desc  { font-size:11px; color:var(--text-secondary); line-height:1.6; margin-bottom:4px; }
-  .notif-time  { font-size:10px; color:var(--text-muted); }
-  .notif-tag   { display:inline-block; font-size:10px; background:var(--bg); border:1px solid var(--border); border-radius:5px; padding:2px 7px; color:var(--text-muted); margin-bottom:4px; }
+  .notif-desc  { font-size:11px; color:var(--ts); line-height:1.6; margin-bottom:4px; }
+  .notif-time  { font-size:10px; color:var(--tm); }
+  .notif-tag   { display:inline-block; font-size:10px; background:var(--bg); border:1px solid var(--bd); border-radius:5px; padding:2px 7px; color:var(--tm); margin-bottom:4px; }
 
   /* 중요 알림 강조 */
   .notif-item.critical { border-left:3px solid var(--danger); }
@@ -81,14 +82,14 @@
 
   /* 빈 상태 */
   .empty-state { padding:60px 20px; text-align:center; }
-  .empty-icon  { width:64px; height:64px; background:var(--bg); border-radius:50%; margin:0 auto 14px; display:flex; align-items:center; justify-content:center; border:1px solid var(--border); }
-  .empty-icon svg { width:28px; height:28px; stroke:var(--text-muted); }
-  .empty-title { font-size:14px; font-weight:500; color:var(--text-secondary); margin-bottom:6px; }
-  .empty-desc  { font-size:12px; color:var(--text-muted); }
+  .empty-icon  { width:64px; height:64px; background:var(--bg); border-radius:50%; margin:0 auto 14px; display:flex; align-items:center; justify-content:center; border:1px solid var(--bd); }
+  .empty-icon svg { width:28px; height:28px; stroke:var(--tm); }
+  .empty-title { font-size:14px; font-weight:500; color:var(--ts); margin-bottom:6px; }
+  .empty-desc  { font-size:12px; color:var(--tm); }
 
   /* 전체 읽음 처리 완료 토스트 */
   .toast {
-    position:fixed; bottom:calc(var(--bottom-nav-h) + 16px); left:50%; transform:translateX(-50%);
+    position:fixed; bottom:calc(var(--bnav) + 16px); left:50%; transform:translateX(-50%);
     background:#1a1a2e; color:#fff; font-size:12px; padding:10px 20px; border-radius:20px;
     white-space:nowrap; z-index:300; opacity:0; transition:opacity 0.3s;
     font-family:'Noto Sans KR',sans-serif;
@@ -96,15 +97,15 @@
   .toast.show { opacity:1; }
 
   /* 하단 네비 */
-  .bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; height:var(--bottom-nav-h); background:var(--card); border-top:1px solid var(--border); display:flex; justify-content:space-around; align-items:center; padding:0 8px; z-index:100; }
+  .bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; height:var(--bnav); background:var(--card); border-top:1px solid var(--bd); display:flex; justify-content:space-around; align-items:center; padding:0 8px; z-index:100; }
   .nav-item { display:flex; flex-direction:column; align-items:center; gap:3px; flex:1; cursor:pointer; text-decoration:none; padding:6px 0; }
   .nav-icon { width:24px; height:24px; display:flex; align-items:center; justify-content:center; }
   .nav-icon svg { width:22px; height:22px; }
   .nav-label { font-size:9px; }
-  .nav-item.active .nav-icon svg { stroke:var(--navy); }
-  .nav-item.active .nav-label    { color:var(--navy); font-weight:500; }
-  .nav-item:not(.active) .nav-icon svg { stroke:var(--text-muted); }
-  .nav-item:not(.active) .nav-label    { color:var(--text-muted); }
+  .nav-item.active .nav-icon svg { stroke:var(--deep); }
+  .nav-item.active .nav-label    { color:var(--deep); font-weight:600; }
+  .nav-item:not(.active) .nav-icon svg { stroke:var(--tm); }
+  .nav-item:not(.active) .nav-label    { color:var(--tm); }
 
   @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
   @media(min-width:421px){ .screen{box-shadow:0 0 40px rgba(0,0,0,0.1);} }
@@ -176,7 +177,7 @@ function switchTab(tab) {
 // ── 알림 목록 로드 ────────────────────────────────────────────────
 function loadNotifs() {
   document.getElementById('contentArea').innerHTML =
-    '<div style="text-align:center;padding:48px 0;color:var(--text-muted);font-size:13px;">불러오는 중...</div>';
+    '<div style="text-align:center;padding:48px 0;color:var(--tm);font-size:13px;">불러오는 중...</div>';
 
   // 탭 'alert'는 서버에서 sys 타입으로 처리 (보안 알림)
   var typeParam = currentTab === 'alert' ? 'sys' : currentTab;

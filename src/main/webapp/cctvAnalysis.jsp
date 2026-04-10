@@ -188,8 +188,8 @@
   .result-empty { text-align:center; padding:22px 0; font-size:13px; color:var(--tm); }
 
   /* ── 바텀 네비 ── */
-  .bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; height:var(--bnav); background:#fff; border-top:1px solid #e2e5ee; display:flex; z-index:100; }
-  .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; text-decoration:none; color:#9ca3af; cursor:pointer; border:none; background:none; font-family:'Noto Sans KR',sans-serif; }
+  .bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; height:var(--bnav); background:var(--card); border-top:1px solid var(--bd); display:flex; z-index:100; }
+  .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; text-decoration:none; color:var(--tm); cursor:pointer; border:none; background:none; font-family:'Noto Sans KR',sans-serif; }
   .nav-item.active { color:var(--deep); }
   .nav-item.active .nav-label { font-weight:600; }
   .nav-icon { width:22px; height:22px; display:flex; align-items:center; justify-content:center; }
@@ -230,7 +230,7 @@
           <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
-      <div class="plate-hint">번호판 <strong>일부만</strong> 입력해도 검색됩니다 · 비우면 영상 내 <strong>모든 번호판</strong>을 추출합니다</div>
+      <div class="plate-hint">번호판 <strong>일부만</strong> 입력해도 검색됩니다 · 번호판 입력 후 분석이 가능합니다</div>
     </div>
 
     <!-- ② 영상 업로드 -->
@@ -275,38 +275,12 @@
   </div>
 
   <!-- 바텀 네비 -->
-  <nav class="bottom-nav">
-    <a href="main.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-      <span class="nav-label">홈</span>
-    </a>
-    <a href="myCase.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-      <span class="nav-label">사건</span>
-    </a>
-    <a href="askAI" class="nav-item">
-      <div class="nav-icon">
-        <svg width="22" height="22" viewBox="0 0 86 86" fill="none">
-          <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="currentColor" stroke-width="5"/>
-          <circle cx="43" cy="40" r="11" fill="none" stroke="currentColor" stroke-width="3"/>
-          <circle cx="43" cy="40" r="5" fill="currentColor"/>
-          <circle cx="43" cy="40" r="2.5" fill="white"/>
-          <circle cx="43" cy="22" r="2.8" fill="currentColor"/>
-          <circle cx="43" cy="58" r="2.8" fill="currentColor"/>
-          <circle cx="28" cy="40" r="2.8" fill="currentColor"/>
-          <circle cx="58" cy="40" r="2.8" fill="currentColor"/>
-        </svg>
-      </div>
-      <span class="nav-label">AI</span>
-    </a>
-    <a href="board.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-      <span class="nav-label">커뮤니티</span>
-    </a>
-    <a href="mypage.jsp" class="nav-item">
-      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-      <span class="nav-label">마이페이지</span>
-    </a>
+    <nav class="bottom-nav">
+    <a href="main.jsp" class="nav-item"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><span class="nav-label">홈</span></a>
+    <a href="myCase.jsp" class="nav-item"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><span class="nav-label">사건</span></a>
+    <a href="askAI" class="nav-item"><div class="nav-icon"><svg width="22" height="22" viewBox="0 0 86 86" fill="none"><path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="currentColor" stroke-width="5"/><circle cx="43" cy="40" r="11" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="43" cy="40" r="5" fill="currentColor"/><circle cx="43" cy="40" r="2.5" fill="white"/><circle cx="43" cy="22" r="2.8" fill="currentColor"/><circle cx="43" cy="58" r="2.8" fill="currentColor"/><circle cx="28" cy="40" r="2.8" fill="currentColor"/><circle cx="58" cy="40" r="2.8" fill="currentColor"/></svg></div><span class="nav-label">AI</span></a>
+    <a href="board.jsp" class="nav-item"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><span class="nav-label">커뮤니티</span></a>
+    <a href="mypage.jsp" class="nav-item"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="nav-label">마이페이지</span></a>
   </nav>
 </div>
 
@@ -318,6 +292,7 @@ var uidSeq = 0;
 /* ── 번호판 입력 ─────────────────────── */
 function onPlateInput(el) {
   document.getElementById('plateClear').style.display = el.value ? 'flex' : 'none';
+  syncUI();
 }
 function clearPlate() {
   var el = document.getElementById('plateInput');
@@ -390,14 +365,34 @@ function removeVideo(id) {
 
 function syncUI() {
   document.getElementById('videoCount').textContent = videoFiles.length + '개 선택됨';
-  var canStart = videoFiles.length > 0 && videoFiles.some(function(v){return v.status==='idle'||v.status==='vierror';});
+  var plate = document.getElementById('plateInput').value.trim();
+  var canStart = videoFiles.length > 0 && plate;
   document.getElementById('analyzeBtn').disabled = !canStart;
 }
 
 /* ── 분석 시작 ─────────────────────── */
 function startAnalysis() {
   var plate = document.getElementById('plateInput').value.trim();
-  var targets = videoFiles.filter(function(v){return v.status==='idle'||v.status==='vierror';});
+  if (!plate) {
+    alert('번호판을 입력해주세요.');
+    document.getElementById('plateInput').focus();
+    return;
+  }
+
+  // 완료/오류 영상을 idle로 리셋
+  videoFiles.forEach(function(vf) {
+    if (vf.status === 'done' || vf.status === 'vierror') {
+      if (vf.pollTimer) clearInterval(vf.pollTimer);
+      vf.jobId = null; vf.results = null; vf.pollTimer = null;
+      setStatus(vf, 'idle', '대기 중');
+      var pg = document.getElementById('vp_' + vf.id);
+      if (pg) pg.classList.remove('show');
+      var pf = document.getElementById('vf_' + vf.id);
+      if (pf) pf.style.width = '0%';
+    }
+  });
+
+  var targets = videoFiles.filter(function(v){return v.status==='idle';});
   if (!targets.length) return;
 
   document.getElementById('analyzeBtn').disabled = true;

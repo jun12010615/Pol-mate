@@ -8,14 +8,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  :root {
-    --navy: #1a2744; --accent: #4a7cdc; --danger: #e74c3c;
-    --text-primary: #1a1a2e; --text-secondary: #6b7280; --text-muted: #9ca3af;
-    --bg: #f4f6fb; --card: #ffffff; --border: #e5e7eb;
-    --success: #16a34a; --success-bg: #f0fdf4; --success-border: #bbf7d0;
-    --warn-bg: #fffbeb; --warn-border: #fde68a; --warn-text: #92400e;
-    --danger-bg: #fef2f2; --danger-border: #fecaca;
-    --bottom-nav-h: 64px;
+  :root{
+    --deep:#0d1a33; --navy:#1a2744; --mid:#243358;
+    --gold:#f0c040; --gold2:#e6b830;
+    --blue:#4a7cdc; --accent:#4a7cdc; --danger:#dc2626;
+    --tp:#1a1a2e; --ts:#6b7280; --tm:#9ca3af;
+    --bg:#f0f2f8; --card:#ffffff; --bd:#e2e5ee;
+    --success:#16a34a; --success-bg:#f0fdf4; --success-bd:#bbf7d0;
+    --warn-bg:#fffbeb; --warn-text:#92400e;
+    --danger-bg:#fef2f2; --danger-bd:#fecaca;
+    --info-bg:#eff6ff; --info-text:#1e40af;
   }
   html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: var(--bg); overflow-x: hidden; }
 
@@ -23,7 +25,7 @@
 
   /* ── 헤더 ── */
   .top-header {
-    background: var(--navy); padding: 52px 20px 20px;
+    background:var(--deep); padding: 52px 20px 20px;
     display: flex; align-items: center; gap: 12px;
     position: sticky; top: 0; z-index: 10;
   }
@@ -38,46 +40,46 @@
   .header-sub   { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 2px; }
 
   /* ── 스크롤 콘텐츠 ── */
-  .content { flex: 1; overflow-y: auto; padding: 20px 16px calc(var(--bottom-nav-h) + 20px); }
+  .content { flex: 1; overflow-y: auto; padding: 20px 16px calc(var(--bnav) + 20px); }
 
   /* ── 카드 공통 ── */
   .card {
-    background: var(--card); border-radius: 16px; border: 1px solid var(--border);
+    background: var(--card); border-radius: 16px; border: 1px solid var(--bd);
     padding: 20px; margin-bottom: 14px;
     animation: fadeUp 0.35s ease both;
   }
   .card-title {
-    font-size: 12px; font-weight: 500; color: var(--text-secondary);
+    font-size: 12px; font-weight: 500; color: var(--ts);
     text-transform: uppercase; letter-spacing: 0.6px;
     margin-bottom: 14px; display: flex; align-items: center; gap: 7px;
   }
-  .card-title svg { width: 14px; height: 14px; stroke: var(--text-muted); }
+  .card-title svg { width: 14px; height: 14px; stroke: var(--tm); }
 
   /* ── STEP 표시 ── */
   .step-flow {
     display: flex; align-items: center; gap: 0;
-    background: var(--card); border-radius: 14px; border: 1px solid var(--border);
+    background: var(--card); border-radius: 14px; border: 1px solid var(--bd);
     padding: 14px 16px; margin-bottom: 14px;
   }
   .step-node {
     display: flex; flex-direction: column; align-items: center; flex: 1; gap: 5px;
   }
   .step-circle {
-    width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--border);
+    width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--bd);
     display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 500; color: var(--text-muted);
+    font-size: 12px; font-weight: 500; color: var(--tm);
     background: var(--bg); transition: all 0.3s;
   }
   .step-circle.active { background: var(--navy); border-color: var(--navy); color: #fff; }
   .step-circle.done   { background: var(--accent); border-color: var(--accent); color: #fff; }
   .step-circle svg    { width: 14px; height: 14px; }
-  .step-name { font-size: 9px; color: var(--text-muted); text-align: center; }
+  .step-name { font-size: 9px; color: var(--tm); text-align: center; }
   .step-name.active { color: var(--navy); font-weight: 500; }
-  .step-line { flex: 1; height: 1px; background: var(--border); margin-bottom: 14px; }
+  .step-line { flex: 1; height: 1px; background: var(--bd); margin-bottom: 14px; }
 
   /* ── 업로드 존 ── */
   .upload-zone {
-    border: 2px dashed var(--border); border-radius: 14px;
+    border: 2px dashed var(--bd); border-radius: 14px;
     padding: 32px 20px; text-align: center; cursor: pointer;
     transition: border-color 0.2s, background 0.2s; position: relative;
   }
@@ -89,9 +91,9 @@
     margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;
   }
   .upload-icon svg { width: 24px; height: 24px; stroke: var(--accent); }
-  .upload-title { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; }
-  .upload-desc  { font-size: 11px; color: var(--text-muted); }
-  .upload-hint  { font-size: 10px; color: var(--text-muted); margin-top: 10px; }
+  .upload-title { font-size: 14px; font-weight: 500; color: var(--tp); margin-bottom: 4px; }
+  .upload-desc  { font-size: 11px; color: var(--tm); }
+  .upload-hint  { font-size: 10px; color: var(--tm); margin-top: 10px; }
 
   /* 선택된 파일 */
   .file-selected {
@@ -102,38 +104,38 @@
   .file-icon { width: 36px; height: 36px; background: #dcfce7; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .file-icon svg { width: 18px; height: 18px; stroke: var(--success); }
   .file-meta { flex: 1; min-width: 0; }
-  .file-name { font-size: 13px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .file-size { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+  .file-name { font-size: 13px; font-weight: 500; color: var(--tp); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-size { font-size: 10px; color: var(--tm); margin-top: 2px; }
   .file-remove { width: 24px; height: 24px; border-radius: 50%; background: #fef2f2; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .file-remove svg { width: 12px; height: 12px; stroke: var(--danger); }
 
   /* ── 텍스트 직접 입력 ── */
   .divider { display: flex; align-items: center; gap: 10px; margin: 14px 0; }
-  .divider span { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
-  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .divider span { font-size: 11px; color: var(--tm); white-space: nowrap; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--bd); }
 
   .text-area {
     width: 100%; min-height: 120px; padding: 13px 14px;
-    background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+    background: var(--bg); border: 1px solid var(--bd); border-radius: 12px;
     font-size: 13px; font-family: 'Noto Sans KR', sans-serif;
-    color: var(--text-primary); outline: none; resize: vertical; line-height: 1.7;
+    color: var(--tp); outline: none; resize: vertical; line-height: 1.7;
     transition: border-color 0.2s;
   }
   .text-area:focus { border-color: var(--accent); background: #fff; }
-  .text-area::placeholder { color: var(--text-muted); font-size: 12px; }
+  .text-area::placeholder { color: var(--tm); font-size: 12px; }
 
   /* ── 사건 정보 입력 ── */
   .field-row { display: flex; gap: 10px; margin-bottom: 10px; }
   .field-half { flex: 1; }
-  .field-label { font-size: 11px; font-weight: 500; color: var(--text-secondary); display: block; margin-bottom: 5px; }
+  .field-label { font-size: 11px; font-weight: 500; color: var(--ts); display: block; margin-bottom: 5px; }
   .field-input {
     width: 100%; padding: 10px 12px; background: var(--bg);
-    border: 1px solid var(--border); border-radius: 10px;
+    border: 1px solid var(--bd); border-radius: 10px;
     font-size: 13px; font-family: 'Noto Sans KR', sans-serif;
-    color: var(--text-primary); outline: none; transition: border-color 0.2s;
+    color: var(--tp); outline: none; transition: border-color 0.2s;
   }
   .field-input:focus { border-color: var(--accent); background: #fff; }
-  .field-input::placeholder { color: var(--text-muted); font-size: 12px; }
+  .field-input::placeholder { color: var(--tm); font-size: 12px; }
   select.field-input { appearance: none; }
 
   /* ── 분석 버튼 ── */
@@ -145,23 +147,23 @@
     transition: transform 0.1s, background 0.2s; margin-bottom: 14px;
   }
   .btn-analyze:active { transform: scale(0.98); }
-  .btn-analyze:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; }
+  .btn-analyze:disabled { background: var(--bd); color: var(--tm); cursor: not-allowed; }
   .btn-analyze svg { width: 18px; height: 18px; stroke: #fff; }
 
   /* ── 로딩 ── */
   .loading-card {
-    background: var(--card); border-radius: 16px; border: 1px solid var(--border);
+    background: var(--card); border-radius: 16px; border: 1px solid var(--bd);
     padding: 28px 20px; text-align: center; display: none; margin-bottom: 14px;
   }
   .spinner {
-    width: 40px; height: 40px; border: 3px solid var(--border);
+    width: 40px; height: 40px; border: 3px solid var(--bd);
     border-top-color: var(--navy); border-radius: 50%;
     animation: spin 0.8s linear infinite; margin: 0 auto 14px;
   }
-  .loading-title { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; }
-  .loading-sub   { font-size: 12px; color: var(--text-muted); }
+  .loading-title { font-size: 14px; font-weight: 500; color: var(--tp); margin-bottom: 4px; }
+  .loading-sub   { font-size: 12px; color: var(--tm); }
   .loading-steps { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; text-align: left; }
-  .loading-step  { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-muted); }
+  .loading-step  { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--tm); }
   .loading-step svg { width: 14px; height: 14px; flex-shrink: 0; }
   .loading-step.done   { color: var(--success); }
   .loading-step.active { color: var(--navy); font-weight: 500; }
@@ -171,15 +173,15 @@
 
   /* 변환 텍스트 */
   .transcript-box {
-    background: var(--bg); border-radius: 12px; border: 1px solid var(--border);
-    padding: 14px; font-size: 13px; color: var(--text-primary);
+    background: var(--bg); border-radius: 12px; border: 1px solid var(--bd);
+    padding: 14px; font-size: 13px; color: var(--tp);
     line-height: 1.9; max-height: 200px; overflow-y: auto;
     white-space: pre-wrap; position: relative;
   }
   .copy-btn {
     position: absolute; top: 10px; right: 10px;
-    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
-    padding: 5px 10px; font-size: 11px; color: var(--text-secondary);
+    background: var(--card); border: 1px solid var(--bd); border-radius: 8px;
+    padding: 5px 10px; font-size: 11px; color: var(--ts);
     cursor: pointer; font-family: 'Noto Sans KR', sans-serif;
     display: flex; align-items: center; gap: 4px;
   }
@@ -187,8 +189,8 @@
 
   /* AI 분석 결과 */
   .ai-result-box {
-    background: var(--bg); border-radius: 12px; border: 1px solid var(--border);
-    padding: 14px; font-size: 13px; color: var(--text-primary); line-height: 1.9;
+    background: var(--bg); border-radius: 12px; border: 1px solid var(--bd);
+    padding: 14px; font-size: 13px; color: var(--tp); line-height: 1.9;
     white-space: pre-wrap; max-height: 300px; overflow-y: auto;
   }
 
@@ -205,7 +207,7 @@
   .contra-title { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
   .contra-title.red   { color: #b91c1c; }
   .contra-title.green { color: var(--success); }
-  .contra-desc  { font-size: 11px; color: var(--text-secondary); line-height: 1.6; }
+  .contra-desc  { font-size: 11px; color: var(--ts); line-height: 1.6; }
 
   /* 모순 항목 리스트 */
   .contra-list { display: flex; flex-direction: column; gap: 8px; }
@@ -215,7 +217,7 @@
   }
   .contra-item-title { font-size: 12px; font-weight: 500; color: #b91c1c; margin-bottom: 5px; display: flex; align-items: center; gap: 6px; }
   .contra-item-title svg { width: 13px; height: 13px; stroke: var(--danger); }
-  .contra-item-desc  { font-size: 11px; color: var(--text-secondary); line-height: 1.7; }
+  .contra-item-desc  { font-size: 11px; color: var(--ts); line-height: 1.7; }
 
   /* 저장 버튼 */
   .btn-save {
@@ -229,16 +231,16 @@
   .btn-save svg { width: 16px; height: 16px; stroke: #fff; }
 
   .btn-reset {
-    width: 100%; background: var(--bg); color: var(--text-secondary);
-    border: 1px solid var(--border); border-radius: 14px; padding: 14px;
+    width: 100%; background: var(--bg); color: var(--ts);
+    border: 1px solid var(--bd); border-radius: 14px; padding: 14px;
     font-size: 14px; font-family: 'Noto Sans KR', sans-serif; cursor: pointer; margin-top: 8px;
   }
 
   /* ── 하단 네비 ── */
   .bottom-nav {
     position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-    width: 100%; max-width: 420px; height: var(--bottom-nav-h);
-    background: var(--card); border-top: 1px solid var(--border);
+    width: 100%; max-width: 420px; height: var(--bnav);
+    background: var(--card); border-top: 1px solid var(--bd);
     display: flex; justify-content: space-around; align-items: center;
     padding: 0 8px; z-index: 100;
   }
@@ -248,8 +250,8 @@
   .nav-label { font-size: 9px; }
   .nav-item.active .nav-icon svg { stroke: var(--navy); }
   .nav-item.active .nav-label    { color: var(--navy); font-weight: 500; }
-  .nav-item:not(.active) .nav-icon svg { stroke: var(--text-muted); }
-  .nav-item:not(.active) .nav-label    { color: var(--text-muted); }
+  .nav-item:not(.active) .nav-icon svg { stroke: var(--tm); }
+  .nav-item:not(.active) .nav-label    { color: var(--tm); }
 
   @keyframes fadeUp  { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
   @keyframes spin    { to { transform: rotate(360deg); } }
@@ -392,7 +394,7 @@
         <textarea class="text-area" id="stmtText"
           placeholder="진술 내용을 직접 입력하거나 붙여넣기 하세요.&#10;&#10;예) 저는 3월 15일 오후 2시에 집에 있었습니다. 그날 외출한 적이 없으며..."></textarea>
         <div style="display:flex; justify-content:flex-end; margin-top:6px;">
-          <span style="font-size:10px; color:var(--text-muted);" id="charCount">0자</span>
+          <span style="font-size:10px; color:var(--tm);" id="charCount">0자</span>
         </div>
       </div>
 

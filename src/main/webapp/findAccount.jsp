@@ -8,10 +8,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  :root {
-    --navy: #1a2744; --accent: #4a7cdc; --danger: #e74c3c;
-    --text-primary: #1a1a2e; --text-secondary: #6b7280; --text-muted: #9ca3af;
-    --bg: #f4f6fb; --card: #ffffff; --border: #e5e7eb; --success: #16a34a;
+  :root{
+    --deep:#0d1a33; --navy:#1a2744; --mid:#243358;
+    --gold:#f0c040; --gold2:#e6b830;
+    --blue:#4a7cdc; --accent:#4a7cdc; --danger:#dc2626;
+    --tp:#1a1a2e; --ts:#6b7280; --tm:#9ca3af;
+    --bg:#f0f2f8; --card:#ffffff; --bd:#e2e5ee;
+    --success:#16a34a; --success-bg:#f0fdf4; --success-bd:#bbf7d0;
+    --warn-bg:#fffbeb; --warn-text:#92400e;
+    --danger-bg:#fef2f2; --danger-bd:#fecaca;
+    --info-bg:#eff6ff; --info-text:#1e40af;
   }
   html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: var(--bg); }
 
@@ -44,20 +50,20 @@
   .tab-panel { display: none; animation: fadeUp 0.3s ease both; }
   .tab-panel.active { display: block; }
 
-  .card { background: var(--card); border-radius: 16px; padding: 22px 20px; border: 1px solid var(--border); margin-bottom: 16px; }
+  .card { background: var(--card); border-radius: 16px; padding: 22px 20px; border: 1px solid var(--bd); margin-bottom: 16px; }
 
   .field-group { margin-bottom: 14px; }
-  .field-label { font-size: 11px; font-weight: 500; color: var(--text-secondary); display: block; margin-bottom: 6px; }
+  .field-label { font-size: 11px; font-weight: 500; color: var(--ts); display: block; margin-bottom: 6px; }
   .field-wrap { position: relative; }
-  .field-wrap svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--text-muted); pointer-events: none; }
+  .field-wrap svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--tm); pointer-events: none; }
   .field-input {
     width: 100%; padding: 12px 12px 12px 38px;
-    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
-    font-size: 13px; font-family: 'Noto Sans KR', sans-serif; color: var(--text-primary); outline: none;
+    background: var(--bg); border: 1px solid var(--bd); border-radius: 10px;
+    font-size: 13px; font-family: 'Noto Sans KR', sans-serif; color: var(--tp); outline: none;
     transition: border-color 0.2s;
   }
   .field-input:focus { border-color: var(--accent); background: #fff; }
-  .field-input::placeholder { color: var(--text-muted); font-size: 12px; }
+  .field-input::placeholder { color: var(--tm); font-size: 12px; }
 
   .inline-row { display: flex; gap: 8px; }
   .inline-row .field-wrap { flex: 1; }
@@ -86,14 +92,14 @@
   }
   .result-label { font-size: 11px; color: #1e40af; margin-bottom: 8px; }
   .result-value { font-size: 20px; font-weight: 700; color: var(--navy); letter-spacing: 1px; }
-  .result-sub   { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+  .result-sub   { font-size: 11px; color: var(--tm); margin-top: 6px; }
 
   /* 새 비밀번호 설정 영역 */
   .new-pw-section { display: none; animation: fadeUp 0.3s ease both; }
 
   .hint-box {
     background: var(--bg); border-radius: 10px; padding: 12px 14px; margin-top: 12px;
-    font-size: 11px; color: var(--text-muted); line-height: 1.8;
+    font-size: 11px; color: var(--tm); line-height: 1.8;
   }
 
   @keyframes fadeUp { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
