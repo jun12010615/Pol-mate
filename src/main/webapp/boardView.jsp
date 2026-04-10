@@ -18,23 +18,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-:root{
-    --deep:#0d1a33; --navy:#1a2744; --mid:#243358;
-    --gold:#f0c040; --gold2:#e6b830;
-    --blue:#4a7cdc; --accent:#4a7cdc; --danger:#dc2626;
-    --tp:#1a1a2e; --ts:#6b7280; --tm:#9ca3af;
-    --bg:#f0f2f8; --card:#ffffff; --bd:#e2e5ee;
-    --success:#16a34a; --success-bg:#f0fdf4; --success-bd:#bbf7d0;
-    --warn-bg:#fffbeb; --warn-text:#92400e;
-    --danger-bg:#fef2f2; --danger-bd:#fecaca;
-    --info-bg:#eff6ff; --info-text:#1e40af;
-    --bnav:64px;
-    --c-suspect:#dc2626; --c-victim:#f97316; --c-witness:#4a7cdc; --c-reference:#8b5cf6;
-  }
+:root {
+  --navy:#1a2744; --accent:#4a7cdc; --danger:#dc2626;
+  --text-primary:#1a1a2e; --text-secondary:#6b7280; --text-muted:#9ca3af;
+  --bg:#f4f6fb; --card:#ffffff; --border:#e5e7eb;
+  --success:#16a34a; --success-bg:#f0fdf4;
+  --warn-bg:#fffbeb; --warn-text:#92400e;
+  --danger-bg:#fef2f2; --danger-bd:#fecaca;
+  --bottom-nav-h:64px;
+  --c-suspect:#dc2626; --c-victim:#f97316; --c-witness:#4a7cdc; --c-reference:#8b5cf6;
+}
 html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(--bg); overflow-x:hidden; }
 .screen { width:100%; max-width:420px; min-height:100vh; margin:0 auto; background:var(--bg); display:flex; flex-direction:column; }
 
-.top-header { background:var(--deep); padding:52px 20px 0; position:sticky; top:0; z-index:20; }
+.top-header { background:var(--navy); padding:52px 20px 0; position:sticky; top:0; z-index:20; }
 .header-row { display:flex; align-items:center; gap:12px; padding-bottom:16px; }
 .back-btn { width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.12); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
 .back-btn svg { width:18px; height:18px; stroke:#fff; }
@@ -43,11 +40,11 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 .header-sub { font-size:10px; color:rgba(255,255,255,0.5); margin-top:2px; }
 .header-gold-line { height:1.5px; background:linear-gradient(90deg,transparent,#f0c040 30%,#f0c040 70%,transparent); opacity:0.25; margin:0 -20px; }
 
-.content { flex:1; overflow-y:auto; padding:20px 16px calc(var(--bnav) + 24px); }
+.content { flex:1; overflow-y:auto; padding:20px 16px calc(var(--bottom-nav-h) + 24px); }
 
 /* 보드 카드 */
 .board-card {
-  background:var(--card); border-radius:16px; border:1px solid var(--bd);
+  background:var(--card); border-radius:16px; border:1px solid var(--border);
   overflow:hidden; margin-bottom:12px; cursor:pointer;
   transition:border-color 0.15s; animation:fadeUp 0.35s ease both;
 }
@@ -56,8 +53,8 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
   padding:14px 16px 10px;
   display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
 }
-.board-case-id   { font-size:10px; color:var(--tm); margin-bottom:3px; }
-.board-case-name { font-size:15px; font-weight:500; color:var(--tp); }
+.board-case-id   { font-size:10px; color:var(--text-muted); margin-bottom:3px; }
+.board-case-name { font-size:15px; font-weight:500; color:var(--text-primary); }
 .board-badge { font-size:10px; padding:3px 9px; border-radius:20px; white-space:nowrap; flex-shrink:0; margin-top:2px; }
 .badge-active { background:var(--success-bg); color:var(--success); }
 .badge-done   { background:#eff6ff; color:#1e40af; }
@@ -66,20 +63,20 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 .board-meta-row {
   padding:10px 16px 14px;
   display:flex; align-items:center; justify-content:space-between;
-  border-top:1px solid var(--bd); background:#fafbfd;
+  border-top:1px solid var(--border); background:#fafbfd;
 }
-.board-meta-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--ts); }
-.board-meta-item svg { width:12px; height:12px; stroke:var(--tm); flex-shrink:0; }
+.board-meta-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-secondary); }
+.board-meta-item svg { width:12px; height:12px; stroke:var(--text-muted); flex-shrink:0; }
 .board-preview { padding:0 16px 14px; }
 /* 미니 캔버스 */
 .board-mini-canvas { background:#0d1a33; border-radius:10px; width:100%; }
 
 /* 빈 상태 */
-.empty-box { background:var(--card); border-radius:16px; border:1px solid var(--bd); padding:56px 20px; text-align:center; }
+.empty-box { background:var(--card); border-radius:16px; border:1px solid var(--border); padding:56px 20px; text-align:center; }
 .empty-icon-wrap { width:60px; height:60px; border-radius:50%; background:#f0f3f9; margin:0 auto 14px; display:flex; align-items:center; justify-content:center; }
-.empty-icon-wrap svg { width:28px; height:28px; stroke:var(--ts); }
-.empty-title { font-size:14px; font-weight:500; color:var(--tp); margin-bottom:6px; }
-.empty-desc  { font-size:12px; color:var(--tm); line-height:1.7; }
+.empty-icon-wrap svg { width:28px; height:28px; stroke:var(--text-secondary); }
+.empty-title { font-size:14px; font-weight:500; color:var(--text-primary); margin-bottom:6px; }
+.empty-desc  { font-size:12px; color:var(--text-muted); line-height:1.7; }
 
 /* 팝업 오버레이 (보드 상세) */
 .detail-overlay {
@@ -118,18 +115,13 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 .btn-go-edit svg { width:16px; height:16px; stroke:#fff; }
 
 /* 하단 네비 */
-.bottom-nav{
-  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
-  width:100%;max-width:420px;height:var(--bnav);
-  background:var(--card);border-top:1px solid var(--bd);
-  display:flex;z-index:100;
-}
-.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:var(--tm);cursor:pointer;border:none;background:none;font-family:'Noto Sans KR',sans-serif;}
-.nav-item.active{color:var(--deep);}
-.nav-item.active .nav-label{font-weight:600;}
-.nav-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
-.nav-icon svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;}
-.nav-label{font-size:10px;}
+.bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:420px; height:var(--bottom-nav-h); background:#fff; border-top:1px solid #e2e5ee; display:flex; z-index:100; }
+.nav-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; text-decoration:none; color:#9ca3af; cursor:pointer; border:none; background:none; font-family:'Noto Sans KR',sans-serif; }
+.nav-item.active { color:#0d1a33; }
+.nav-item.active .nav-label { font-weight:600; }
+.nav-icon { width:22px; height:22px; display:flex; align-items:center; justify-content:center; }
+.nav-icon svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; }
+.nav-label { font-size:10px; }
 
 @keyframes slideUp { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
 @keyframes fadeUp  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
@@ -141,14 +133,14 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
   background:rgba(10,20,50,0.92); color:#fff;
   border:1px solid rgba(255,255,255,0.18);
   border-radius:8px; padding:6px 9px;
-  font-size:11px; line-height:1.5;
-  max-width:150px; word-break:keep-all;
+  font-size:10px; line-height:1.6;
+  max-width:160px; width:max-content;
+  word-break:keep-all; white-space:normal;
   box-shadow:0 3px 10px rgba(0,0,0,0.4);
   opacity:0; transition:opacity 0.15s;
-  white-space:pre-wrap;
 }
 .node-tooltip.visible { opacity:1; }
-.node-tooltip-memo  { font-size:10px; color:rgba(255,255,255,0.9); }
+.node-tooltip-memo { color:rgba(255,255,255,0.9); }
 </style>
 </head>
 <body>
@@ -168,13 +160,13 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
   </div>
 
   <div class="content" id="boardListContent">
-    <div style="text-align:center;padding:48px 0;font-size:13px;color:var(--tm);">불러오는 중...</div>
+    <div style="text-align:center;padding:48px 0;font-size:13px;color:var(--text-muted);">불러오는 중...</div>
   </div>
 
-      <nav class="bottom-nav">
+    <nav class="bottom-nav">
     <a href="main.jsp" class="nav-item"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><span class="nav-label">홈</span></a>
-    <a href="myCase.jsp" class="nav-item"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><span class="nav-label">사건</span></a>
-    <a href="askAI" class="nav-item"><div class="nav-icon"><svg width="22" height="22" viewBox="0 0 86 86" fill="none"><path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="currentColor" stroke-width="5"/><circle cx="43" cy="40" r="11" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="43" cy="40" r="5" fill="currentColor"/><circle cx="43" cy="40" r="2.5" fill="white"/><circle cx="43" cy="22" r="2.8" fill="currentColor"/><circle cx="43" cy="58" r="2.8" fill="currentColor"/><circle cx="28" cy="40" r="2.8" fill="currentColor"/><circle cx="58" cy="40" r="2.8" fill="currentColor"/></svg></div><span class="nav-label">AI</span></a>
+    <a href="myCase.jsp" class="nav-item"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><span class="nav-label">조서</span></a>
+    <a href="askAI" class="nav-item active"><div class="nav-icon"><svg width="22" height="22" viewBox="0 0 86 86" fill="none"><path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="currentColor" stroke-width="5"/><circle cx="43" cy="40" r="11" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="43" cy="40" r="5" fill="currentColor"/><circle cx="43" cy="40" r="2.5" fill="white"/><circle cx="43" cy="22" r="2.8" fill="currentColor"/><circle cx="43" cy="58" r="2.8" fill="currentColor"/><circle cx="28" cy="40" r="2.8" fill="currentColor"/><circle cx="58" cy="40" r="2.8" fill="currentColor"/></svg></div><span class="nav-label">AI</span></a>
     <a href="board.jsp" class="nav-item"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><span class="nav-label">커뮤니티</span></a>
     <a href="mypage.jsp" class="nav-item"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="nav-label">마이페이지</span></a>
   </nav>
@@ -207,7 +199,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
         </div>
         <canvas id="detailCanvas" height="380"></canvas>
         <div class="canvas-hint">드래그로 이동 · 핀치로 확대/축소</div>
-        <div class="node-tooltip" id="nodeTooltip">
+        <div class="node-tooltip" id="nodeTooltip" style="display:none;">
           <div class="node-tooltip-memo" id="ttMemo"></div>
         </div>
       </div>
@@ -475,7 +467,7 @@ function initDetailCanvas() {
   if (dCanvas) return;
   dCanvas = document.getElementById('detailCanvas');
   dCtx = dCanvas.getContext('2d');
-  dCanvas.addEventListener('mousedown',  function(e){dDrag=true;dLastX=e.clientX;dLastY=e.clientY;});
+  dCanvas.addEventListener('mousedown',  function(e){dDrag=true;dLastX=e.clientX;dLastY=e.clientY; hideNodeTooltip();});
   dCanvas.addEventListener('mousemove',  function(e){
     if(dDrag){
       dOffsetX+=(e.clientX-dLastX)/dScale;dOffsetY+=(e.clientY-dLastY)/dScale;
@@ -675,6 +667,7 @@ function hideNodeTooltip() {
   var tt = document.getElementById('nodeTooltip');
   if (!tt) return;
   tt.classList.remove('visible');
+  tt.style.display = 'none';
 }
 
 function uid() { return Math.random().toString(36).substr(2,9); }
