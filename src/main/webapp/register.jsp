@@ -8,16 +8,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  :root{
-    --deep:#0d1a33; --navy:#1a2744; --mid:#243358;
-    --gold:#f0c040; --gold2:#e6b830;
-    --blue:#4a7cdc; --accent:#4a7cdc; --danger:#dc2626;
-    --tp:#1a1a2e; --ts:#6b7280; --tm:#9ca3af;
-    --bg:#f0f2f8; --card:#ffffff; --bd:#e2e5ee;
-    --success:#16a34a; --success-bg:#f0fdf4; --success-bd:#bbf7d0;
-    --warn-bg:#fffbeb; --warn-text:#92400e;
-    --danger-bg:#fef2f2; --danger-bd:#fecaca;
-    --info-bg:#eff6ff; --info-text:#1e40af;
+  :root {
+    --navy: #1a2744; --accent: #4a7cdc; --danger: #e74c3c;
+    --text-primary: #1a1a2e; --text-secondary: #6b7280; --text-muted: #9ca3af;
+    --bg: #f4f6fb; --card: #ffffff; --border: #e5e7eb; --success: #16a34a;
   }
   html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: var(--bg); }
 
@@ -43,32 +37,32 @@
   .step-circle {
     width: 28px; height: 28px; border-radius: 50%; font-size: 12px; font-weight: 500;
     display: flex; align-items: center; justify-content: center;
-    border: 2px solid var(--bd); color: var(--tm); background: var(--card);
+    border: 2px solid var(--border); color: var(--text-muted); background: var(--card);
     transition: all 0.3s;
   }
   .step-circle.active { background: var(--navy); border-color: var(--navy); color: #fff; }
   .step-circle.done   { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .step-label { font-size: 9px; color: var(--tm); margin-top: 4px; }
+  .step-label { font-size: 9px; color: var(--text-muted); margin-top: 4px; }
   .step-label.active { color: var(--navy); font-weight: 500; }
-  .step-line { flex: 1; height: 1px; background: var(--bd); margin-bottom: 16px; }
+  .step-line { flex: 1; height: 1px; background: var(--border); margin-bottom: 16px; }
 
-  .card { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid var(--bd); margin-bottom: 16px; }
-  .card-title { font-size: 13px; font-weight: 500; color: var(--navy); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--bd); }
+  .card { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid var(--border); margin-bottom: 16px; }
+  .card-title { font-size: 13px; font-weight: 500; color: var(--navy); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
 
   .field-group { margin-bottom: 14px; }
-  .field-label { font-size: 11px; font-weight: 500; color: var(--ts); display: block; margin-bottom: 6px; }
+  .field-label { font-size: 11px; font-weight: 500; color: var(--text-secondary); display: block; margin-bottom: 6px; }
   .required { color: #ef4444; margin-left: 2px; }
 
   .field-wrap { position: relative; }
-  .field-wrap svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--tm); pointer-events: none; }
+  .field-wrap svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--text-muted); pointer-events: none; }
   .field-input {
     width: 100%; padding: 12px 12px 12px 38px;
-    background: var(--bg); border: 1px solid var(--bd); border-radius: 10px;
-    font-size: 13px; font-family: 'Noto Sans KR', sans-serif; color: var(--tp); outline: none;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+    font-size: 13px; font-family: 'Noto Sans KR', sans-serif; color: var(--text-primary); outline: none;
     transition: border-color 0.2s;
   }
   .field-input:focus { border-color: var(--accent); background: #fff; }
-  .field-input::placeholder { color: var(--tm); font-size: 12px; }
+  .field-input::placeholder { color: var(--text-muted); font-size: 12px; }
   .field-input.no-icon { padding-left: 12px; }
   .field-input:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -81,7 +75,7 @@
   }
   .btn-check:active { opacity: 0.8; }
 
-  .field-hint { font-size: 10px; color: var(--tm); margin-top: 5px; }
+  .field-hint { font-size: 10px; color: var(--text-muted); margin-top: 5px; }
   .field-ok   { font-size: 10px; color: var(--success); margin-top: 5px; display: none; }
   .field-err  { font-size: 10px; color: var(--danger);  margin-top: 5px; display: none; }
 
@@ -97,22 +91,22 @@
 
   .agree-box {
     background: var(--card); border-radius: 16px; padding: 18px 20px;
-    border: 1px solid var(--bd); margin-bottom: 20px;
+    border: 1px solid var(--border); margin-bottom: 20px;
   }
   .agree-all {
     display: flex; align-items: center; gap: 10px; padding-bottom: 12px;
-    border-bottom: 1px solid var(--bd); margin-bottom: 12px; cursor: pointer;
+    border-bottom: 1px solid var(--border); margin-bottom: 12px; cursor: pointer;
   }
   .agree-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; }
   .agree-item:last-child { margin-bottom: 0; }
 
-  .chk { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--bd); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .chk { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
   .chk.checked { background: var(--navy); border-color: var(--navy); }
   .chk svg { width: 10px; height: 10px; stroke: #fff; display: none; }
   .chk.checked svg { display: block; }
 
-  .agree-text { font-size: 12px; color: var(--ts); flex: 1; }
-  .agree-text strong { color: var(--tp); font-weight: 500; }
+  .agree-text { font-size: 12px; color: var(--text-secondary); flex: 1; }
+  .agree-text strong { color: var(--text-primary); font-weight: 500; }
   .agree-view { font-size: 11px; color: var(--accent); margin-left: auto; }
 
   .notice-box {
@@ -128,7 +122,7 @@
   }
   .done-icon svg { width: 36px; height: 36px; stroke: var(--success); }
   .done-title { font-size: 20px; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
-  .done-desc  { font-size: 13px; color: var(--ts); line-height: 1.8; margin-bottom: 32px; }
+  .done-desc  { font-size: 13px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 32px; }
 
   @keyframes fadeUp { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
   .card { animation: fadeUp 0.35s ease both; }
@@ -214,12 +208,21 @@
           </div>
         </div>
 
-        <div class="field-group" style="margin-bottom:0">
+        <div class="field-group">
           <label class="field-label">연락처 <span class="required">*</span></label>
           <div class="field-wrap">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.6 19 19.45 19.45 0 0 1 5 12.4 19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
             <input type="tel" id="userPhone" class="field-input" placeholder="010-0000-0000">
           </div>
+        </div>
+
+        <div class="field-group" style="margin-bottom:0">
+          <label class="field-label">이메일 <span class="required">*</span></label>
+          <div class="field-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <input type="email" id="userEmail" class="field-input" placeholder="example@email.com" oninput="checkEmailFormat()">
+          </div>
+          <div id="emailMsg" style="font-size:11px; margin-top:5px; display:none;"></div>
         </div>
       </div>
 
@@ -286,7 +289,7 @@
       </div>
 
       <div style="display:flex; gap:10px;">
-        <button class="btn-submit" style="background:var(--bg); color:var(--tp); border:1px solid var(--bd); flex:0 0 80px;" onclick="goStep1()">이전</button>
+        <button class="btn-submit" style="background:var(--bg); color:var(--text-primary); border:1px solid var(--border); flex:0 0 80px;" onclick="goStep1()">이전</button>
         <button class="btn-submit" style="flex:1" onclick="goStep3()">다음 단계</button>
       </div>
     </div>
@@ -323,7 +326,7 @@
       </div>
 
       <div style="display:flex; gap:10px;">
-        <button class="btn-submit" style="background:var(--bg); color:var(--tp); border:1px solid var(--bd); flex:0 0 80px;" onclick="goStep2b()">이전</button>
+        <button class="btn-submit" style="background:var(--bg); color:var(--text-primary); border:1px solid var(--border); flex:0 0 80px;" onclick="goStep2b()">이전</button>
         <button class="btn-submit" style="flex:1" onclick="submitRegister()">가입 완료</button>
       </div>
     </div>
@@ -419,6 +422,22 @@ function agreeAndCloseDrawer() {
 let idChecked = false;
 
 // ── 아이디 중복 확인 ──
+
+function checkEmailFormat() {
+  const email = document.getElementById('userEmail').value.trim();
+  const msg   = document.getElementById('emailMsg');
+  if (!email) { msg.style.display = 'none'; return; }
+  if (/^[\w.+-]+@[\w-]+\.[\w.]+$/.test(email)) {
+    msg.style.display  = 'block';
+    msg.style.color    = 'var(--success)';
+    msg.textContent    = '✓ 올바른 이메일 형식입니다.';
+  } else {
+    msg.style.display  = 'block';
+    msg.style.color    = 'var(--danger)';
+    msg.textContent    = '이메일 형식이 올바르지 않습니다. (예: name@email.com)';
+  }
+}
+
 function checkId() {
   const v = document.getElementById('userId').value.trim();
   if (!v) { alert('아이디를 입력하세요.'); return; }
@@ -549,6 +568,9 @@ function goStep2() {
   else                                   { document.getElementById('pwErr').style.display='none'; }
   if (!name)                             { alert('이름을 입력해 주세요.'); return; }
   if (!phone)                            { alert('연락처를 입력해 주세요.'); return; }
+  const email = document.getElementById('userEmail').value.trim();
+  if (!email)                            { alert('이메일을 입력해 주세요.'); return; }
+  if (!/^[\w.+-]+@[\w-]+\.[\w.]+$/.test(email)) { alert('이메일 형식이 올바르지 않습니다.'); return; }
   setStep(2);
 }
 
@@ -604,6 +626,7 @@ function submitRegister() {
   params.append('userPw',    document.getElementById('userPw').value);
   params.append('userName',  document.getElementById('userName').value.trim());
   params.append('userPhone', document.getElementById('userPhone').value.trim());
+  params.append('userEmail', document.getElementById('userEmail').value.trim());
   params.append('userOrg',   document.getElementById('userOrg').value);
   params.append('userRank',  document.getElementById('userRank').value);
   params.append('deptId',    document.getElementById('userDept').value);  // dept_id (숫자) 전송
