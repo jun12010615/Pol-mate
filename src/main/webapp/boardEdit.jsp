@@ -93,7 +93,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 .person-info { flex:1; min-width:0; }
 .person-name { font-size:13px; font-weight:500; color:var(--text-primary); }
 .person-role-label { font-size:11px; margin-top:2px; }
-.person-memo { font-size:10px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.person-memo { font-size:10px; color:var(--text-muted); white-space:pre-wrap; word-break:keep-all; line-height:1.5; margin-top:1px; }
 .item-actions { display:flex; gap:5px; }
 .item-btn { width:27px; height:27px; border-radius:8px; background:var(--card); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; }
 .item-btn svg { width:12px; height:12px; stroke:var(--text-secondary); }
@@ -180,6 +180,20 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 @keyframes slideUp { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
 @keyframes fadeUp  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 @media(min-width:421px){ .screen{box-shadow:0 0 40px rgba(0,0,0,0.1);} }
+
+/* 인물 메모 툴팁 */
+.node-tooltip {
+  position:absolute; pointer-events:none; z-index:10;
+  background:rgba(10,20,50,0.92); color:#fff;
+  border:1px solid rgba(255,255,255,0.18);
+  border-radius:8px; padding:6px 9px;
+  font-size:10px; line-height:1.5;
+  max-width:150px; word-break:keep-all;
+  box-shadow:0 3px 10px rgba(0,0,0,0.4);
+  opacity:0; transition:opacity 0.15s;
+  white-space:pre-wrap;
+}
+.node-tooltip.visible { opacity:1; }
 </style>
 </head>
 <body>
@@ -217,6 +231,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
       </div>
       <canvas id="boardCanvas" height="360"></canvas>
       <div class="canvas-hint">노드 끌어 배치 · 빈 곳 드래그로 화면 이동 · 핀치로 확대</div>
+      <div class="node-tooltip" id="beNodeTooltip"></div>
     </div>
 
     <!-- 범례 -->
@@ -311,7 +326,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
         <div class="role-opt" id="role-reference" onclick="selRole('reference')">🟣 참고인</div>
       </div>
       <label class="form-label">메모 (선택)</label>
-      <input type="text" class="form-input" id="pMemo" placeholder="예) 사건 당일 현장 목격" maxlength="60">
+      <textarea class="form-input" id="pMemo" placeholder="예) 사건 당일 현장 목격" maxlength="200" rows="3" style="resize:vertical;min-height:72px;height:auto;line-height:1.6;"></textarea>
       <button type="button" class="btn-drawer-confirm" onclick="confirmPerson()">확인</button>
       <button type="button" class="btn-drawer-cancel"  onclick="closePersonDrawer()">취소</button>
     </div>
@@ -978,7 +993,7 @@ function boardHitPerson(wx, wy) {
   return null;
 }
 function clampBoardPerson(p) {
-  var pad = 52;
+  var pad = 28;
   p._x = Math.max(pad, Math.min(canvas.width - pad, p._x));
   p._y = Math.max(pad, Math.min(canvas.height - pad, p._y));
 }
@@ -998,6 +1013,7 @@ function initCanvas() {
         cDraggingNode = hit;
         cDrag = false;
         canvas.style.cursor = 'grabbing';
+        hideBETooltip();
       } else {
         cDraggingNode = null;
         cDrag = true;
@@ -1028,7 +1044,14 @@ function initCanvas() {
     }
     if (persons.length) {
       var wh = boardClientToWorld(e.clientX, e.clientY);
-      canvas.style.cursor = boardHitPerson(wh.x, wh.y) ? 'grab' : 'default';
+      var hitP = boardHitPerson(wh.x, wh.y);
+      canvas.style.cursor = hitP ? 'grab' : 'default';
+      if (hitP && (hitP.memo || '').trim()) {
+        var rect = canvas.getBoundingClientRect();
+        showBETooltip(hitP.memo.trim(), e.clientX - rect.left, e.clientY - rect.top);
+      } else {
+        hideBETooltip();
+      }
     }
   });
   canvas.addEventListener('mouseup', function() {
@@ -1040,6 +1063,7 @@ function initCanvas() {
     cDraggingNode = null;
     cDrag = false;
     canvas.style.cursor = '';
+    hideBETooltip();
   });
 
   var touchLx, touchLy, pinchD0;
@@ -1144,9 +1168,9 @@ function resizeCanvas() {
 function initForce() {
   var n=persons.length, cx=canvas.width/2, cy=canvas.height/2;
   var minDim=Math.min(cx,cy)*2, area=Math.max(canvas.width*canvas.height,1);
-  var k0=Math.sqrt(area/Math.max(n,1))*0.82;
-  var r=Math.min(minDim*0.36, k0*Math.sqrt(Math.max(n,2))*0.52);
-  var jitter=k0*0.16;
+  var k0=Math.sqrt(area/Math.max(n,1))*1.1;
+  var r=Math.min(minDim*0.42, k0*Math.sqrt(Math.max(n,2))*0.58);
+  var jitter=k0*0.2;
   persons.forEach(function(p,i){
     var a=(2*Math.PI*i/n)-Math.PI/2;
     p._x=cx+Math.cos(a)*r+(Math.random()-0.5)*jitter;
@@ -1158,9 +1182,9 @@ function initForce() {
   _fdInit=true;
 }
 function runForce(){
-  var n=persons.length, w=canvas.width, h=canvas.height, pad=52;
-  var area=Math.max(w*h,1), k=Math.sqrt(area/n)*0.82, repK=k*k, attract=0.052;
-  var cx=w/2, cy=h/2, damping=0.86, grav=0.018, vmax=k*0.38;
+  var n=persons.length, w=canvas.width, h=canvas.height, pad=28;
+  var area=Math.max(w*h,1), k=Math.sqrt(area/n)*1.1, repK=k*k, attract=0.038;
+  var cx=w/2, cy=h/2, damping=0.86, grav=0.012, vmax=k*0.38;
   persons.forEach(function(p){p._fx=0;p._fy=0;});
   for(var i=0;i<n;i++){for(var j=i+1;j<n;j++){
     var pi=persons[i],pj=persons[j],dx=pi._x-pj._x,dy=pi._y-pj._y;
@@ -1246,6 +1270,25 @@ function zoomOut()   { cScale=Math.max(0.4,cScale-0.2); drawCanvas(); }
 function resetView() { cScale=1;cOffsetX=0;cOffsetY=0;cDraggingNode=null;cDrag=false;drawCanvas(); }
 
 // ── 유틸 ─────────────────────────────────────────────────────────
+function showBETooltip(memo, px, py) {
+  var tt = document.getElementById('beNodeTooltip');
+  var wrap = document.getElementById('canvasWrap');
+  if (!tt || !wrap) return;
+  tt.textContent = memo;
+  tt.style.display = 'block';
+  var ww = wrap.clientWidth;
+  var left = px + 14, top = py - 10;
+  if (left + 160 > ww) left = px - 164;
+  if (left < 4) left = 4;
+  tt.style.left = left + 'px';
+  tt.style.top  = top  + 'px';
+  requestAnimationFrame(function(){ tt.classList.add('visible'); });
+}
+function hideBETooltip() {
+  var tt = document.getElementById('beNodeTooltip');
+  if (tt) tt.classList.remove('visible');
+}
+
 function uid() { return Math.random().toString(36).substr(2,9); }
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function showToast(msg) {
