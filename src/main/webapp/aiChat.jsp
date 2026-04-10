@@ -11,6 +11,7 @@
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   :root{
     --deep:#0d1a33; --navy:#1a2744; --mid:#243358;
+    --bubble-user:#0d1a33; --bubble-ai:#ffffff;
     --gold:#f0c040; --gold2:#e6b830;
     --blue:#4a7cdc; --accent:#4a7cdc; --danger:#dc2626;
     --tp:#1a1a2e; --ts:#6b7280; --tm:#9ca3af;
@@ -138,7 +139,8 @@
   .bubble.user {
     background:var(--bubble-user); color:#fff;
     border-radius:18px 18px 4px 18px;
-    word-break:keep-all; min-width:120px;
+    word-break:break-all; white-space:pre-wrap;
+    min-width:60px; max-width:82%;
   }
   .bubble-meta { font-size:10px; color:var(--tm); margin-top:4px; padding:0 4px; }
   .msg-row.user .bubble-meta { text-align:right; }
