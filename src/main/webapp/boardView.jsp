@@ -134,6 +134,21 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 @keyframes slideUp { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
 @keyframes fadeUp  { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 @media(min-width:421px){ .screen{box-shadow:0 0 40px rgba(0,0,0,0.1);} }
+
+/* 인물 메모 툴팁 */
+.node-tooltip {
+  position:absolute; pointer-events:none; z-index:20;
+  background:rgba(10,20,50,0.92); color:#fff;
+  border:1px solid rgba(255,255,255,0.18);
+  border-radius:8px; padding:6px 9px;
+  font-size:11px; line-height:1.5;
+  max-width:150px; word-break:keep-all;
+  box-shadow:0 3px 10px rgba(0,0,0,0.4);
+  opacity:0; transition:opacity 0.15s;
+  white-space:pre-wrap;
+}
+.node-tooltip.visible { opacity:1; }
+.node-tooltip-memo  { font-size:10px; color:rgba(255,255,255,0.9); }
 </style>
 </head>
 <body>
@@ -190,8 +205,11 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
           </button>
         </div>
-        <canvas id="detailCanvas" height="340"></canvas>
+        <canvas id="detailCanvas" height="380"></canvas>
         <div class="canvas-hint">드래그로 이동 · 핀치로 확대/축소</div>
+        <div class="node-tooltip" id="nodeTooltip">
+          <div class="node-tooltip-memo" id="ttMemo"></div>
+        </div>
       </div>
       <button class="btn-go-edit" id="btnGoEdit" onclick="">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
@@ -458,9 +476,25 @@ function initDetailCanvas() {
   dCanvas = document.getElementById('detailCanvas');
   dCtx = dCanvas.getContext('2d');
   dCanvas.addEventListener('mousedown',  function(e){dDrag=true;dLastX=e.clientX;dLastY=e.clientY;});
-  dCanvas.addEventListener('mousemove',  function(e){if(!dDrag)return;dOffsetX+=(e.clientX-dLastX)/dScale;dOffsetY+=(e.clientY-dLastY)/dScale;dLastX=e.clientX;dLastY=e.clientY;drawDetailCanvas();});
+  dCanvas.addEventListener('mousemove',  function(e){
+    if(dDrag){
+      dOffsetX+=(e.clientX-dLastX)/dScale;dOffsetY+=(e.clientY-dLastY)/dScale;
+      dLastX=e.clientX;dLastY=e.clientY;drawDetailCanvas();
+      hideNodeTooltip(); return;
+    }
+    var rect=dCanvas.getBoundingClientRect();
+    var cx=(e.clientX-rect.left)/dScale - dOffsetX;
+    var cy=(e.clientY-rect.top)/dScale  - dOffsetY;
+    var nr=22, hit=null;
+    detailPersons.forEach(function(p){
+      var dx=cx-p._x, dy=cy-p._y;
+      if(Math.sqrt(dx*dx+dy*dy)<=nr+4) hit=p;
+    });
+    if(hit){ showNodeTooltip(hit, e.clientX-rect.left, e.clientY-rect.top); }
+    else   { hideNodeTooltip(); }
+  });
   dCanvas.addEventListener('mouseup',    function(){dDrag=false;});
-  dCanvas.addEventListener('mouseleave', function(){dDrag=false;});
+  dCanvas.addEventListener('mouseleave', function(){dDrag=false; hideNodeTooltip();});
   var ltx,lty,ld;
   dCanvas.addEventListener('touchstart',function(e){if(e.touches.length===1){ltx=e.touches[0].clientX;lty=e.touches[0].clientY;}if(e.touches.length===2){ld=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}e.preventDefault();},{passive:false});
   dCanvas.addEventListener('touchmove',function(e){if(e.touches.length===1){dOffsetX+=(e.touches[0].clientX-ltx)/dScale;dOffsetY+=(e.touches[0].clientY-lty)/dScale;ltx=e.touches[0].clientX;lty=e.touches[0].clientY;drawDetailCanvas();}if(e.touches.length===2){var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);dScale=Math.max(0.4,Math.min(2.5,dScale*d/ld));ld=d;drawDetailCanvas();}e.preventDefault();},{passive:false});
@@ -470,7 +504,7 @@ function resizeDetailCanvas() {
   var w = document.getElementById('detailCanvasWrap');
   if (!w||!dCanvas) return;
   var prevW = dCanvas.width, prevH = dCanvas.height;
-  dCanvas.width=w.clientWidth; dCanvas.height=340;
+  dCanvas.width=w.clientWidth; dCanvas.height=380;
   var allPos = detailPersons.length && detailPersons.every(function(p) {
     return typeof p._x === 'number' && typeof p._y === 'number' && !isNaN(p._x) && !isNaN(p._y);
   });
@@ -505,7 +539,7 @@ function runDetailForce(w, h) {
   if (n<2) return;
   var area = Math.max(w * h, 1);
   var k = Math.sqrt(area / n) * 0.82;
-  var repK = k * k, attract = 0.052, pad = 52;
+  var repK = k * k, attract = 0.052, pad = 62;
   var cx = w/2, cy = h/2, damping = 0.86, grav = 0.018, vmax = k * 0.38;
   detailPersons.forEach(function(p){ p._fx=0; p._fy=0; });
   for (var i=0; i<n; i++) {
@@ -553,7 +587,7 @@ function drawDetailCanvas() {
   if (!allSavedPos) {
     initDetailForce(c.width, c.height);
   } else {
-    var pad = 52;
+    var pad = 62;
     detailPersons.forEach(function(p) {
       p._x = Math.max(pad, Math.min(c.width - pad, p._x));
       p._y = Math.max(pad, Math.min(c.height - pad, p._y));
@@ -621,6 +655,27 @@ function drawDetailCanvas() {
 function dZoomIn()  { dScale=Math.min(2.5,dScale+0.2); drawDetailCanvas(); }
 function dZoomOut() { dScale=Math.max(0.4,dScale-0.2); drawDetailCanvas(); }
 function dReset()   { dScale=1; dOffsetX=0; dOffsetY=0; drawDetailCanvas(); }
+
+function showNodeTooltip(p, px, py) {
+  var tt = document.getElementById('nodeTooltip');
+  var wrap = document.getElementById('detailCanvasWrap');
+  var memo = (p.memo || '').trim();
+  if (!memo) { hideNodeTooltip(); return; }
+  document.getElementById('ttMemo').textContent = memo;
+  tt.style.display = 'block';
+  var ww = wrap.clientWidth;
+  var left = px + 14, top = py - 10;
+  if (left + 160 > ww) left = px - 164;
+  if (left < 4) left = 4;
+  tt.style.left = left + 'px';
+  tt.style.top  = top  + 'px';
+  requestAnimationFrame(function(){ tt.classList.add('visible'); });
+}
+function hideNodeTooltip() {
+  var tt = document.getElementById('nodeTooltip');
+  if (!tt) return;
+  tt.classList.remove('visible');
+}
 
 function uid() { return Math.random().toString(36).substr(2,9); }
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
