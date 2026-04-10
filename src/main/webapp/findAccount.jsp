@@ -8,23 +8,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  :root{
+  :root {
     --deep:#0d1a33; --navy:#1a2744; --mid:#243358;
-    --gold:#f0c040; --gold2:#e6b830;
-    --blue:#4a7cdc; --accent:#4a7cdc; --danger:#dc2626;
+    --accent:#4a7cdc; --danger:#e74c3c;
     --tp:#1a1a2e; --ts:#6b7280; --tm:#9ca3af;
     --bg:#f0f2f8; --card:#ffffff; --bd:#e2e5ee;
-    --success:#16a34a; --success-bg:#f0fdf4; --success-bd:#bbf7d0;
-    --warn-bg:#fffbeb; --warn-text:#92400e;
-    --danger-bg:#fef2f2; --danger-bd:#fecaca;
-    --info-bg:#eff6ff; --info-text:#1e40af;
+    --success:#16a34a;
   }
   html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: var(--bg); }
 
   .screen { width: 100%; max-width: 420px; min-height: 100vh; margin: 0 auto; background: var(--bg); }
 
   .top-bar {
-    background: var(--navy); padding: 52px 20px 0;
+    background: var(--deep); padding: 52px 20px 0;
     position: sticky; top: 0; z-index: 10;
   }
   .top-row { display: flex; align-items: center; gap: 12px; padding-bottom: 16px; }
@@ -50,20 +46,20 @@
   .tab-panel { display: none; animation: fadeUp 0.3s ease both; }
   .tab-panel.active { display: block; }
 
-  .card { background: var(--card); border-radius: 16px; padding: 22px 20px; border: 1px solid var(--bd); margin-bottom: 16px; }
+  .card { background: var(--card); border-radius: 16px; padding: 22px 20px; border: 1px solid var(--border); margin-bottom: 16px; }
 
   .field-group { margin-bottom: 14px; }
-  .field-label { font-size: 11px; font-weight: 500; color: var(--ts); display: block; margin-bottom: 6px; }
+  .field-label { font-size: 11px; font-weight: 500; color: var(--text-secondary); display: block; margin-bottom: 6px; }
   .field-wrap { position: relative; }
-  .field-wrap svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--tm); pointer-events: none; }
+  .field-wrap svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--text-muted); pointer-events: none; }
   .field-input {
     width: 100%; padding: 12px 12px 12px 38px;
-    background: var(--bg); border: 1px solid var(--bd); border-radius: 10px;
-    font-size: 13px; font-family: 'Noto Sans KR', sans-serif; color: var(--tp); outline: none;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+    font-size: 13px; font-family: 'Noto Sans KR', sans-serif; color: var(--text-primary); outline: none;
     transition: border-color 0.2s;
   }
   .field-input:focus { border-color: var(--accent); background: #fff; }
-  .field-input::placeholder { color: var(--tm); font-size: 12px; }
+  .field-input::placeholder { color: var(--text-muted); font-size: 12px; }
 
   .inline-row { display: flex; gap: 8px; }
   .inline-row .field-wrap { flex: 1; }
@@ -92,14 +88,14 @@
   }
   .result-label { font-size: 11px; color: #1e40af; margin-bottom: 8px; }
   .result-value { font-size: 20px; font-weight: 700; color: var(--navy); letter-spacing: 1px; }
-  .result-sub   { font-size: 11px; color: var(--tm); margin-top: 6px; }
+  .result-sub   { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
 
   /* 새 비밀번호 설정 영역 */
   .new-pw-section { display: none; animation: fadeUp 0.3s ease both; }
 
   .hint-box {
     background: var(--bg); border-radius: 10px; padding: 12px 14px; margin-top: 12px;
-    font-size: 11px; color: var(--tm); line-height: 1.8;
+    font-size: 11px; color: var(--text-muted); line-height: 1.8;
   }
 
   @keyframes fadeUp { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
@@ -127,96 +123,104 @@
     <!-- ═══ 아이디 찾기 패널 ═══ -->
     <div class="tab-panel active" id="panelId">
 
-      <div class="card">
-        <div class="field-group">
-          <label class="field-label">이름</label>
-          <div class="field-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <input type="text" id="findIdName" class="field-input" placeholder="가입 시 등록한 이름">
-          </div>
-        </div>
-
-        <div class="field-group" style="margin-bottom:0">
-          <label class="field-label">연락처</label>
-          <div class="inline-row">
-            <div class="field-wrap" style="flex:1; position:relative">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.45 19.45 0 0 1 5 12.4 19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-              <input type="tel" id="findIdPhone" class="field-input" placeholder="010-0000-0000">
+      <!-- 입력 폼 -->
+      <div id="findIdForm">
+        <div class="card">
+          <div class="field-group">
+            <label class="field-label">이름</label>
+            <div class="field-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <input type="text" id="findIdName" class="field-input" placeholder="가입 시 등록한 이름">
             </div>
-            <button class="btn-send" id="btnSendId" onclick="sendOtp('id')">인증번호 발송</button>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label">이메일</label>
+            <div class="field-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <input type="email" id="findIdEmail" class="field-input" placeholder="가입 시 등록한 이메일">
+            </div>
           </div>
         </div>
+
+        <button class="btn-submit" id="btnFindId" onclick="doFindId()">아이디 찾기</button>
+        <p style="text-align:center; margin-top:14px;">
+          <a href="login.jsp" style="font-size:12px; color:var(--accent); text-decoration:none;">로그인 화면으로 돌아가기</a>
+        </p>
       </div>
 
-      <div class="card" id="otpCardId" style="display:none">
-        <div class="field-group" style="margin-bottom:0">
-          <label class="field-label">인증번호 입력</label>
-          <div class="field-wrap" style="position:relative">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <input type="text" id="otpId" class="field-input" placeholder="6자리 숫자 입력" maxlength="6">
-            <span class="timer" id="timerIdEl"></span>
+      <!-- 발송 완료 결과 -->
+      <div id="findIdDone" style="display:none; animation: fadeUp 0.3s ease both;">
+        <div class="result-card" style="display:block;">
+          
+          <div class="result-label">이메일 발송 완료</div>
+          <div class="result-value" id="maskedEmailEl" style="font-size:14px; letter-spacing:0; word-break:break-all;"></div>
+          <div class="result-sub" style="margin-top:10px; line-height:1.7;">
+            위 이메일로 아이디를 발송했습니다.<br>
+            스팸함도 확인해 주세요.
           </div>
-          <div class="hint-box">임시 인증번호: <strong>123456</strong> (DB 연동 전 테스트용)</div>
         </div>
+        <button class="btn-submit" onclick="location.href='login.jsp'">로그인 화면으로 이동</button>
       </div>
 
-      <!-- 결과 -->
-      <div class="result-card" id="idResult">
-        <div class="result-label">회원님의 아이디는</div>
-        <div class="result-value" id="foundId"></div>
-        <div class="result-sub">가입일 기준으로 조회되었습니다</div>
-      </div>
-
-      <button class="btn-submit" onclick="findId()">아이디 찾기</button>
-      <p style="text-align:center; margin-top:14px;">
-        <a href="login.jsp" style="font-size:12px; color:var(--accent); text-decoration:none;">로그인 화면으로 돌아가기</a>
-      </p>
     </div>
 
     <!-- ═══ 비밀번호 찾기 패널 ═══ -->
     <div class="tab-panel" id="panelPw">
 
-      <div class="card">
-        <div class="field-group">
-          <label class="field-label">아이디</label>
-          <div class="field-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <input type="text" id="findPwId" class="field-input" placeholder="가입한 아이디">
-          </div>
-        </div>
-
-        <div class="field-group" style="margin-bottom:0">
-          <label class="field-label">연락처</label>
-          <div class="inline-row">
-            <div class="field-wrap" style="flex:1; position:relative">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.45 19.45 0 0 1 5 12.4 19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-              <input type="tel" id="findPwPhone" class="field-input" placeholder="010-0000-0000">
+      <!-- Step 1: 아이디 + 이메일 입력 -->
+      <div id="pwStep1">
+        <div class="card">
+          <div class="field-group">
+            <label class="field-label">아이디</label>
+            <div class="field-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <input type="text" id="findPwUserId" class="field-input" placeholder="가입한 아이디">
             </div>
-            <button class="btn-send" id="btnSendPw" onclick="sendOtp('pw')">인증번호 발송</button>
+          </div>
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label">이메일</label>
+            <div class="inline-row">
+              <div class="field-wrap" style="flex:1;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                <input type="email" id="findPwEmail" class="field-input" placeholder="가입 시 등록한 이메일">
+              </div>
+              <button class="btn-send" id="btnSendCode" onclick="sendPwCode()">인증코드 발송</button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="card" id="otpCardPw" style="display:none">
-        <div class="field-group" style="margin-bottom:0">
-          <label class="field-label">인증번호 입력</label>
-          <div class="field-wrap" style="position:relative">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <input type="text" id="otpPw" class="field-input" placeholder="6자리 숫자 입력" maxlength="6">
-            <span class="timer" id="timerPwEl"></span>
+        <!-- 인증코드 입력 (발송 후 표시) -->
+        <div class="card" id="otpCardPw" style="display:none">
+          <div class="field-group" style="margin-bottom:0">
+            <label class="field-label">인증코드</label>
+            <div class="field-wrap" style="position:relative">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input type="text" id="otpPw" class="field-input" placeholder="이메일로 받은 6자리 코드" maxlength="6" inputmode="numeric" style="padding-right:52px">
+              <span class="timer" id="timerPwEl"></span>
+            </div>
           </div>
-          <div class="hint-box">임시 인증번호: <strong>123456</strong> (DB 연동 전 테스트용)</div>
         </div>
+
+        <button class="btn-submit" id="btnVerifyPw" onclick="verifyPwCode()">인증 확인</button>
+        <p style="text-align:center; margin-top:14px;">
+          <a href="login.jsp" style="font-size:12px; color:var(--accent); text-decoration:none;">로그인 화면으로 돌아가기</a>
+        </p>
       </div>
 
-      <!-- 새 비밀번호 설정 -->
-      <div class="new-pw-section" id="newPwSection">
+      <!-- Step 2: 새 비밀번호 입력 -->
+      <div id="pwStep2" style="display:none">
         <div class="card">
           <div class="field-group">
             <label class="field-label">새 비밀번호</label>
             <div class="field-wrap">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <input type="password" id="newPw" class="field-input" placeholder="8자 이상 영문+숫자+특수문자">
+              <input type="password" id="newPw" class="field-input" placeholder="8자 이상 영문+숫자+특수문자" oninput="checkPwStrength()">
+            </div>
+            <div style="margin-top:6px">
+              <div style="height:3px;background:var(--bd);border-radius:2px;margin-bottom:4px">
+                <div id="pwStrengthBar" style="height:100%;border-radius:2px;width:0;transition:width 0.3s,background 0.3s"></div>
+              </div>
+              <div id="pwStrengthMsg" style="font-size:10px;color:var(--tm)"></div>
             </div>
           </div>
           <div class="field-group" style="margin-bottom:0">
@@ -227,34 +231,25 @@
             </div>
           </div>
         </div>
-        <button class="btn-submit" onclick="resetPw()">비밀번호 변경 완료</button>
+        <button class="btn-submit" id="btnResetPw" onclick="doResetPw()">비밀번호 변경 완료</button>
       </div>
 
-      <div id="verifyPwBtn">
-        <button class="btn-submit" onclick="verifyOtpPw()">인증 확인</button>
+      <!-- Step 3: 변경 완료 -->
+      <div id="pwStep3" style="display:none">
+        <div class="result-card" style="display:block; background:#f0fdf4; border-color:#bbf7d0;">
+          <div style="font-size:36px; margin-bottom:10px;">✅</div>
+          <div class="result-label" style="color:#15803d;">비밀번호 변경 완료</div>
+          <div class="result-value" style="font-size:15px; letter-spacing:0; color:#1a2744;">새 비밀번호로 로그인하세요</div>
+        </div>
+        <button class="btn-submit" onclick="location.href='login.jsp'">로그인 화면으로 이동</button>
       </div>
 
-      <p style="text-align:center; margin-top:14px;">
-        <a href="login.jsp" style="font-size:12px; color:var(--accent); text-decoration:none;">로그인 화면으로 돌아가기</a>
-      </p>
     </div>
 
   </div>
 </div>
 
 <script>
-// ── 임시 사용자 데이터 (DB 연동 전 테스트용) ──────────────────────
-const TEMP_DB = [
-  { id:'admin', name:'관리자', phone:'010-0000-0000' },
-  { id:'test',  name:'김민준', phone:'010-1234-5678' },
-  { id:'hong',  name:'홍길동', phone:'010-9876-5432' }
-];
-const TEMP_OTP = '123456';
-// ──────────────────────────────────────────────────────────────────
-
-let timerIdInterval = null;
-let timerPwInterval = null;
-
 function switchTab(tab) {
   document.getElementById('panelId').classList.toggle('active', tab==='id');
   document.getElementById('panelPw').classList.toggle('active', tab==='pw');
@@ -262,88 +257,180 @@ function switchTab(tab) {
   document.getElementById('tabPw').classList.toggle('active', tab==='pw');
 }
 
-// ── OTP 발송 (임시: 콘솔 출력) ──
-function sendOtp(type) {
-  const phone = document.getElementById(type==='id' ? 'findIdPhone' : 'findPwPhone').value.trim();
-  if (!phone) { alert('연락처를 입력해 주세요.'); return; }
+// ══════════════════════════════════════════
+// 아이디 찾기
+// ══════════════════════════════════════════
+async function doFindId() {
+  const name  = document.getElementById('findIdName').value.trim();
+  const email = document.getElementById('findIdEmail').value.trim();
+  if (!name)  { alert('이름을 입력해 주세요.'); return; }
+  if (!email) { alert('이메일을 입력해 주세요.'); return; }
+  if (!/^[\w.+-]+@[\w-]+\.[\w.]+$/.test(email)) { alert('이메일 형식이 올바르지 않습니다.'); return; }
 
-  const cardId  = type==='id' ? 'otpCardId' : 'otpCardPw';
-  const timerId = type==='id' ? 'timerIdEl' : 'timerPwEl';
-  const btnId   = type==='id' ? 'btnSendId' : 'btnSendPw';
-  const prevTimer = type==='id' ? timerIdInterval : timerPwInterval;
+  const btn = document.getElementById('btnFindId');
+  btn.disabled = true; btn.textContent = '조회 중...';
 
-  document.getElementById(cardId).style.display = 'block';
-  document.getElementById(btnId).textContent    = '재발송';
-  if (prevTimer) clearInterval(prevTimer);
+  try {
+    const data = await fetch('findAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+      body: new URLSearchParams({ action: 'findId', name, email }).toString()
+    }).then(r => r.json());
 
+    if (data.success) {
+      document.getElementById('maskedEmailEl').textContent = data.maskedEmail;
+      document.getElementById('findIdForm').style.display = 'none';
+      document.getElementById('findIdDone').style.display = 'block';
+    } else {
+      alert(data.message);
+      btn.disabled = false; btn.textContent = '아이디 찾기';
+    }
+  } catch(e) {
+    alert('서버 통신 오류가 발생했습니다.');
+    btn.disabled = false; btn.textContent = '아이디 찾기';
+  }
+}
+
+// ══════════════════════════════════════════
+// 비밀번호 찾기 - 인증코드 발송
+// ══════════════════════════════════════════
+let pwTimerIv = null;
+
+async function sendPwCode() {
+  const userId = document.getElementById('findPwUserId').value.trim();
+  const email  = document.getElementById('findPwEmail').value.trim();
+  if (!userId) { alert('아이디를 입력해 주세요.'); return; }
+  if (!email)  { alert('이메일을 입력해 주세요.'); return; }
+  if (!/^[\w.+-]+@[\w-]+\.[\w.]+$/.test(email)) { alert('이메일 형식이 올바르지 않습니다.'); return; }
+
+  const btn = document.getElementById('btnSendCode');
+  btn.disabled = true; btn.textContent = '발송 중...';
+
+  try {
+    const data = await fetch('findAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+      body: new URLSearchParams({ action: 'sendCode', userId, email }).toString()
+    }).then(r => r.json());
+
+    if (data.success) {
+      document.getElementById('otpCardPw').style.display = 'block';
+      btn.textContent = '재발송'; btn.disabled = false;
+      startTimer();
+      alert('인증코드가 이메일로 발송되었습니다.');
+    } else {
+      alert(data.message);
+      btn.disabled = false; btn.textContent = '인증코드 발송';
+    }
+  } catch(e) {
+    alert('서버 통신 오류가 발생했습니다.');
+    btn.disabled = false; btn.textContent = '인증코드 발송';
+  }
+}
+
+function startTimer() {
+  clearInterval(pwTimerIv);
   let sec = 180;
-  const el = document.getElementById(timerId);
-  function tick() {
+  const el = document.getElementById('timerPwEl');
+  const tick = () => {
     const m = String(Math.floor(sec/60)).padStart(2,'0');
     const s = String(sec%60).padStart(2,'0');
     el.textContent = m+':'+s;
-    if (sec-- <= 0) { clearInterval(iv); el.textContent='만료'; }
-  }
+    if (sec-- <= 0) { clearInterval(pwTimerIv); el.textContent = '만료'; }
+  };
   tick();
-  const iv = setInterval(tick, 1000);
-  if (type==='id') timerIdInterval = iv; else timerPwInterval = iv;
-
-  console.log('[POL-MATE 테스트] OTP: ' + TEMP_OTP);
+  pwTimerIv = setInterval(tick, 1000);
 }
 
-// ── 아이디 찾기 ──
-function findId() {
-  const name  = document.getElementById('findIdName').value.trim();
-  const phone = document.getElementById('findIdPhone').value.trim();
-  const otp   = document.getElementById('otpId') ? document.getElementById('otpId').value.trim() : '';
+// ══════════════════════════════════════════
+// 비밀번호 찾기 - 인증코드 확인
+// ══════════════════════════════════════════
+async function verifyPwCode() {
+  const code = document.getElementById('otpPw').value.trim();
+  if (!code) { alert('인증코드를 입력해 주세요.'); return; }
 
-  if (!name || !phone) { alert('이름과 연락처를 입력해 주세요.'); return; }
-  if (document.getElementById('otpCardId').style.display !== 'none' && otp !== TEMP_OTP) {
-    alert('인증번호가 올바르지 않습니다.'); return;
+  const btn = document.getElementById('btnVerifyPw');
+  btn.disabled = true; btn.textContent = '확인 중...';
+
+  try {
+    const data = await fetch('findAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+      body: new URLSearchParams({ action: 'verifyCode', code }).toString()
+    }).then(r => r.json());
+
+    btn.disabled = false; btn.textContent = '인증 확인';
+    if (data.success) {
+      clearInterval(pwTimerIv);
+      document.getElementById('pwStep1').style.display = 'none';
+      document.getElementById('pwStep2').style.display = 'block';
+    } else {
+      alert(data.message);
+    }
+  } catch(e) {
+    alert('서버 통신 오류가 발생했습니다.');
+    btn.disabled = false; btn.textContent = '인증 확인';
   }
+}
 
-  const found = TEMP_DB.find(u => u.name === name && u.phone === phone);
-  if (found) {
-    const result = document.getElementById('idResult');
-    document.getElementById('foundId').textContent = maskId(found.id);
-    result.style.display = 'block';
-  } else {
-    alert('일치하는 회원 정보를 찾을 수 없습니다.');
+// ══════════════════════════════════════════
+// 비밀번호 재설정
+// ══════════════════════════════════════════
+async function doResetPw() {
+  const newPw  = document.getElementById('newPw').value;
+  const newPwCf= document.getElementById('newPwCf').value;
+  if (!newPw || newPw.length < 8)    { alert('비밀번호를 8자 이상 입력해 주세요.'); return; }
+  if (!/[a-zA-Z]/.test(newPw))       { alert('영문자를 포함해야 합니다.'); return; }
+  if (!/[0-9]/.test(newPw))          { alert('숫자를 포함해야 합니다.'); return; }
+  if (!/[!@#$%^&*()_+\-=]/.test(newPw)) { alert('특수문자를 포함해야 합니다.'); return; }
+  if (newPw !== newPwCf)             { alert('비밀번호가 일치하지 않습니다.'); return; }
+
+  const btn = document.getElementById('btnResetPw');
+  btn.disabled = true; btn.textContent = '변경 중...';
+
+  try {
+    const data = await fetch('findAccount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+      body: new URLSearchParams({ action: 'resetPw', newPw }).toString()
+    }).then(r => r.json());
+
+    btn.disabled = false; btn.textContent = '비밀번호 변경 완료';
+    if (data.success) {
+      document.getElementById('pwStep2').style.display = 'none';
+      document.getElementById('pwStep3').style.display = 'block';
+    } else {
+      alert(data.message);
+    }
+  } catch(e) {
+    alert('서버 통신 오류가 발생했습니다.');
+    btn.disabled = false; btn.textContent = '비밀번호 변경 완료';
   }
 }
 
-function maskId(id) {
-  if (id.length <= 3) return id[0] + '*'.repeat(id.length-1);
-  return id.slice(0, Math.ceil(id.length/2)) + '*'.repeat(Math.floor(id.length/2));
-}
-
-// ── 비밀번호 찾기 - OTP 인증 ──
-function verifyOtpPw() {
-  const userId= document.getElementById('findPwId').value.trim();
-  const phone = document.getElementById('findPwPhone').value.trim();
-  const otp   = document.getElementById('otpPw').value.trim();
-
-  if (!userId || !phone) { alert('아이디와 연락처를 입력해 주세요.'); return; }
-  if (!otp) { alert('인증번호를 입력해 주세요.'); return; }
-
-  const found = TEMP_DB.find(u => u.id === userId && u.phone === phone);
-  if (!found)             { alert('일치하는 회원 정보를 찾을 수 없습니다.'); return; }
-  if (otp !== TEMP_OTP)   { alert('인증번호가 올바르지 않습니다.'); return; }
-
-  document.getElementById('verifyPwBtn').style.display    = 'none';
-  document.getElementById('otpCardPw').style.display      = 'none';
-  document.getElementById('newPwSection').style.display   = 'block';
-}
-
-// ── 비밀번호 재설정 ──
-function resetPw() {
-  const pw   = document.getElementById('newPw').value;
-  const pwcf = document.getElementById('newPwCf').value;
-  if (!pw || pw.length < 8) { alert('비밀번호를 8자 이상 입력해 주세요.'); return; }
-  if (pw !== pwcf)           { alert('비밀번호가 일치하지 않습니다.'); return; }
-
-  alert('비밀번호가 변경되었습니다.\n(DB 미연동 상태 — 실제 반영은 DB 연동 후 가능합니다.)');
-  location.href = 'login.jsp';
+// ══════════════════════════════════════════
+// 비밀번호 강도
+// ══════════════════════════════════════════
+function checkPwStrength() {
+  const pw = document.getElementById('newPw').value;
+  let score = 0;
+  if (pw.length >= 8)              score++;
+  if (/[A-Z]/.test(pw))           score++;
+  if (/[a-z]/.test(pw))           score++;
+  if (/[0-9]/.test(pw))           score++;
+  if (/[!@#$%^&*()_+\-=]/.test(pw)) score++;
+  const lv = [
+    {p:'0%',   c:'var(--bd)',      t:''},
+    {p:'25%',  c:'var(--danger)',  t:'매우 약함'},
+    {p:'50%',  c:'#f97316',        t:'약함'},
+    {p:'75%',  c:'#eab308',        t:'보통'},
+    {p:'90%',  c:'var(--success)', t:'강함'},
+    {p:'100%', c:'var(--success)', t:'매우 강함 ✓'},
+  ][Math.min(score, 5)];
+  const bar = document.getElementById('pwStrengthBar');
+  const msg = document.getElementById('pwStrengthMsg');
+  bar.style.width = lv.p; bar.style.background = lv.c;
+  msg.textContent = lv.t; msg.style.color = lv.c;
 }
 </script>
 </body>

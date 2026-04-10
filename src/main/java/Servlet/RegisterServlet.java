@@ -139,6 +139,7 @@ public class RegisterServlet extends HttpServlet {
         String userRank = nvl(request.getParameter("userRank"));
         String deptId   = nvl(request.getParameter("deptId"));   // 선택 (departments.dept_id)
         String badgeNum = nvl(request.getParameter("badgeNum"));
+        String userEmail= nvl(request.getParameter("userEmail"));
 
         // ── 필수값 검증 ──────────────────────────────────────────
         if (userId.isEmpty())   { response.getWriter().print(jsonResult(false, "아이디를 입력해 주세요.")); return; }
@@ -147,6 +148,11 @@ public class RegisterServlet extends HttpServlet {
         if (userOrg.isEmpty())  { response.getWriter().print(jsonResult(false, "소속 기관을 선택해 주세요.")); return; }
         if (userRank.isEmpty()) { response.getWriter().print(jsonResult(false, "계급을 선택해 주세요.")); return; }
         if (badgeNum.isEmpty()) { response.getWriter().print(jsonResult(false, "수사관 번호를 입력해 주세요.")); return; }
+        if (userEmail.isEmpty()) { response.getWriter().print(jsonResult(false, "이메일을 입력해 주세요.")); return; }
+        if (!userEmail.matches("^[\\w.+\\-]+@[\\w\\-]+\\.[\\w.]+$")) {
+            response.getWriter().print(jsonResult(false, "이메일 형식이 올바르지 않습니다."));
+            return;
+        }
 
         // 아이디 형식 체크
         if (!userId.matches("^[a-z0-9]{4,16}$")) {
@@ -200,27 +206,39 @@ public class RegisterServlet extends HttpServlet {
             }
             bRs.close(); bChk.close();
 
+            // 이메일 중복 확인
+            PreparedStatement eChk = conn.prepareStatement("SELECT 1 FROM users WHERE user_email = ?");
+            eChk.setString(1, userEmail);
+            ResultSet eRs = eChk.executeQuery();
+            if (eRs.next()) {
+                eRs.close(); eChk.close();
+                response.getWriter().print(jsonResult(false, "이미 사용 중인 이메일입니다."));
+                return;
+            }
+            eRs.close(); eChk.close();
+
             // INSERT (user_dept 대신 dept_id 사용)
-            String sql = "INSERT INTO users (user_id, user_pw, user_name, user_phone, user_org, user_rank, dept_id, badge_num) " +
-                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO users (user_id, user_pw, user_name, user_phone, user_email, user_org, user_rank, dept_id, badge_num) " +
+                         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, userId);
             pstmt.setString(2, userPw);   // ※ 운영 환경에서는 BCrypt 해시로 교체
             pstmt.setString(3, userName);
             pstmt.setString(4, userPhone.isEmpty() ? null : userPhone);
-            pstmt.setString(5, userOrg);
-            pstmt.setString(6, userRank);
+            pstmt.setString(5, userEmail);
+            pstmt.setString(6, userOrg);
+            pstmt.setString(7, userRank);
             // deptId가 비어있거나 숫자가 아니면 NULL 저장
             if (deptId.isEmpty()) {
-                pstmt.setNull(7, Types.INTEGER);
+                pstmt.setNull(8, Types.INTEGER);
             } else {
                 try {
-                    pstmt.setInt(7, Integer.parseInt(deptId));
+                    pstmt.setInt(8, Integer.parseInt(deptId));
                 } catch (NumberFormatException e) {
-                    pstmt.setNull(7, Types.INTEGER);
+                    pstmt.setNull(8, Types.INTEGER);
                 }
             }
-            pstmt.setString(8, badgeNum);
+            pstmt.setString(9, badgeNum);
             pstmt.executeUpdate();
 
             response.getWriter().print(jsonResult(true, "회원가입이 완료되었습니다."));
