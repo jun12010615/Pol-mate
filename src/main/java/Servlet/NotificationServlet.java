@@ -96,8 +96,9 @@ public class NotificationServlet extends HttpServlet {
 
             JSONArray arr = new JSONArray();
 
-            // ── 1. 비밀번호 만료 경고 (DB 저장 없이 실시간 계산) ──
-            if ("all".equals(typeFilter) || "sys".equals(typeFilter)) {
+            // ── 1. 비밀번호 만료 경고 (DB 저장 + 24시간 중복 방지) ──
+            // "all", "alert", "sys" 탭에서 노출
+            if ("all".equals(typeFilter) || "alert".equals(typeFilter) || "sys".equals(typeFilter)) {
                 ps = conn.prepareStatement(
                     "SELECT DATEDIFF(NOW(), IFNULL(password_changed_at, created_at)) AS days_since " +
                     "FROM users WHERE user_id = ?");
@@ -106,21 +107,41 @@ public class NotificationServlet extends HttpServlet {
                 if (rs.next()) {
                     int daysSince = rs.getInt("days_since");
                     if (daysSince >= PW_WARN_DAYS) {
-                        JSONObject pw = new JSONObject();
-                        pw.put("notifId",     -1);
-                        pw.put("type",        "sys");
-                        pw.put("tag",         "보안");
-                        pw.put("title",       "비밀번호 변경 권고");
-                        pw.put("description", "마지막 비밀번호 변경 후 " + daysSince + "일이 경과했습니다. 보안을 위해 비밀번호를 변경해 주세요.");
-                        pw.put("link",        "mypage.jsp");
-                        pw.put("isUnread",    true);
-                        pw.put("isCritical",  daysSince >= 180);
-                        pw.put("timeLabel",   "보안 알림");
-                        arr.put(pw);
+                        // 24시간 이내 같은 비밀번호 경고 알림이 이미 있으면 추가하지 않음
+                        rs.close();
+                        mgr.freeConnection(null, ps);
+                        ps = conn.prepareStatement(
+                            "SELECT COUNT(*) AS cnt FROM notifications " +
+                            "WHERE user_id = ? AND type = 'sys' AND tag = '보안' " +
+                            "  AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)");
+                        ps.setString(1, loginUser);
+                        rs = ps.executeQuery();
+                        int recentPwWarn = rs.next() ? rs.getInt("cnt") : 0;
+                        rs.close();
+                        mgr.freeConnection(null, ps);
+
+                        if (recentPwWarn == 0) {
+                            // 24시간 내 경고 없음 → DB에 저장
+                            ps = conn.prepareStatement(
+                                "INSERT INTO notifications " +
+                                "(user_id, type, tag, title, description, link, is_unread, is_critical) " +
+                                "VALUES (?, 'sys', '보안', ?, ?, 'mypage.jsp', 1, ?)");
+                            ps.setString(1, loginUser);
+                            ps.setString(2, "비밀번호 변경 권고");
+                            ps.setString(3, "마지막 비밀번호 변경 후 " + daysSince + "일이 경과했습니다. 보안을 위해 비밀번호를 변경해 주세요.");
+                            ps.setBoolean(4, daysSince >= 180);
+                            ps.executeUpdate();
+                            mgr.freeConnection(null, ps);
+                        }
+                    } else {
+                        rs.close();
+                        mgr.freeConnection(null, ps);
                     }
+                } else {
+                    rs.close();
+                    mgr.freeConnection(null, ps);
                 }
-                rs.close();
-                mgr.freeConnection(null, ps);
+                ps = null; rs = null;
             }
 
             // ── 2. DB 알림 목록 조회 ──
@@ -133,10 +154,16 @@ public class NotificationServlet extends HttpServlet {
             List<Object> params = new ArrayList<>();
             params.add(loginUser);
 
-            if (!"all".equals(typeFilter)) {
-                sql.append("AND type = ? ");
-                params.add(typeFilter);
+            if ("alert".equals(typeFilter)) {
+                // 경고 탭: sys 전체 + case 중 is_critical=1 (모순탐지 등)
+                sql.append("AND (type = 'sys' OR (type = 'case' AND is_critical = 1)) ");
+            } else if ("case".equals(typeFilter)) {
+                // 사건 탭: case 타입 전체 (모순탐지 포함)
+                sql.append("AND type = 'case' ");
+            } else if ("sys".equals(typeFilter)) {
+                sql.append("AND type = 'sys' ");
             }
+            // "all"이면 조건 없음
 
             sql.append("ORDER BY created_at DESC LIMIT 100");
 
@@ -203,14 +230,28 @@ public class NotificationServlet extends HttpServlet {
             rs.close();
             mgr.freeConnection(null, ps);
 
-            // 비밀번호 만료 여부
+            // 비밀번호 만료 경고 알림이 아직 DB에 없으면 카운트에 포함
             ps = conn.prepareStatement(
                 "SELECT DATEDIFF(NOW(), IFNULL(password_changed_at, created_at)) AS days_since " +
                 "FROM users WHERE user_id = ?");
             ps.setString(1, loginUser);
             rs = ps.executeQuery();
-            if (rs.next() && rs.getInt("days_since") >= PW_WARN_DAYS) {
-                cnt++;
+            if (rs.next()) {
+                int daysSince = rs.getInt("days_since");
+                if (daysSince >= PW_WARN_DAYS) {
+                    // 24시간 이내 경고 알림이 DB에 없을 경우에만 +1
+                    rs.close();
+                    mgr.freeConnection(null, ps);
+                    ps = conn.prepareStatement(
+                        "SELECT COUNT(*) AS cnt FROM notifications " +
+                        "WHERE user_id = ? AND type = 'sys' AND tag = '보안' " +
+                        "  AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)");
+                    ps.setString(1, loginUser);
+                    rs = ps.executeQuery();
+                    if (rs.next() && rs.getInt("cnt") == 0) {
+                        cnt++;
+                    }
+                }
             }
 
             JSONObject result = new JSONObject();
