@@ -9,16 +9,22 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-  :root{
-    --deep:#0d1a33; --navy:#1a2744; --mid:#243358;
-    --gold:#f0c040; --gold2:#e6b830;
-    --blue:#4a7cdc; --accent:#4a7cdc; --danger:#dc2626;
-    --tp:#1a1a2e; --ts:#6b7280; --tm:#9ca3af;
-    --bg:#f0f2f8; --card:#ffffff; --bd:#e2e5ee;
-    --success:#16a34a; --success-bg:#f0fdf4; --success-bd:#bbf7d0;
-    --warn-bg:#fffbeb; --warn-text:#92400e;
-    --danger-bg:#fef2f2; --danger-bd:#fecaca;
-    --info-bg:#eff6ff; --info-text:#1e40af;
+  :root {
+    --navy: #1a2744;
+    --navy-light: #243358;
+    --accent: #4a7cdc;
+    --danger: #e74c3c;
+    --text-primary: #1a1a2e;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --success: #16a34a;
+    --success-bg: #f0fdf4;
+    --danger-bg: #fef2f2;
+    --danger-border: #fecaca;
+    --bottom-nav-h: 64px;
   }
 
   html, body {
@@ -40,7 +46,7 @@
 
   /* ── 헤더 ── */
   .top-header {
-    background:var(--deep);
+    background: var(--navy);
     padding: 52px 20px 0;
     position: sticky;
     top: 0;
@@ -71,7 +77,7 @@
 
   /* ── 프로필 카드 ── */
   .profile-band {
-    background: var(--deep);
+    background: var(--navy);
     padding: 0 20px 28px;
   }
 
@@ -158,18 +164,18 @@
     position: absolute;
     right: 0; top: 20%; bottom: 20%;
     width: 1px;
-    background: var(--bd);
+    background: var(--border);
   }
   .stat-col:last-child::after { display: none; }
 
   .stat-num { font-size: 22px; font-weight: 700; color: var(--navy); }
-  .stat-lbl { font-size: 10px; color: var(--tm); margin-top: 3px; }
+  .stat-lbl { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
 
   /* ── 스크롤 영역 ── */
   .content {
     flex: 1;
     overflow-y: auto;
-    padding-bottom: 80px;
+    padding-bottom: calc(var(--bottom-nav-h) + 16px);
     background: var(--bg);
   }
 
@@ -180,7 +186,7 @@
   .section-label {
     font-size: 10px;
     font-weight: 500;
-    color: var(--tm);
+    color: var(--text-muted);
     letter-spacing: 0.8px;
     text-transform: uppercase;
     margin-bottom: 8px;
@@ -191,7 +197,7 @@
   .menu-list {
     background: var(--card);
     border-radius: 14px;
-    border: 1px solid var(--bd);
+    border: 1px solid var(--border);
     overflow: hidden;
     margin-bottom: 0;
   }
@@ -203,7 +209,7 @@
     cursor: pointer;
     transition: background 0.15s;
     text-decoration: none;
-    border-bottom: 1px solid var(--bd);
+    border-bottom: 1px solid var(--border);
   }
   .menu-row:last-child { border-bottom: none; }
   .menu-row:active { background: var(--bg); }
@@ -238,8 +244,8 @@
   .stroke-navy   { stroke: #1a2744; }
 
   .menu-text { flex: 1; }
-  .menu-name { font-size: 14px; color: var(--tp); font-weight: 400; }
-  .menu-sub  { font-size: 11px; color: var(--tm); margin-top: 2px; }
+  .menu-name { font-size: 14px; color: var(--text-primary); font-weight: 400; }
+  .menu-sub  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
   .menu-right {
     display: flex;
@@ -247,14 +253,14 @@
     gap: 8px;
   }
 
-  .menu-value { font-size: 12px; color: var(--tm); }
-  .menu-arrow svg { width: 16px; height: 16px; stroke: var(--tm); }
+  .menu-value { font-size: 12px; color: var(--text-muted); }
+  .menu-arrow svg { width: 16px; height: 16px; stroke: var(--text-muted); }
 
   .toggle-wrap { position: relative; width: 44px; height: 26px; }
   .toggle-input { opacity: 0; width: 0; height: 0; position: absolute; }
   .toggle-slider {
     position: absolute; inset: 0;
-    background: var(--bd);
+    background: var(--border);
     border-radius: 13px;
     cursor: pointer;
     transition: background 0.25s;
@@ -296,7 +302,7 @@
 
   .drawer-handle {
     width: 36px; height: 4px;
-    background: var(--bd);
+    background: var(--border);
     border-radius: 2px;
     margin: 12px auto 20px;
   }
@@ -304,9 +310,9 @@
   .drawer-title {
     font-size: 16px;
     font-weight: 500;
-    color: var(--tp);
+    color: var(--text-primary);
     padding: 0 20px 16px;
-    border-bottom: 1px solid var(--bd);
+    border-bottom: 1px solid var(--border);
   }
 
   .drawer-body { padding: 20px; }
@@ -315,7 +321,7 @@
   .d-label {
     font-size: 11px;
     font-weight: 500;
-    color: var(--ts);
+    color: var(--text-secondary);
     display: block;
     margin-bottom: 6px;
   }
@@ -323,16 +329,16 @@
     width: 100%;
     padding: 12px 14px;
     background: var(--bg);
-    border: 1px solid var(--bd);
+    border: 1px solid var(--border);
     border-radius: 10px;
     font-size: 14px;
     font-family: 'Noto Sans KR', sans-serif;
-    color: var(--tp);
+    color: var(--text-primary);
     outline: none;
     transition: border-color 0.2s;
   }
   .d-input:focus { border-color: var(--accent); background: #fff; }
-  .d-input:disabled { color: var(--tm); }
+  .d-input:disabled { color: var(--text-muted); }
 
   .d-btn {
     width: 100%;
@@ -353,8 +359,8 @@
   .d-btn-cancel {
     width: 100%;
     background: var(--bg);
-    color: var(--ts);
-    border: 1px solid var(--bd);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 13px;
     font-size: 14px;
@@ -367,14 +373,14 @@
   .history-list { padding: 0 20px; }
   .history-item {
     padding: 14px 0;
-    border-bottom: 1px solid var(--bd);
+    border-bottom: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
   }
   .history-item:last-child { border-bottom: none; }
-  .h-title { font-size: 13px; font-weight: 500; color: var(--tp); margin-bottom: 4px; }
-  .h-meta  { font-size: 11px; color: var(--tm); }
+  .h-title { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; }
+  .h-meta  { font-size: 11px; color: var(--text-muted); }
   .h-badge {
     font-size: 10px; padding: 3px 9px; border-radius: 20px; white-space: nowrap; flex-shrink: 0;
   }
@@ -408,13 +414,13 @@
   .app-info-card {
     background: var(--card);
     border-radius: 14px;
-    border: 1px solid var(--bd);
+    border: 1px solid var(--border);
     padding: 20px;
     text-align: center;
   }
-  .app-ver  { font-size: 13px; color: var(--ts); margin-bottom: 6px; }
+  .app-ver  { font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
   .app-name { font-size: 20px; font-weight: 700; color: var(--navy); letter-spacing: 2px; margin-bottom: 4px; }
-  .app-copy { font-size: 10px; color: var(--tm); }
+  .app-copy { font-size: 10px; color: var(--text-muted); }
 
   /* ── 하단 네비 ── */
   .bottom-nav{
@@ -424,7 +430,7 @@
   display:flex;z-index:100;
 }
 .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:#9ca3af;cursor:pointer;border:none;background:none;font-family:'Noto Sans KR',sans-serif;}
-.nav-item.active{color:var(--deep);}
+.nav-item.active{color:#0d1a33;}
 .nav-item.active .nav-label{font-weight:600;}
 .nav-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
 .nav-icon svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;}
@@ -670,8 +676,8 @@
       <div class="app-info-card">
         <div class="app-name">POL-MATE</div>
         <div class="app-ver">버전 1.0.0-beta · 2025.03</div>
-        <div class="app-copy" style="margin-top:10px; color:var(--tm);">형사사법정보지원 시스템</div>
-        <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--bd); display:flex; justify-content:center; gap:24px;">
+        <div class="app-copy" style="margin-top:10px; color:var(--text-muted);">형사사법정보지원 시스템</div>
+        <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border); display:flex; justify-content:center; gap:24px;">
           <a href="#" onclick="openDrawer('termsDrawer');return false;" style="font-size:11px; color:var(--accent); text-decoration:none;">이용약관</a>
           <a href="#" onclick="openDrawer('privacyDrawer');return false;" style="font-size:11px; color:var(--accent); text-decoration:none;">개인정보처리방침</a>
           <a href="#" onclick="openDrawer('licenseDrawer');return false;" style="font-size:11px; color:var(--accent); text-decoration:none;">오픈소스 라이선스</a>
@@ -693,7 +699,7 @@
 
     <!-- 회원탈퇴 -->
     <div style="padding:0 0 20px; text-align:center;">
-      <button onclick="confirmWithdraw()" style="background:none;border:none;font-size:11px;color:var(--tm);font-family:'Noto Sans KR',sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">회원탈퇴</button>
+      <button onclick="confirmWithdraw()" style="background:none;border:none;font-size:11px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">회원탈퇴</button>
     </div>
 
   </div><!-- /content -->
@@ -749,34 +755,34 @@
 
       <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;">
 
-        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--bd);">
-          <div style="font-size:10px;color:var(--tm);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">이름</div>
-          <div style="font-size:14px;color:var(--tp);font-weight:500;"><%= userName %></div>
+        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">이름</div>
+          <div style="font-size:14px;color:var(--text-primary);font-weight:500;"><%= userName %></div>
         </div>
 
-        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--bd);">
-          <div style="font-size:10px;color:var(--tm);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">계급</div>
-          <div style="font-size:14px;color:var(--tp);font-weight:500;"><%= userRank != null ? userRank : "-" %></div>
+        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">계급</div>
+          <div style="font-size:14px;color:var(--text-primary);font-weight:500;"><%= userRank != null ? userRank : "-" %></div>
         </div>
 
-        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--bd);">
-          <div style="font-size:10px;color:var(--tm);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">소속 기관</div>
-          <div style="font-size:14px;color:var(--tp);font-weight:500;"><%= userOrg != null ? userOrg : "-" %></div>
+        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">소속 기관</div>
+          <div style="font-size:14px;color:var(--text-primary);font-weight:500;"><%= userOrg != null ? userOrg : "-" %></div>
         </div>
 
-        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--bd);" id="viewDeptRow">
-          <div style="font-size:10px;color:var(--tm);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">부서</div>
-          <div style="font-size:14px;color:var(--tp);font-weight:500;" id="viewDeptName">-</div>
+        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--border);" id="viewDeptRow">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">부서</div>
+          <div style="font-size:14px;color:var(--text-primary);font-weight:500;" id="viewDeptName">-</div>
         </div>
 
-        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--bd);">
-          <div style="font-size:10px;color:var(--tm);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">연락처</div>
-          <div style="font-size:14px;color:var(--tp);font-weight:500;"><%= userPhone != null && !userPhone.isEmpty() ? userPhone : "-" %></div>
+        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">연락처</div>
+          <div style="font-size:14px;color:var(--text-primary);font-weight:500;"><%= userPhone != null && !userPhone.isEmpty() ? userPhone : "-" %></div>
         </div>
 
-        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--bd);">
-          <div style="font-size:10px;color:var(--tm);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">아이디</div>
-          <div style="font-size:14px;color:var(--tp);font-weight:500;"><%= userId %></div>
+        <div style="background:var(--bg);border-radius:12px;padding:14px 16px;border:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:500;letter-spacing:0.5px;margin-bottom:4px;">아이디</div>
+          <div style="font-size:14px;color:var(--text-primary);font-weight:500;"><%= userId %></div>
         </div>
 
       </div>
@@ -906,21 +912,32 @@
         <button class="period-btn" onclick="setPeriod(this,'all')">전체</button>
       </div>
 
-      <!-- 수치 그리드 -->
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px;" id="statsGrid">
+      <!-- 요약 배지 4개 -->
+      <div class="stats-summary-row" id="statsSummary">
         <!-- JS로 채움 -->
       </div>
 
-      <!-- 막대 차트 (순수 CSS) -->
-      <div style="font-size:11px; color:var(--tm); margin-bottom:8px;">월별 조서 처리 현황</div>
-      <div id="barChart" style="display:flex; align-items:flex-end; gap:6px; height:80px; padding-bottom:4px;">
-        <!-- JS로 채움 -->
-      </div>
-      <div id="barLabels" style="display:flex; gap:6px; margin-top:4px;">
-        <!-- JS로 채움 -->
+      <!-- 도넛 차트: 활동 유형별 비율 -->
+      <div class="chart-section">
+        <div class="chart-section-title">활동 유형별 비율</div>
+        <div class="donut-wrap">
+          <!-- 레티나 대응: 실제 픽셀은 JS에서 2x로 설정 -->
+          <div style="position:relative;flex-shrink:0;width:140px;height:140px;">
+            <canvas id="donutChart" style="width:140px;height:140px;display:block;"></canvas>
+            <div id="donutCenter" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;"></div>
+          </div>
+          <div class="donut-legend" id="donutLegend"><!-- JS로 채움 --></div>
+        </div>
       </div>
 
-      <button class="d-btn-cancel" style="margin-top:18px;" onclick="closeDrawer('statsDrawer')">닫기</button>
+      <!-- 막대 차트: 월별 조서 처리 현황 -->
+      <div class="chart-section">
+        <div class="chart-section-title">월별 조서 처리 현황</div>
+        <canvas id="barChartCanvas" width="340" height="130"
+          style="width:100%;max-width:100%;display:block;"></canvas>
+      </div>
+
+      <button class="d-btn-cancel" style="margin-top:4px;" onclick="closeDrawer('statsDrawer')">닫기</button>
     </div>
   </div>
 </div>
@@ -932,21 +949,21 @@
   <div class="drawer">
     <div class="drawer-handle"></div>
     <div class="drawer-title">이용약관</div>
-    <div class="drawer-body" style="font-size:13px; color:var(--ts); line-height:1.8;">
+    <div class="drawer-body" style="font-size:13px; color:var(--text-secondary); line-height:1.8;">
 
-      <p style="font-weight:600; color:var(--tp); margin-bottom:6px;">제1조 (목적)</p>
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">제1조 (목적)</p>
       <p style="margin-bottom:16px;">본 약관은 POL-MATE(이하 "서비스")의 이용에 관한 조건 및 절차, 기타 필요한 사항을 규정함을 목적으로 합니다.</p>
 
-      <p style="font-weight:600; color:var(--tp); margin-bottom:6px;">제2조 (정의)</p>
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">제2조 (정의)</p>
       <p style="margin-bottom:16px;">① "서비스"란 형사사법정보 지원을 위해 제공되는 조서 작성·분석·관리 시스템을 의미합니다.<br>② "이용자"란 본 약관에 동의하고 서비스를 이용하는 수사 담당 공무원을 말합니다.</p>
 
-      <p style="font-weight:600; color:var(--tp); margin-bottom:6px;">제3조 (약관의 효력 및 변경)</p>
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">제3조 (약관의 효력 및 변경)</p>
       <p style="margin-bottom:16px;">① 본 약관은 서비스 내 공지 또는 이용자에게 통지하는 방법으로 효력이 발생합니다.<br>② 운영 기관은 관련 법령을 위반하지 않는 범위에서 약관을 개정할 수 있으며, 변경 시 사전 공지합니다.</p>
 
-      <p style="font-weight:600; color:var(--tp); margin-bottom:6px;">제4조 (서비스의 제공 및 중단)</p>
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">제4조 (서비스의 제공 및 중단)</p>
       <p style="margin-bottom:16px;">① 서비스는 연중 24시간 제공을 원칙으로 합니다.<br>② 시스템 점검, 보안 업데이트, 불가항력적 사유 등으로 서비스가 일시 중단될 수 있습니다.</p>
 
-      <p style="font-weight:600; color:var(--tp); margin-bottom:6px;">제5조 (이용자의 의무)</p>
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">제5조 (이용자의 의무)</p>
       <p style="margin-bottom:16px;">① 이용자는 다음 행위를 하여서는 안 됩니다.<br>
         &nbsp;&nbsp;1. 허가받지 않은 타인의 계정 이용<br>
         &nbsp;&nbsp;2. 서비스로 취득한 정보의 무단 외부 유출<br>
@@ -954,13 +971,13 @@
         &nbsp;&nbsp;4. 수사 목적 외 데이터 접근 및 활용<br>
       ② 이용자는 관계 법령, 수사 규정 및 본 약관을 준수하여야 합니다.</p>
 
-      <p style="font-weight:600; color:var(--tp); margin-bottom:6px;">제6조 (책임의 한계)</p>
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">제6조 (책임의 한계)</p>
       <p style="margin-bottom:16px;">AI 분석 결과는 참고 자료로만 활용하며, 수사·기소 등 법적 판단의 근거로 단독 사용할 수 없습니다. 최종 판단은 담당 수사관의 책임 하에 이루어져야 합니다.</p>
 
-      <p style="font-weight:600; color:var(--tp); margin-bottom:6px;">제7조 (준거법)</p>
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">제7조 (준거법)</p>
       <p style="margin-bottom:20px;">본 약관은 대한민국 법령에 따라 해석 및 적용됩니다.</p>
 
-      <p style="font-size:11px; color:var(--tm); border-top:1px solid var(--bd); padding-top:12px;">시행일: 2025년 3월 1일</p>
+      <p style="font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">시행일: 2025년 3월 1일</p>
 
       <button class="d-btn-cancel" style="margin-top:16px;" onclick="closeDrawer('termsDrawer')">닫기</button>
     </div>
@@ -975,18 +992,18 @@
   <div class="drawer">
     <div class="drawer-handle"></div>
     <div class="drawer-title">개인정보처리방침</div>
-    <div class="drawer-body" style="font-size:13px; color:var(--ts); line-height:1.8;">
+    <div class="drawer-body" style="font-size:13px; color:var(--text-secondary); line-height:1.8;">
 
       <p style="margin-bottom:16px;">POL-MATE(이하 "서비스")는 「개인정보 보호법」에 따라 이용자의 개인정보를 보호하고 이와 관련한 고충을 신속하게 처리하기 위하여 다음과 같이 개인정보처리방침을 수립·공개합니다.</p>
 
-      <p style="font-weight:600; color:var(--tp); margin-bottom:6px;">1. 수집하는 개인정보 항목</p>
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">1. 수집하는 개인정보 항목</p>
       <p style="margin-bottom:16px;">
         · <b>필수 항목:</b> 아이디, 비밀번호(암호화 저장), 이름, 계급, 소속 기관<br>
         · <b>선택 항목:</b> 부서, 연락처<br>
         · <b>자동 수집:</b> 접속 로그, 서비스 이용 기록
       </p>
 
-      <p style="font-weight:600; color:var(--tp); margin-bottom:6px;">2. 개인정보 수집 목적</p>
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">2. 개인정보 수집 목적</p>
       <p style="margin-bottom:16px;">
         · 이용자 식별 및 서비스 이용 자격 확인<br>
         · 사건·조서 관리 및 수사 활동 지원<br>
@@ -994,26 +1011,26 @@
         · 서비스 개선 및 통계 분석
       </p>
 
-      <p style="font-weight:600; color:var(--tp); margin-bottom:6px;">3. 개인정보 보유 및 이용 기간</p>
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">3. 개인정보 보유 및 이용 기간</p>
       <p style="margin-bottom:16px;">회원 탈퇴 또는 이용 목적 달성 시 즉시 파기합니다. 단, 관계 법령에 의거하여 보존이 필요한 경우 해당 기간 동안 보관합니다.</p>
 
-      <p style="font-weight:600; color:var(--tp); margin-bottom:6px;">4. 개인정보의 제3자 제공</p>
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">4. 개인정보의 제3자 제공</p>
       <p style="margin-bottom:16px;">수집된 개인정보는 원칙적으로 제3자에게 제공하지 않습니다. 다만, 수사 절차상 법령에 따른 요청이 있는 경우는 예외로 합니다.</p>
 
-      <p style="font-weight:600; color:var(--tp); margin-bottom:6px;">5. 개인정보의 안전성 확보</p>
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">5. 개인정보의 안전성 확보</p>
       <p style="margin-bottom:16px;">
         · 비밀번호 단방향 암호화(bcrypt) 저장<br>
         · 접근 권한 최소화 및 계정 이상 접근 감지<br>
         · 보안 취약점 정기 점검
       </p>
 
-      <p style="font-weight:600; color:var(--tp); margin-bottom:6px;">6. 이용자의 권리</p>
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">6. 이용자의 권리</p>
       <p style="margin-bottom:16px;">이용자는 언제든지 자신의 개인정보를 조회·수정할 수 있으며, 회원탈퇴를 통해 개인정보 삭제를 요청할 수 있습니다.</p>
 
-      <p style="font-weight:600; color:var(--tp); margin-bottom:6px;">7. 개인정보 보호 담당</p>
+      <p style="font-weight:600; color:var(--text-primary); margin-bottom:6px;">7. 개인정보 보호 담당</p>
       <p style="margin-bottom:20px;">개인정보 처리 관련 문의는 서비스 운영 기관 정보보안 담당 부서로 연락하시기 바랍니다.</p>
 
-      <p style="font-size:11px; color:var(--tm); border-top:1px solid var(--bd); padding-top:12px;">시행일: 2025년 3월 1일</p>
+      <p style="font-size:11px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">시행일: 2025년 3월 1일</p>
 
       <button class="d-btn-cancel" style="margin-top:16px;" onclick="closeDrawer('privacyDrawer')">닫기</button>
     </div>
@@ -1028,64 +1045,64 @@
   <div class="drawer">
     <div class="drawer-handle"></div>
     <div class="drawer-title">오픈소스 라이선스</div>
-    <div class="drawer-body" style="font-size:13px; color:var(--ts); line-height:1.8;">
+    <div class="drawer-body" style="font-size:13px; color:var(--text-secondary); line-height:1.8;">
 
-      <p style="margin-bottom:16px; color:var(--tm); font-size:12px;">POL-MATE는 아래 오픈소스 소프트웨어를 사용합니다.</p>
+      <p style="margin-bottom:16px; color:var(--text-muted); font-size:12px;">POL-MATE는 아래 오픈소스 소프트웨어를 사용합니다.</p>
 
       <!-- 항목 -->
-      <div style="border:1px solid var(--bd); border-radius:12px; overflow:hidden; margin-bottom:12px;">
+      <div style="border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:12px;">
 
-        <div style="padding:14px 16px; border-bottom:1px solid var(--bd);">
+        <div style="padding:14px 16px; border-bottom:1px solid var(--border);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-weight:600; color:var(--tp);">Apache Tomcat</span>
+            <span style="font-weight:600; color:var(--text-primary);">Apache Tomcat</span>
             <span style="font-size:10px; background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:20px;">Apache 2.0</span>
           </div>
-          <div style="font-size:11px; color:var(--tm);">Java Servlet 컨테이너 · Apache Software Foundation</div>
+          <div style="font-size:11px; color:var(--text-muted);">Java Servlet 컨테이너 · Apache Software Foundation</div>
         </div>
 
-        <div style="padding:14px 16px; border-bottom:1px solid var(--bd);">
+        <div style="padding:14px 16px; border-bottom:1px solid var(--border);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-weight:600; color:var(--tp);">MySQL Connector/J</span>
+            <span style="font-weight:600; color:var(--text-primary);">MySQL Connector/J</span>
             <span style="font-size:10px; background:#f0fdf4; color:#15803d; padding:2px 8px; border-radius:20px;">GPL 2.0</span>
           </div>
-          <div style="font-size:11px; color:var(--tm);">Java-MySQL JDBC 드라이버 · Oracle Corporation</div>
+          <div style="font-size:11px; color:var(--text-muted);">Java-MySQL JDBC 드라이버 · Oracle Corporation</div>
         </div>
 
-        <div style="padding:14px 16px; border-bottom:1px solid var(--bd);">
+        <div style="padding:14px 16px; border-bottom:1px solid var(--border);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-weight:600; color:var(--tp);">Gson</span>
+            <span style="font-weight:600; color:var(--text-primary);">Gson</span>
             <span style="font-size:10px; background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:20px;">Apache 2.0</span>
           </div>
-          <div style="font-size:11px; color:var(--tm);">Java JSON 직렬화/역직렬화 라이브러리 · Google</div>
+          <div style="font-size:11px; color:var(--text-muted);">Java JSON 직렬화/역직렬화 라이브러리 · Google</div>
         </div>
 
-        <div style="padding:14px 16px; border-bottom:1px solid var(--bd);">
+        <div style="padding:14px 16px; border-bottom:1px solid var(--border);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-weight:600; color:var(--tp);">Noto Sans KR</span>
+            <span style="font-weight:600; color:var(--text-primary);">Noto Sans KR</span>
             <span style="font-size:10px; background:#f5f3ff; color:#7c3aed; padding:2px 8px; border-radius:20px;">OFL 1.1</span>
           </div>
-          <div style="font-size:11px; color:var(--tm);">한국어 웹 폰트 · Google Fonts / Sandoll</div>
+          <div style="font-size:11px; color:var(--text-muted);">한국어 웹 폰트 · Google Fonts / Sandoll</div>
         </div>
 
-        <div style="padding:14px 16px; border-bottom:1px solid var(--bd);">
+        <div style="padding:14px 16px; border-bottom:1px solid var(--border);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-weight:600; color:var(--tp);">BCrypt</span>
+            <span style="font-weight:600; color:var(--text-primary);">BCrypt</span>
             <span style="font-size:10px; background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:20px;">ISC License</span>
           </div>
-          <div style="font-size:11px; color:var(--tm);">비밀번호 단방향 해시 암호화 라이브러리</div>
+          <div style="font-size:11px; color:var(--text-muted);">비밀번호 단방향 해시 암호화 라이브러리</div>
         </div>
 
         <div style="padding:14px 16px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span style="font-weight:600; color:var(--tp);">D3.js</span>
+            <span style="font-weight:600; color:var(--text-primary);">D3.js</span>
             <span style="font-size:10px; background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:20px;">ISC License</span>
           </div>
-          <div style="font-size:11px; color:var(--tm);">관계망 시각화 라이브러리 · Mike Bostock</div>
+          <div style="font-size:11px; color:var(--text-muted);">관계망 시각화 라이브러리 · Mike Bostock</div>
         </div>
 
       </div>
 
-      <p style="font-size:11px; color:var(--tm); line-height:1.6;">각 라이브러리의 전체 라이선스 텍스트는 해당 프로젝트 공식 저장소에서 확인할 수 있습니다.</p>
+      <p style="font-size:11px; color:var(--text-muted); line-height:1.6;">각 라이브러리의 전체 라이선스 텍스트는 해당 프로젝트 공식 저장소에서 확인할 수 있습니다.</p>
 
       <button class="d-btn-cancel" style="margin-top:16px;" onclick="closeDrawer('licenseDrawer')">닫기</button>
     </div>
@@ -1096,22 +1113,61 @@
 <style>
   .period-btn {
     flex: 1; padding: 8px 0; font-size: 12px; font-family: 'Noto Sans KR', sans-serif;
-    background: var(--bg); border: 1px solid var(--bd); border-radius: 8px; cursor: pointer;
-    color: var(--ts); transition: all 0.15s;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+    color: var(--text-secondary); transition: all 0.15s;
   }
   .period-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
 
+  /* ── 활동 통계 그래프 ── */
+  .stats-summary-row {
+    display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .stats-badge {
+    flex: 1; min-width: 80px;
+    background: var(--bg); border: 1px solid var(--bd); border-radius: 10px;
+    padding: 10px 8px; text-align: center;
+  }
+  .stats-badge-num {
+    font-size: 20px; font-weight: 700; color: var(--navy); line-height: 1;
+  }
+  .stats-badge-lbl {
+    font-size: 10px; color: var(--tm); margin-top: 4px;
+  }
+  .chart-section { margin-bottom: 22px; }
+  .chart-section-title {
+    font-size: 11px; font-weight: 600; color: var(--ts);
+    margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+  }
+  .chart-section-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--bd);
+  }
+  .donut-wrap {
+    display: flex; align-items: center; gap: 16px;
+  }
+  .donut-legend {
+    flex: 1; display: flex; flex-direction: column; gap: 8px;
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 8px; font-size: 11px;
+  }
+  .legend-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .legend-label { color: var(--ts); flex: 1; }
+  .legend-val   { color: var(--navy); font-weight: 600; }
+  .legend-pct   { color: var(--tm); font-size: 10px; }
+
   .stat-tile {
     background: var(--bg); border-radius: 12px; padding: 14px;
-    text-align: center; border: 1px solid var(--bd);
+    text-align: center; border: 1px solid var(--border);
   }
   .tile-num { font-size: 24px; font-weight: 700; color: var(--navy); }
-  .tile-lbl { font-size: 11px; color: var(--tm); margin-top: 4px; }
+  .tile-lbl { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 
   .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
   .bar-fill { width: 100%; border-radius: 4px 4px 0 0; background: #c7d7f0; transition: height 0.4s; }
   .bar-fill.cur { background: var(--navy); }
-  .bar-lbl { font-size: 9px; color: var(--tm); text-align: center; flex: 0 0 auto; width: 100%; }
+  .bar-lbl { font-size: 9px; color: var(--text-muted); text-align: center; flex: 0 0 auto; width: 100%; }
 </style>
 
 <script>
@@ -1372,14 +1428,14 @@ function confirmLogout() {
 // ── 내 조서 이력 로드 ─────────────────────────────────────────────
 function loadHistory() {
   var container = document.getElementById('historyList');
-  container.innerHTML = '<p style="padding:20px; text-align:center; color:var(--tm); font-size:13px;">불러오는 중...</p>';
+  container.innerHTML = '<p style="padding:20px; text-align:center; color:var(--text-muted); font-size:13px;">불러오는 중...</p>';
 
   fetch('mypage?action=history')
     .then(function(r) { return r.json(); })
     .then(function(data) {
       var list = data.history;
       if (!list || list.length === 0) {
-        container.innerHTML = '<p style="padding:20px; text-align:center; color:var(--tm); font-size:13px;">조서 이력이 없습니다.</p>';
+        container.innerHTML = '<p style="padding:20px; text-align:center; color:var(--text-muted); font-size:13px;">조서 이력이 없습니다.</p>';
         return;
       }
       var BADGE_MAP = {
@@ -1455,69 +1511,212 @@ function loadStats(period) {
     .catch(function(e) { console.error('통계 로드 실패', e); });
 }
 
-function renderStats(data) {
-  document.getElementById('statsGrid').innerHTML =
-    '<div class="stat-tile"><div class="tile-num">' + (data.activeCases      || 0) + '</div><div class="tile-lbl">진행 사건</div></div>' +
-    '<div class="stat-tile"><div class="tile-num">' + (data.totalTranscripts || 0) + '</div><div class="tile-lbl">조서 처리</div></div>' +
-    '<div class="stat-tile"><div class="tile-num">' + (data.contradictionCount||0) + '</div><div class="tile-lbl">모순 탐지</div></div>' +
-    '<div class="stat-tile"><div class="tile-num">' + (data.relationEdges    || 0) + '</div><div class="tile-lbl">관계망 등록</div></div>';
-
-  renderBarChart(data.monthly || {});
+// ── 요약 배지 렌더 ──────────────────────────────────────────────
+function renderStatsSummary(data) {
+  var badges = [
+    { num: data.activeCases       || 0, lbl: '진행 사건' },
+    { num: data.totalTranscripts  || 0, lbl: '조서 처리' },
+    { num: data.contradictionCount|| 0, lbl: '모순 탐지' },
+    { num: data.relationEdges     || 0, lbl: '관계망 등록' },
+  ];
+  document.getElementById('statsSummary').innerHTML = badges.map(function(b) {
+    return '<div class="stats-badge">' +
+      '<div class="stats-badge-num">' + b.num + '</div>' +
+      '<div class="stats-badge-lbl">' + b.lbl + '</div>' +
+    '</div>';
+  }).join('');
 }
 
-function renderBarChart(monthly) {
-  var chartEl  = document.getElementById('barChart');
-  var labelEl  = document.getElementById('barLabels');
-  var entries  = Object.entries(monthly);
+// ── 도넛 차트 렌더 ──────────────────────────────────────────────
+function renderDonutChart(data) {
+  var canvas = document.getElementById('donutChart');
+  if (!canvas) return;
+
+  // ── 레티나 선명도: devicePixelRatio 적용 ──
+  var dpr    = window.devicePixelRatio || 2;
+  var SIZE   = 140;
+  canvas.width  = SIZE * dpr;
+  canvas.height = SIZE * dpr;
+
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr); // 이후 모든 좌표는 논리 px 기준
+
+  var cx = SIZE / 2, cy = SIZE / 2;
+  var R_OUT = 58, R_IN = 38; // 외반경, 내반경 → 두께 = 20px
+
+  var vals = [
+    { label: '조서 처리',   val: data.totalTranscripts   || 0, color: '#1A2744' },
+    { label: '진행 사건',   val: data.activeCases        || 0, color: '#4A7CDB' },
+    { label: '모순 탐지',   val: data.contradictionCount || 0, color: '#E8B84B' },
+    { label: '관계망 등록', val: data.relationEdges      || 0, color: '#34C9A3' },
+  ];
+
+  var total = vals.reduce(function(s, v) { return s + v.val; }, 0);
+
+  ctx.clearRect(0, 0, SIZE, SIZE);
+
+  if (total === 0) {
+    // 빈 상태 링
+    ctx.beginPath();
+    ctx.arc(cx, cy, (R_OUT + R_IN) / 2, 0, Math.PI * 2);
+    ctx.strokeStyle = '#EEF1F8';
+    ctx.lineWidth   = R_OUT - R_IN;
+    ctx.stroke();
+
+    // 중앙 텍스트
+    var centerEl = document.getElementById('donutCenter');
+    if (centerEl) {
+      centerEl.innerHTML = '<div style="font-size:11px;color:#9CA3AF;">데이터 없음</div>';
+    }
+    document.getElementById('donutLegend').innerHTML = '';
+    return;
+  }
+
+  // ── arc fill 방식 (fill 채우기 → 선명하고 갭 완벽 제어) ──
+  var GAP_DEG   = 2.5;                    // 세그먼트 사이 간격 (도)
+  var GAP_RAD   = (GAP_DEG * Math.PI) / 180;
+  var startAngle = -Math.PI / 2;          // 12시 방향 시작
+
+  vals.forEach(function(v) {
+    if (v.val <= 0) return;
+    var sweep = (v.val / total) * Math.PI * 2 - GAP_RAD;
+    if (sweep <= 0) return;
+
+    var endAngle = startAngle + sweep;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, R_OUT, startAngle, endAngle);       // 바깥 호
+    ctx.arc(cx, cy, R_IN,  endAngle, startAngle, true); // 안쪽 호 (역방향)
+    ctx.closePath();
+
+    ctx.fillStyle = v.color;
+    ctx.fill();
+
+    startAngle += sweep + GAP_RAD;
+  });
+
+  // ── 중앙 흰 원 (배경이 card:#fff 이므로) ──
+  ctx.beginPath();
+  ctx.arc(cx, cy, R_IN - 1, 0, Math.PI * 2);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fill();
+
+  // ── 중앙 텍스트 (DOM 오버레이) ──
+  var centerEl = document.getElementById('donutCenter');
+  if (centerEl) {
+    centerEl.innerHTML =
+      '<div style="font-size:20px;font-weight:700;color:#1A2744;line-height:1;">' + total + '</div>' +
+      '<div style="font-size:9px;color:#9CA3AF;margin-top:2px;">전체 활동</div>';
+  }
+
+  // ── 범례 ──
+  var legendEl = document.getElementById('donutLegend');
+  legendEl.innerHTML = vals.map(function(v) {
+    var pct = total > 0 ? Math.round(v.val / total * 100) : 0;
+    return '<div class="legend-item">' +
+      '<div class="legend-dot" style="background:' + v.color + ';border-radius:3px;width:10px;height:10px;flex-shrink:0;"></div>' +
+      '<span class="legend-label">' + v.label + '</span>' +
+      '<span class="legend-val">' + v.val + '</span>' +
+      '<span class="legend-pct"> ' + pct + '%</span>' +
+    '</div>';
+  }).join('');
+}
+
+// ── 막대 차트 (Canvas) ──────────────────────────────────────────
+function renderBarChartCanvas(monthly) {
+  var canvas = document.getElementById('barChartCanvas');
+  if (!canvas) return;
+
+  // canvas 실제 픽셀 크기 = 표시 크기의 2배 (레티나 선명도)
+  var displayW = canvas.offsetWidth || 340;
+  var displayH = 130;
+  canvas.width  = displayW * 2;
+  canvas.height = displayH * 2;
+  canvas.style.width  = displayW + 'px';
+  canvas.style.height = displayH + 'px';
+
+  var ctx = canvas.getContext('2d');
+  ctx.scale(2, 2); // 레티나 스케일
+  var W = displayW, H = displayH;
+  ctx.clearRect(0, 0, W, H);
+
+  var entries = Object.entries(monthly || {});
   if (!entries.length) {
-    chartEl.innerHTML  = '<div style="width:100%;text-align:center;color:var(--tm);font-size:11px;padding-top:24px;">데이터 없음</div>';
-    labelEl.innerHTML  = '';
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '11px Noto Sans KR, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('데이터 없음', W/2, H/2);
     return;
   }
 
   var maxVal = Math.max.apply(null, entries.map(function(e){ return e[1]; })) || 1;
-  var BAR_H  = 72; // 최대 막대 높이(px)
-  var accent = '#4a7cdc';
-  var muted  = 'rgba(74,124,220,0.25)';
+  var padL = 28, padR = 8, padT = 22, padB = 24;
+  var chartW = W - padL - padR;
+  var chartH = H - padT - padB;
+  var barW   = (chartW / entries.length) * 0.55;
+  var gap    = chartW / entries.length;
 
-  chartEl.innerHTML  = '';
-  labelEl.innerHTML  = '';
-  chartEl.style.display = 'flex';
-  chartEl.style.alignItems = 'flex-end';
-  chartEl.style.gap  = '6px';
-  chartEl.style.height = (BAR_H + 4) + 'px';
-  labelEl.style.display = 'flex';
-  labelEl.style.gap  = '6px';
+  // 격자선 3개
+  ctx.strokeStyle = '#EEF1F8';
+  ctx.lineWidth   = 1;
+  [0.25, 0.5, 0.75, 1.0].forEach(function(r) {
+    var y = padT + chartH * (1 - r);
+    ctx.beginPath();
+    ctx.moveTo(padL, y);
+    ctx.lineTo(W - padR, y);
+    ctx.stroke();
+    // Y축 레이블
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '8px Noto Sans KR, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(Math.round(maxVal * r), padL - 4, y + 3);
+  });
 
-  entries.forEach(function(entry) {
-    var ym  = entry[0]; // "2026.04"
+  // 막대
+  entries.forEach(function(entry, i) {
+    var ym  = entry[0];
     var val = entry[1];
-    var pct = val / maxVal;
-    var bh  = Math.max(pct * BAR_H, val > 0 ? 6 : 2);
+    var bh  = val > 0 ? Math.max((val / maxVal) * chartH, 4) : 2;
+    var x   = padL + i * gap + (gap - barW) / 2;
+    var y   = padT + chartH - bh;
 
-    // 막대
-    var bar = document.createElement('div');
-    bar.style.cssText = 'flex:1;border-radius:4px 4px 0 0;transition:height 0.4s ease;cursor:default;position:relative;';
-    bar.style.height  = bh + 'px';
-    bar.style.background = val > 0 ? accent : muted;
-    bar.title = ym + ': ' + val + '건';
-
-    // 수치 레이블 (0이 아닐때만)
+    // 막대 그라데이션
+    var grad = ctx.createLinearGradient(x, y, x, y + bh);
     if (val > 0) {
-      var numEl = document.createElement('div');
-      numEl.style.cssText = 'position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--accent, #4a7cdc);font-weight:500;white-space:nowrap;';
-      numEl.textContent = val;
-      bar.appendChild(numEl);
+      grad.addColorStop(0, '#4A7CDB');
+      grad.addColorStop(1, '#1A2744');
+    } else {
+      grad.addColorStop(0, '#E2E5EE');
+      grad.addColorStop(1, '#E2E5EE');
     }
-    chartEl.appendChild(bar);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect(x, y, barW, bh, [3, 3, 0, 0]);
+    ctx.fill();
 
-    // 레이블 (월만 표시)
-    var lbl = document.createElement('div');
-    lbl.style.cssText = 'flex:1;text-align:center;font-size:9px;color:var(--tm);white-space:nowrap;overflow:hidden;';
-    lbl.textContent = ym.slice(5); // "04"
-    labelEl.appendChild(lbl);
+    // 수치 레이블
+    if (val > 0) {
+      ctx.fillStyle = '#1A2744';
+      ctx.font = 'bold 9px Noto Sans KR, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(val, x + barW/2, y - 4);
+    }
+
+    // X축 레이블 (월만)
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '8px Noto Sans KR, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(ym.slice(5), x + barW/2, H - 6);
   });
 }
+
+function renderStats(data) {
+  renderStatsSummary(data);
+  renderDonutChart(data);
+  renderBarChartCanvas(data.monthly || {});
+}
+
+/* renderBarChart 제거 — renderBarChartCanvas로 대체 */
 
 function setPeriod(btn, period) {
   document.querySelectorAll('.period-btn').forEach(function(b) { b.classList.remove('active'); });
