@@ -14,22 +14,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  :root{
-    --deep:#0d1a33; --navy:#1a2744; --mid:#243358;
-    --gold:#f0c040; --gold2:#e6b830;
-    --blue:#4a7cdc; --accent:#4a7cdc; --danger:#dc2626;
-    --tp:#1a1a2e; --ts:#6b7280; --tm:#9ca3af;
-    --bg:#f0f2f8; --card:#ffffff; --bd:#e2e5ee;
-    --success:#16a34a; --success-bg:#f0fdf4; --success-bd:#bbf7d0;
+  :root {
+    --navy:#1a2744; --accent:#4a7cdc; --danger:#dc2626;
+    --text-primary:#1a1a2e; --text-secondary:#6b7280; --text-muted:#9ca3af;
+    --bg:#f4f6fb; --card:#ffffff; --border:#e5e7eb;
+    --success:#16a34a; --success-bg:#f0fdf4; --success-border:#bbf7d0;
     --warn-bg:#fffbeb; --warn-text:#92400e;
-    --danger-bg:#fef2f2; --danger-bd:#fecaca;
+    --danger-bg:#fef2f2; --danger-border:#fecaca;
     --info-bg:#eff6ff; --info-text:#1e40af;
+    --bnav:64px;
   }
   html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(--bg); overflow-x:hidden; }
-  .screen { width:100%; max-width:420px; min-height:100vh; margin:0 auto; background:var(--bg); display:flex; flex-direction:column; }
+  .screen { width:100%; max-width:420px; height:100dvh; margin:0 auto; background:var(--bg); display:flex; flex-direction:column; }
 
   /* ── 헤더 ── */
-  .top-header { background:var(--deep); padding:52px 20px 0; position:sticky; top:0; z-index:10; }
+  .top-header { background:var(--navy); padding:52px 20px 0; position:sticky; top:0; z-index:10; }
   .header-row { display:flex; align-items:center; justify-content:space-between; padding-bottom:14px; }
   .header-title { font-size:17px; font-weight:500; color:#fff; }
   .btn-new {
@@ -40,7 +39,7 @@
   .btn-new svg { width:13px; height:13px; stroke:#fff; }
 
   /* 검색 바 */
-  .search-wrap { background:var(--deep); padding:0 16px 16px; }
+  .search-wrap { background:var(--navy); padding:0 16px 16px; }
   .search-box {
     background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
     border-radius:12px; display:flex; align-items:center; gap:10px; padding:10px 14px;
@@ -63,7 +62,7 @@
   .filter-row::-webkit-scrollbar { display:none; }
   .chip {
     flex-shrink:0; padding:6px 14px; border-radius:20px; font-size:12px;
-    border:1px solid var(--bd); background:var(--card); color:var(--ts);
+    border:1px solid var(--border); background:var(--card); color:var(--text-secondary);
     cursor:pointer; white-space:nowrap; transition:all 0.15s; font-family:'Noto Sans KR',sans-serif;
   }
   .chip.active { background:var(--navy); color:#fff; border-color:var(--navy); }
@@ -76,7 +75,7 @@
   .sort-btn {
     display:flex; align-items:center; gap:4px;
     padding:5px 11px; border-radius:20px; font-size:11px;
-    border:1px solid var(--bd); background:var(--card); color:var(--ts);
+    border:1px solid var(--border); background:var(--card); color:var(--text-secondary);
     cursor:pointer; white-space:nowrap; transition:all 0.15s; font-family:'Noto Sans KR',sans-serif;
   }
   .sort-btn svg { width:12px; height:12px; stroke:currentColor; flex-shrink:0; }
@@ -85,7 +84,7 @@
   /* 사건 카드 */
   .case-list { padding:0 16px; display:flex; flex-direction:column; gap:10px; }
   .case-card {
-    background:var(--card); border-radius:16px; border:1px solid var(--bd);
+    background:var(--card); border-radius:16px; border:1px solid var(--border);
     padding:16px; cursor:pointer; transition:border-color 0.2s;
     animation:fadeUp 0.3s ease both; text-decoration:none; display:block;
   }
@@ -93,47 +92,47 @@
   .case-card.urgent { border-left:3px solid var(--danger); }
 
   .case-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
-  .case-num  { font-size:12px; color:var(--tm); margin-bottom:3px; }
-  .case-name { font-size:15px; font-weight:500; color:var(--tp); }
+  .case-num  { font-size:12px; color:var(--text-muted); margin-bottom:3px; }
+  .case-name { font-size:15px; font-weight:500; color:var(--text-primary); }
 
   .badge { font-size:10px; font-weight:500; padding:4px 10px; border-radius:20px; white-space:nowrap; flex-shrink:0; }
   .badge-warn   { background:var(--warn-bg);    color:var(--warn-text); }
   .badge-ok     { background:var(--success-bg); color:var(--success); }
   .badge-info   { background:var(--info-bg);    color:var(--info-text); }
-  .badge-done   { background:#f3f4f6;            color:var(--tm); }
+  .badge-done   { background:#f3f4f6;            color:var(--text-muted); }
   .badge-danger { background:var(--danger-bg);  color:var(--danger); }
 
   .case-meta { display:flex; gap:14px; flex-wrap:wrap; }
-  .meta-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--tm); }
-  .meta-item svg { width:12px; height:12px; stroke:var(--tm); }
+  .meta-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-muted); }
+  .meta-item svg { width:12px; height:12px; stroke:var(--text-muted); }
 
 
 
   /* 빈 상태 */
   .empty-state { padding:48px 20px; text-align:center; }
   .empty-icon  { width:60px; height:60px; background:var(--bg); border-radius:50%; margin:0 auto 14px; display:flex; align-items:center; justify-content:center; }
-  .empty-icon svg { width:28px; height:28px; stroke:var(--tm); }
-  .empty-title { font-size:14px; font-weight:500; color:var(--ts); margin-bottom:6px; }
-  .empty-desc  { font-size:12px; color:var(--tm); }
+  .empty-icon svg { width:28px; height:28px; stroke:var(--text-muted); }
+  .empty-title { font-size:14px; font-weight:500; color:var(--text-secondary); margin-bottom:6px; }
+  .empty-desc  { font-size:12px; color:var(--text-muted); }
 
   /* ── 드로어 ── */
   .overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:200; display:none; align-items:flex-end; justify-content:center; }
   .overlay.open { display:flex; }
   .drawer { background:var(--card); border-radius:20px 20px 0 0; width:100%; max-width:420px; padding:0 0 36px; animation:slideUp 0.28s ease both; max-height:88vh; overflow-y:auto; }
-  .drawer-handle { width:36px; height:4px; background:var(--bd); border-radius:2px; margin:12px auto 0; }
-  .drawer-head   { padding:16px 20px; border-bottom:1px solid var(--bd); }
-  .drawer-title  { font-size:16px; font-weight:500; color:var(--tp); }
-  .drawer-sub    { font-size:12px; color:var(--tm); margin-top:3px; }
+  .drawer-handle { width:36px; height:4px; background:var(--border); border-radius:2px; margin:12px auto 0; }
+  .drawer-head   { padding:16px 20px; border-bottom:1px solid var(--border); }
+  .drawer-title  { font-size:16px; font-weight:500; color:var(--text-primary); }
+  .drawer-sub    { font-size:12px; color:var(--text-muted); margin-top:3px; }
   .drawer-body   { padding:16px 20px; }
 
   .action-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; }
   .action-btn {
-    background:var(--bg); border:1px solid var(--bd); border-radius:12px;
+    background:var(--bg); border:1px solid var(--border); border-radius:12px;
     padding:14px 10px; text-align:center; cursor:pointer; text-decoration:none; display:block; transition:background 0.15s;
   }
-  .action-btn:active { background:var(--bd); }
+  .action-btn:active { background:var(--border); }
   .action-btn svg { width:20px; height:20px; display:block; margin:0 auto 6px; }
-  .action-btn span { font-size:11px; color:var(--ts); }
+  .action-btn span { font-size:11px; color:var(--text-secondary); }
   .action-btn.primary { background:var(--navy); border-color:var(--navy); }
   .action-btn.primary svg { stroke:#fff; }
   .action-btn.primary span { color:#fff; }
@@ -146,28 +145,28 @@
   display:flex;z-index:100;
 }
 .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:#9ca3af;cursor:pointer;border:none;background:none;font-family:'Noto Sans KR',sans-serif;}
-.nav-item.active{color:var(--deep);}
+.nav-item.active{color:#0d1a33;}
 .nav-item.active .nav-label{font-weight:600;}
 .nav-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
 .nav-icon svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;}
 .nav-label{font-size:10px;}
 
-  .status-btn { padding:10px 8px; border:1px solid var(--bd); border-radius:10px; background:var(--card); font-size:13px; font-family:'Noto Sans KR',sans-serif; color:var(--ts); cursor:pointer; transition:all 0.15s; }
+  .status-btn { padding:10px 8px; border:1px solid var(--border); border-radius:10px; background:var(--card); font-size:13px; font-family:'Noto Sans KR',sans-serif; color:var(--text-secondary); cursor:pointer; transition:all 0.15s; }
   .status-btn.selected { background:var(--navy); color:#fff; border-color:var(--navy); }
 
   /* ── 드로어 내 조서 목록 ── */
   .drawer-doc-list { display:flex; flex-direction:column; gap:8px; margin-bottom:6px; }
-  .drawer-doc-item { display:flex; align-items:center; gap:10px; background:var(--bg); border:1px solid var(--bd); border-radius:12px; padding:11px 13px; cursor:pointer; transition:border-color 0.15s; }
+  .drawer-doc-item { display:flex; align-items:center; gap:10px; background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:11px 13px; cursor:pointer; transition:border-color 0.15s; }
   .drawer-doc-item:active { border-color:var(--accent); }
   .drawer-doc-item.checked { border-color:var(--accent); background:#eff6ff; }
-  .doc-checkbox { width:18px; height:18px; border-radius:5px; border:2px solid var(--bd); background:var(--card); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.15s; }
+  .doc-checkbox { width:18px; height:18px; border-radius:5px; border:2px solid var(--border); background:var(--card); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.15s; }
   .doc-checkbox.on { background:var(--accent); border-color:var(--accent); }
   .doc-checkbox.on::after { content:''; display:block; width:5px; height:9px; border:2px solid #fff; border-top:none; border-left:none; transform:rotate(45deg) translateY(-1px); }
   .drawer-doc-icon { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .drawer-doc-icon svg { width:17px; height:17px; }
   .drawer-doc-info { flex:1; min-width:0; }
-  .drawer-doc-title { font-size:12px; font-weight:500; color:var(--tp); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .drawer-doc-meta  { font-size:10px; color:var(--tm); margin-top:2px; }
+  .drawer-doc-title { font-size:12px; font-weight:500; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .drawer-doc-meta  { font-size:10px; color:var(--text-muted); margin-top:2px; }
   .drawer-doc-badge { flex-shrink:0; }
   .action-btn.disabled { opacity:0.38; cursor:not-allowed; pointer-events:none; }
   #contraBtn:not(.disabled) { cursor:pointer; pointer-events:auto; opacity:1; }
@@ -179,34 +178,34 @@
   .popup-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:400; display:none; align-items:center; justify-content:center; padding:20px; }
   .popup-overlay.open { display:flex; }
   .popup-sheet { background:var(--card); border-radius:16px; width:100%; max-width:380px; max-height:75vh; display:flex; flex-direction:column; animation:slideUp 0.22s ease both; }
-  .popup-head { padding:16px 18px 12px; border-bottom:1px solid var(--bd); display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
-  .popup-title { font-size:14px; font-weight:600; color:var(--tp); flex:1; }
+  .popup-head { padding:16px 18px 12px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .popup-title { font-size:14px; font-weight:600; color:var(--text-primary); flex:1; }
   .popup-close { width:28px; height:28px; border-radius:50%; border:none; background:var(--bg); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
-  .popup-close svg { width:14px; height:14px; stroke:var(--tm); }
-  .popup-body { flex:1; overflow-y:auto; padding:14px 18px 18px; font-size:13px; color:var(--tp); line-height:1.8; white-space:pre-wrap; }
+  .popup-close svg { width:14px; height:14px; stroke:var(--text-muted); }
+  .popup-body { flex:1; overflow-y:auto; padding:14px 18px 18px; font-size:13px; color:var(--text-primary); line-height:1.8; white-space:pre-wrap; }
   .popup-summary {
     flex:0 0 auto;
     max-height:170px;
     overflow-y:auto;
-    border-top:1px solid var(--bd);
+    border-top:1px solid var(--border);
     background:var(--bg);
     padding:12px 18px 16px;
   }
   .popup-summary-title { font-size:12px; font-weight:600; color:var(--navy); margin-bottom:6px; }
-  .popup-summary-text  { font-size:12px; color:var(--tp); line-height:1.8; white-space:pre-wrap; }
-  .popup-summary-empty { color:var(--tm); font-size:12px; }
-  .popup-empty { color:var(--tm); font-size:12px; text-align:center; padding:24px 0; }
-  .contra-result { font-size:13px; color:var(--tp); line-height:1.8; white-space:pre-wrap; }
-  .contra-loading { text-align:center; padding:30px 0; color:var(--tm); font-size:13px; }
+  .popup-summary-text  { font-size:12px; color:var(--text-primary); line-height:1.8; white-space:pre-wrap; }
+  .popup-summary-empty { color:var(--text-muted); font-size:12px; }
+  .popup-empty { color:var(--text-muted); font-size:12px; text-align:center; padding:24px 0; }
+  .contra-result { font-size:13px; color:var(--text-primary); line-height:1.8; white-space:pre-wrap; }
+  .contra-loading { text-align:center; padding:30px 0; color:var(--text-muted); font-size:13px; }
   .contra-buffer-spinner {
     width:36px; height:36px; margin:0 auto 14px;
-    border:3px solid var(--bd); border-top-color:var(--navy); border-radius:50%;
+    border:3px solid var(--border); border-top-color:var(--navy); border-radius:50%;
     animation:contraSpin 0.72s linear infinite;
   }
   @keyframes contraSpin { to { transform:rotate(360deg); } }
-  .contra-analyze-loading { text-align:center; padding:32px 16px 28px; color:var(--tm); font-size:13px; }
+  .contra-analyze-loading { text-align:center; padding:32px 16px 28px; color:var(--text-muted); font-size:13px; }
   .contra-analyze-loading-title { font-size:14px; font-weight:600; color:var(--navy); margin-bottom:6px; }
-  .contra-analyze-loading-sub { font-size:11px; line-height:1.5; color:var(--tm); }
+  .contra-analyze-loading-sub { font-size:11px; line-height:1.5; color:var(--text-muted); }
   .contra-bubble-wrap { display:flex; justify-content:flex-start; width:100%; }
   .contra-bubble {
     max-width:100%; width:100%;
@@ -214,7 +213,7 @@
     border:1px solid #e2e8f0; border-radius:18px 18px 18px 6px;
     padding:14px 16px 16px;
     box-shadow:0 2px 8px rgba(26,39,68,0.06);
-    font-size:13px; color:var(--tp); line-height:1.75;
+    font-size:13px; color:var(--text-primary); line-height:1.75;
     white-space:pre-wrap; word-break:break-word;
   }
   .contra-type-text { min-height:1.4em; }
@@ -345,7 +344,7 @@
     </div>
     <div class="popup-body" id="contraPopupBody"></div>
     <!-- 자동 저장 실패 시에만 표시 (다시 시도) -->
-    <div id="contraSaveFooter" style="display:none; padding:12px 18px 16px; border-top:1px solid var(--bd);">
+    <div id="contraSaveFooter" style="display:none; padding:12px 18px 16px; border-top:1px solid var(--border);">
       <div id="contraSaveHint" style="display:none;font-size:11px;color:var(--danger);text-align:center;margin-bottom:10px;line-height:1.5;">목록에 자동 저장되지 않았습니다. 아래를 눌러 다시 시도하세요.</div>
       <button id="contraSaveBtn" onclick="saveContraResult()"
         style="width:100%; background:var(--navy); color:#fff; border:none; border-radius:12px;
@@ -372,24 +371,24 @@
     <div class="drawer-body">
       <div style="display:flex;flex-direction:column;gap:12px;">
         <div style="background:#f4f6fb;border-radius:10px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;">
-          <span style="font-size:12px;color:var(--tm);">담당 부서</span>
+          <span style="font-size:12px;color:var(--text-muted);">담당 부서</span>
           <span id="newCaseDeptLabel" style="font-size:13px;font-weight:500;color:var(--navy);">불러오는 중...</span>
         </div>
         <div>
-          <label style="font-size:11px;color:var(--tm);font-weight:500;display:block;margin-bottom:5px;">사건번호 <span style="color:var(--danger)">*</span></label>
-          <input id="newCaseId" type="text" placeholder="예: 2024-0312" maxlength="9" style="width:100%;padding:11px 14px;border:1px solid var(--bd);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;">
+          <label style="font-size:11px;color:var(--text-muted);font-weight:500;display:block;margin-bottom:5px;">사건번호 <span style="color:var(--danger)">*</span></label>
+          <input id="newCaseId" type="text" placeholder="예: 2024-0312" maxlength="9" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;">
         </div>
         <div>
-          <label style="font-size:11px;color:var(--tm);font-weight:500;display:block;margin-bottom:5px;">사건명 <span style="color:var(--danger)">*</span></label>
-          <input id="newCaseName" type="text" placeholder="예: 절도사건" maxlength="50" style="width:100%;padding:11px 14px;border:1px solid var(--bd);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;">
+          <label style="font-size:11px;color:var(--text-muted);font-weight:500;display:block;margin-bottom:5px;">사건명 <span style="color:var(--danger)">*</span></label>
+          <input id="newCaseName" type="text" placeholder="예: 절도사건" maxlength="50" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;">
         </div>
         <div>
-          <label style="font-size:11px;color:var(--tm);font-weight:500;display:block;margin-bottom:5px;">피의자 성명 (선택)</label>
-          <input id="newSuspect" type="text" placeholder="홍길동" maxlength="30" style="width:100%;padding:11px 14px;border:1px solid var(--bd);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;">
+          <label style="font-size:11px;color:var(--text-muted);font-weight:500;display:block;margin-bottom:5px;">피의자 성명 (선택)</label>
+          <input id="newSuspect" type="text" placeholder="홍길동" maxlength="30" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;">
         </div>
         <div>
-          <label style="font-size:11px;color:var(--tm);font-weight:500;display:block;margin-bottom:5px;">적용 법조 (선택)</label>
-          <input id="newCharge" type="text" placeholder="형법 제329조" maxlength="100" style="width:100%;padding:11px 14px;border:1px solid var(--bd);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;">
+          <label style="font-size:11px;color:var(--text-muted);font-weight:500;display:block;margin-bottom:5px;">적용 법조 (선택)</label>
+          <input id="newCharge" type="text" placeholder="형법 제329조" maxlength="100" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;">
         </div>
         <button onclick="submitNewCase()" style="width:100%;padding:14px;background:var(--navy);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:500;font-family:'Noto Sans KR',sans-serif;cursor:pointer;margin-top:4px;">등록하기</button>
       </div>
@@ -408,7 +407,7 @@
     <div class="drawer-body">
       <div style="display:flex;flex-direction:column;gap:14px;">
         <div>
-          <label style="font-size:11px;color:var(--tm);font-weight:500;display:block;margin-bottom:8px;">상태</label>
+          <label style="font-size:11px;color:var(--text-muted);font-weight:500;display:block;margin-bottom:8px;">상태</label>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
             <button class="status-btn" data-val="진행중"   onclick="selectStatus(this)">진행중</button>
             <button class="status-btn" data-val="검토필요" onclick="selectStatus(this)">검토필요</button>
@@ -459,7 +458,7 @@ document.getElementById('searchInput').addEventListener('input', function(){
 
 function loadCaseList() {
   var kw = document.getElementById('searchInput').value.trim();
-  document.getElementById('caseList').innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--tm);font-size:13px;">불러오는 중...</div>';
+  document.getElementById('caseList').innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;">불러오는 중...</div>';
   fetch('caseApi?action=caseList&status=' + encodeURIComponent(currentFilter) + '&keyword=' + encodeURIComponent(kw))
     .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
     .then(function(data){
@@ -480,7 +479,7 @@ function renderCases(list) {
     var dt=(c.rank?c.rank+' ':'')+escHtml(c.detective);
     var tt=!c.isMine?'<span style="font-size:10px;background:#f0fdf4;color:#16a34a;padding:2px 7px;border-radius:10px;margin-left:4px;">팀원</span>':'';
     var st=(c.suspect&&c.suspect!=='미입력')
-      ?'<span style="font-size:11px;color:var(--tm);white-space:nowrap;">피의자: '+escHtml(c.suspect)+'</span>':'';
+      ?'<span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">피의자: '+escHtml(c.suspect)+'</span>':'';
     html+='<div class="case-card'+(c.urgent?' urgent':'')+'" style="animation-delay:'+(i*0.05)+'s" onclick="openCase(\''+escStr(c.id)+'\')">' +
       '<div class="case-top">' +
         '<div><div class="case-num">'+escHtml(c.id)+tt+'</div><div class="case-name">'+escHtml(c.name)+'</div></div>' +
@@ -521,7 +520,7 @@ function openCase(id) {
 function renderDrawerDocs(docs) {
   var im={'피의자':'#eff6ff','피해자':'#fff7ed','목격자':'#f0fdf4','참고인':'#fffbeb'};
   var sm={'피의자':'#1d4ed8','피해자':'#c2410c','목격자':'#15803d','참고인':'#b45309'};
-  if(!docs.length){document.getElementById('drawerDocList').innerHTML='<div style="text-align:center;padding:24px 0;color:var(--tm);font-size:12px;">등록된 조서가 없습니다.<br>조서 추가 버튼으로 첫 조서를 작성하세요.</div>';return;}
+  if(!docs.length){document.getElementById('drawerDocList').innerHTML='<div style="text-align:center;padding:24px 0;color:var(--text-muted);font-size:12px;">등록된 조서가 없습니다.<br>조서 추가 버튼으로 첫 조서를 작성하세요.</div>';return;}
   var html='<div class="drawer-doc-list">';
   docs.forEach(function(d,i){
     var bg=im[d.type]||'#f3f4f6', st=sm[d.type]||'#6b7280';
@@ -551,23 +550,15 @@ function toggleDocCheck(docId,idx){
   if(btn){var a=checkedDocs.length>=2;btn.classList.toggle('disabled',!a);btn.classList.toggle('contra-active',a);}
 }
 
-function goToRelationMap(caseId) {
-  var url = 'caseRelationMap.jsp?caseId=' + encodeURIComponent(caseId);
-  if (checkedDocs.length > 0) {
-    url += '&docIds=' + checkedDocs.map(function(id){ return encodeURIComponent(id); }).join(',');
-  }
-  location.href = url;
-}
-
 function renderDrawerActions(c){
   var del=c.isMine?'<button class="action-btn" onclick="confirmDeleteCase(\''+escStr(c.id)+'\')" style="border:none;cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.8" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg><span style="color:var(--danger)">삭제</span></button>':'';
   document.getElementById('drawerActions').innerHTML=
     '<a href="writeTranscript.jsp?caseId='+encodeURIComponent(c.id)+'" class="action-btn primary"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg><span>조서 추가</span></a>' +
-    '<button class="action-btn" onclick="openEditDrawer(\''+escStr(c.id)+'\',\''+escStr(c.status)+'\')" style="border:1px solid var(--bd);cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.8" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><span>상태 수정</span></button>' +
-    '<a href="javascript:void(0)" class="action-btn" onclick="goToRelationMap(\''+escStr(c.id)+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="18" cy="19" r="2.5"/><line x1="8.4" y1="11.0" x2="15.6" y2="6.5"/><line x1="8.4" y1="13.0" x2="15.6" y2="17.5"/></svg><span>관계망</span></a>' +
-    '<button type="button" class="action-btn disabled" id="contraBtn" onclick="runContradiction()" style="border:1px solid var(--bd);"><svg viewBox="0 0 24 24" fill="none" stroke="var(--tm)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>모순탐지</span></button>' +
+    '<button class="action-btn" onclick="openEditDrawer(\''+escStr(c.id)+'\',\''+escStr(c.status)+'\')" style="border:1px solid var(--border);cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.8" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><span>상태 수정</span></button>' +
+    '<a href="caseRelationMap.jsp" class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="18" cy="19" r="2.5"/><line x1="8.4" y1="11.0" x2="15.6" y2="6.5"/><line x1="8.4" y1="13.0" x2="15.6" y2="17.5"/></svg><span>관계망</span></a>' +
+    '<button type="button" class="action-btn disabled" id="contraBtn" onclick="runContradiction()" style="border:1px solid var(--border);"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>모순탐지</span></button>' +
     del +
-    '<button class="action-btn" onclick="closeDrawer(\'caseDrawer\')" style="border:none;cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--tm)" stroke-width="1.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>닫기</span></button>';
+    '<button class="action-btn" onclick="closeDrawer(\'caseDrawer\')" style="border:none;cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>닫기</span></button>';
 }
 
 function openTranscriptPopup(idx){
@@ -714,7 +705,7 @@ function runContradiction(){
   var caseId=currentCaseData.id||'';
   var titles=checkedDocs.map(function(id){var d=currentDocs.find(function(x){return x.id===id;});return d?d.name+' '+d.type+' 진술':'ID:'+id;});
   document.getElementById('contraPopupTitle').textContent='모순 분석 중...';
-  document.getElementById('contraPopupBody').innerHTML='<div class="contra-loading"><div class="contra-buffer-spinner"></div><div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px;">조서를 불러오는 중</div><div style="font-size:12px;">선택한 '+checkedDocs.length+'개 조서를 준비합니다.</div><div style="margin-top:8px;font-size:11px;color:var(--tm);">'+titles.join(', ')+'</div></div>';
+  document.getElementById('contraPopupBody').innerHTML='<div class="contra-loading"><div class="contra-buffer-spinner"></div><div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px;">조서를 불러오는 중</div><div style="font-size:12px;">선택한 '+checkedDocs.length+'개 조서를 준비합니다.</div><div style="margin-top:8px;font-size:11px;color:var(--text-muted);">'+titles.join(', ')+'</div></div>';
   document.getElementById('contraPopup').classList.add('open');
   var fp=checkedDocs.map(function(id){var d=currentDocs.find(function(x){return x.id===id;});if(d&&d.originalText!==undefined)return Promise.resolve(d);return fetch('caseApi?action=transcriptText&transcriptId='+id).then(function(r){return r.json();}).then(function(res){if(d)d.originalText=res.text||'';return d;});});
   Promise.all(fp).then(function(docs){
@@ -889,14 +880,14 @@ function openNewCaseDrawer(){
   document.getElementById('newCaseId').value=''; document.getElementById('newCaseName').value='';
   document.getElementById('newSuspect').value=''; document.getElementById('newCharge').value='';
   document.getElementById('newCaseDeptLabel').textContent='불러오는 중...';
-  document.getElementById('newCaseDeptLabel').style.color='var(--tm)';
+  document.getElementById('newCaseDeptLabel').style.color='var(--text-muted)';
   document.getElementById('newCaseDrawer').classList.add('open');
   document.body.style.overflow='hidden';
   setTimeout(function(){document.getElementById('newCaseId').focus();},300);
   fetch('caseApi?action=myDept').then(function(r){return r.json();}).then(function(d){
     if(d.error){document.getElementById('newCaseDeptLabel').textContent='조회 실패';return;}
     document.getElementById('newCaseDeptLabel').textContent=d.label;
-    document.getElementById('newCaseDeptLabel').style.color=d.deptId?'var(--navy)':'var(--tm)';
+    document.getElementById('newCaseDeptLabel').style.color=d.deptId?'var(--navy)':'var(--text-muted)';
   }).catch(function(){document.getElementById('newCaseDeptLabel').textContent='조회 실패';});
 }
 
