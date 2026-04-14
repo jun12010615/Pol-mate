@@ -631,6 +631,7 @@ var POL_MATE_SERV_BASE='<%= safePolMateServBaseUrl %>';
 var ANALYZE_STREAM_URL=POL_MATE_SERV_BASE+'/analyze/stream';
 var contraTypeSession=0;
 var contraStreamAbort=null;
+var contraHasContradictionFromServer=null;
 function removeContraCaret(caret){if(caret&&caret.parentNode)caret.parentNode.removeChild(caret);}
 function consumeAnalyzeStream(response,session){
   return new Promise(function(resolve,reject){
@@ -670,6 +671,11 @@ function consumeAnalyzeStream(response,session){
           reject(new Error(ev.message||'분석 오류'));
           return;
         }else if(ev.event==='done'){
+          if(typeof ev.has_contradiction==='boolean'){
+            contraHasContradictionFromServer=ev.has_contradiction;
+          }else if(typeof ev.contradiction_count==='number'){
+            contraHasContradictionFromServer=ev.contradiction_count>0;
+          }
           finished=true;
           removeContraCaret(caret);
           resolve();
@@ -719,6 +725,7 @@ function consumeAnalyzeStream(response,session){
 function runContradiction(){
   if(checkedDocs.length<2) return;
   contraTypeSession++;
+  contraHasContradictionFromServer=null;
   contraSavePosting=false;
   // 저장 푸터 초기화 (자동 저장 실패 시에만 표시)
   document.getElementById('contraSaveFooter').style.display='none';
@@ -773,6 +780,7 @@ function closeContraPopup(e){
   if(!e||e.target===document.getElementById('contraPopup')||!e.target){
     if(contraStreamAbort)contraStreamAbort.abort();
     contraTypeSession++;
+    contraHasContradictionFromServer=null;
     document.getElementById('contraPopup').classList.remove('open');
     document.getElementById('contraSaveFooter').style.display='none';
     var h=document.getElementById('contraSaveHint');
@@ -822,7 +830,9 @@ function buildContraSavePayload(){
     var d=currentDocs.find(function(x){return x.id===id;});
     return d?(d.type||''):'';
   }).filter(Boolean).join(', ');
-  var hasContradiction=inferHasContradictionFromAiText(aiResult);
+  var hasContradiction=(typeof contraHasContradictionFromServer==='boolean')
+    ? contraHasContradictionFromServer
+    : inferHasContradictionFromAiText(aiResult);
   var caseId=currentCaseData?currentCaseData.id||'':'';
   return { aiResult:aiResult, stmtNames:stmtNames, stmtTypes:stmtTypes, hasContradiction:hasContradiction, caseId:caseId };
 }
