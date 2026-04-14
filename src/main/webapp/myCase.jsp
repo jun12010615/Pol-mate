@@ -664,7 +664,7 @@ function consumeAnalyzeStream(response,session){
         try{ev=JSON.parse(jsonStr);}catch(e){continue;}
         if(ev.event==='chunk'&&ev.text){
           ensureOutputPanel();
-          textSpan.textContent+=ev.text;
+          textSpan.textContent+=normalizeStatementLabels(ev.text);
         }else if(ev.event==='error'){
           finished=true;
           removeContraCaret(caret);
@@ -790,9 +790,18 @@ function closeContraPopup(e){
 
 var contraSavePosting=false;
 
-/** 분석 출력의 statement_a/b 표기를 조서A/B로 통일 */
+/** 분석 출력의 statement_x 표기를 조서N(1-base)으로 통일 */
 function normalizeStatementLabels(s){
-  return String(s||'').replace(/statement_a/gi,'조서A').replace(/statement_b/gi,'조서B');
+  return String(s||'').replace(/statement_([a-z]+)/gi, function(_, letters){
+    var n = 0;
+    var t = String(letters || '').toLowerCase();
+    for (var i = 0; i < t.length; i++) {
+      var c = t.charCodeAt(i);
+      if (c < 97 || c > 122) return 'statement_' + letters;
+      n = n * 26 + (c - 96);
+    }
+    return '조서' + n;
+  });
 }
 
 /** contradictionList.jsp·writeTranscript.jsp와 동일 기준 (저장 시 플래그 정확도) */
@@ -804,7 +813,7 @@ function inferHasContradictionFromAiText(ai){
     '모순 발견','모순이 탐지','모순이 확인','모순이 존재','진술 불일치',
     '진술 간에','진술 간 모순','진술에 모순','상충','엇갈린','앞뒤가 맞지',
     '일치하지 않','일치가 없','주장이 다름','서로 다른','행동 불일치','알리바이 불일치',
-    '불일치가 발견','불일치를 발견','불일치합니다','조서A','조서B','조서 A','조서 B',
+    '불일치가 발견','불일치를 발견','불일치합니다','조서1','조서2','조서 1','조서 2',
     '거짓 진술','허위 진술','시간대가 맞지','알리바이가 맞지','위반이 확인'
   ];
   if(strong.some(function(p){ return s.indexOf(p)>=0; }))return true;

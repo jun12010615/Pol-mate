@@ -417,7 +417,16 @@ function normCaseId(v) {
 }
 
 function normalizeStatementLabels(s) {
-  return String(s || '').replace(/statement_a/gi, '조서A').replace(/statement_b/gi, '조서B');
+  return String(s || '').replace(/statement_([a-z]+)/gi, function(_, letters) {
+    var n = 0;
+    var t = String(letters || '').toLowerCase();
+    for (var i = 0; i < t.length; i++) {
+      var c = t.charCodeAt(i);
+      if (c < 97 || c > 122) return 'statement_' + letters;
+      n = n * 26 + (c - 96);
+    }
+    return '조서' + n;
+  });
 }
 
 /**
