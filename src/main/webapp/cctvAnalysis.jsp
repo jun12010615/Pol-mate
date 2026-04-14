@@ -4,6 +4,22 @@
     String userName  = (String) session.getAttribute("userName");
     if (loginUser == null) { response.sendRedirect("login.jsp"); return; }
     String userInitial = (userName != null && userName.length() > 0) ? String.valueOf(userName.charAt(0)) : "경";
+
+    String polMateServBaseUrl = "http://113.198.238.111:5001";
+    try {
+        java.util.Properties props = new java.util.Properties();
+        java.io.InputStream is = application.getResourceAsStream("/WEB-INF/config.properties");
+        if (is != null) {
+            props.load(is);
+            String u = props.getProperty("POL_MATE_SERV_BASE_URL", "").trim();
+            if (!u.isEmpty()) {
+                while (u.endsWith("/")) u = u.substring(0, u.length() - 1);
+                polMateServBaseUrl = u;
+            }
+            is.close();
+        }
+    } catch (Exception ignored) {}
+    String safePolMateServBaseUrl = polMateServBaseUrl.replace("\\", "\\\\").replace("'", "\\'");
 %>
 <!DOCTYPE html>
 <html lang="ko">
@@ -285,7 +301,7 @@
 </div>
 
 <script>
-var PYTHON_SERVER = 'http://113.198.238.115:5001';
+var PYTHON_SERVER = '<%= safePolMateServBaseUrl %>';
 var videoFiles = []; // { file, id, status, jobId, results, pollTimer }
 var uidSeq = 0;
 

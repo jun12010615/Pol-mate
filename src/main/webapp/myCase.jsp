@@ -4,6 +4,23 @@
     String userName  = (String) session.getAttribute("userName");
     if (loginUser == null) { response.sendRedirect("login.jsp"); return; }
     String paramCaseId = request.getParameter("caseId") != null ? request.getParameter("caseId") : "";
+    String safeParamCaseIdJs = paramCaseId.replace("\\", "\\\\").replace("'", "\\'");
+
+    String polMateServBaseUrl = "http://113.198.238.111:5001";
+    try {
+        java.util.Properties props = new java.util.Properties();
+        java.io.InputStream is = application.getResourceAsStream("/WEB-INF/config.properties");
+        if (is != null) {
+            props.load(is);
+            String u = props.getProperty("POL_MATE_SERV_BASE_URL", "").trim();
+            if (!u.isEmpty()) {
+                while (u.endsWith("/")) u = u.substring(0, u.length() - 1);
+                polMateServBaseUrl = u;
+            }
+            is.close();
+        }
+    } catch (Exception ignored) {}
+    String safePolMateServBaseUrl = polMateServBaseUrl.replace("\\", "\\\\").replace("'", "\\'");
 %>
 <!DOCTYPE html>
 <html lang="ko">
@@ -610,7 +627,8 @@ function renderTranscriptSummary(summary){
   }
 }
 
-var ANALYZE_STREAM_URL='http://113.198.238.111:5001/analyze/stream';
+var POL_MATE_SERV_BASE='<%= safePolMateServBaseUrl %>';
+var ANALYZE_STREAM_URL=POL_MATE_SERV_BASE+'/analyze/stream';
 var contraTypeSession=0;
 var contraStreamAbort=null;
 function removeContraCaret(caret){if(caret&&caret.parentNode)caret.parentNode.removeChild(caret);}
@@ -748,7 +766,7 @@ function runContradiction(){
   .catch(function(err){
     if(err.name==='AbortError')return;
     document.getElementById('contraPopupTitle').textContent='분석 실패';
-    document.getElementById('contraPopupBody').innerHTML='<div class="popup-empty">'+(err&&err.message?escHtml(err.message):'연결 실패')+'<br><br>서버(<code>113.198.238.111:5001</code>) <code>/analyze/stream</code>·CORS를 확인해 주세요.</div>';
+    document.getElementById('contraPopupBody').innerHTML='<div class="popup-empty">'+(err&&err.message?escHtml(err.message):'연결 실패')+'<br><br>서버(<code>'+escHtml(POL_MATE_SERV_BASE)+'</code>) <code>/analyze/stream</code>·CORS를 확인해 주세요.</div>';
   });
 }
 function closeContraPopup(e){
@@ -944,7 +962,7 @@ loadCaseList();
 
 // 알림에서 caseId 파라미터로 직접 진입 시 해당 사건 드로어 자동 오픈
 (function() {
-  var targetId = '<%= paramCaseId.replace("'", "\'") %>';
+  var targetId = '<%= safeParamCaseIdJs %>';
   if (!targetId) return;
   // 카드 렌더링 완료 후 해당 사건 드로어 오픈
   var maxTry = 20, tried = 0;

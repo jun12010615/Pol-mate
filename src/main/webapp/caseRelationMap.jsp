@@ -14,6 +14,22 @@
   String safeOpenBoardAttr = "true".equalsIgnoreCase(paramOpenBoard) ? "true" : "false";
   String safeDocIdsAttr = paramDocIds.replace("&", "&amp;").replace("\"", "&quot;").replace("'", "&#39;").replace("<", "&lt;");
 
+  String polMateServBaseUrl = "http://113.198.238.111:5001";
+  try {
+    java.util.Properties props = new java.util.Properties();
+    java.io.InputStream is = application.getResourceAsStream("/WEB-INF/config.properties");
+    if (is != null) {
+      props.load(is);
+      String u = props.getProperty("POL_MATE_SERV_BASE_URL", "").trim();
+      if (!u.isEmpty()) {
+        while (u.endsWith("/")) u = u.substring(0, u.length() - 1);
+        polMateServBaseUrl = u;
+      }
+      is.close();
+    }
+  } catch (Exception ignored) {}
+  String safePolMateServBaseUrl = polMateServBaseUrl.replace("\\", "\\\\").replace("'", "\\'");
+
   // ── 팀 사건 목록 조회 ────────────────────────────────────────────
   DBConnectionMgr mgr = DBConnectionMgr.getInstance();
   java.sql.Connection conn = null;
@@ -674,7 +690,7 @@ var EDGE_MISMATCH_STROKE = '#f97316'; // 진술 불일치(다른 관계색보다
 var REL_LABEL  = {accomplice:'공범',harm:'피해관계',witness:'목격',acquaint:'지인',family:'가족'};
 
 /** Pol-mate-Serv (Flask app.py) — Ollama는 서버에서만 호출. 로컬 개발 시 http://127.0.0.1:5001 로 바꿀 것. */
-var POL_MATE_SERV_BASE = 'http://113.198.238.108:5001';
+var POL_MATE_SERV_BASE = '<%= safePolMateServBaseUrl %>';
 var RELATION_MAP_URL   = POL_MATE_SERV_BASE.replace(/\/$/, '') + '/relation_map';
 
 // ── STEP 1: 사건 선택 ────────────────────────────────────────────
