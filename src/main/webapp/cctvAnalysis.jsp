@@ -5,7 +5,8 @@
     if (loginUser == null) { response.sendRedirect("login.jsp"); return; }
     String userInitial = (userName != null && userName.length() > 0) ? String.valueOf(userName.charAt(0)) : "경";
 
-    String polMateServBaseUrl = "http://113.198.238.111:5001";
+    String polMateServBaseUrl = "http://113.198.238.115:5001";
+    /*
     try {
         java.util.Properties props = new java.util.Properties();
         java.io.InputStream is = application.getResourceAsStream("/WEB-INF/config.properties");
@@ -19,6 +20,7 @@
             is.close();
         }
     } catch (Exception ignored) {}
+    */
     String safePolMateServBaseUrl = polMateServBaseUrl.replace("\\", "\\\\").replace("'", "\\'");
 %>
 <!DOCTYPE html>
