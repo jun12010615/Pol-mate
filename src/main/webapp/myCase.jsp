@@ -601,7 +601,7 @@ function renderTranscriptSummary(summary){
   }
 }
 
-var ANALYZE_STREAM_URL='http://113.198.238.108:5001/analyze/stream';
+var ANALYZE_STREAM_URL='http://113.198.238.111:5001/analyze/stream';
 var contraTypeSession=0;
 var contraStreamAbort=null;
 function removeContraCaret(caret){if(caret&&caret.parentNode)caret.parentNode.removeChild(caret);}
@@ -739,7 +739,7 @@ function runContradiction(){
   .catch(function(err){
     if(err.name==='AbortError')return;
     document.getElementById('contraPopupTitle').textContent='분석 실패';
-    document.getElementById('contraPopupBody').innerHTML='<div class="popup-empty">'+(err&&err.message?escHtml(err.message):'연결 실패')+'<br><br>서버(<code>113.198.238.108:5001</code>) <code>/analyze/stream</code>·CORS를 확인해 주세요.</div>';
+    document.getElementById('contraPopupBody').innerHTML='<div class="popup-empty">'+(err&&err.message?escHtml(err.message):'연결 실패')+'<br><br>서버(<code>113.198.238.111:5001</code>) <code>/analyze/stream</code>·CORS를 확인해 주세요.</div>';
   });
 }
 function closeContraPopup(e){
