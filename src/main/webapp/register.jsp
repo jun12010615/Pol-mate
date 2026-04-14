@@ -239,7 +239,7 @@
           <label class="field-label">소속 기관 <span class="required">*</span></label>
           <select id="userOrg" class="field-input no-icon" onchange="loadDepts()">
             <option value="">선택하세요</option>
-            <option>서울지방경찰청</option>
+            <option>서울경찰청</option>
             <option>부산지방경찰청</option>
             <option>인천지방경찰청</option>
             <option>경기남부경찰청</option>
