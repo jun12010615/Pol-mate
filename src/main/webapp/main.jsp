@@ -239,14 +239,12 @@
   DBConnectionMgr mgr = DBConnectionMgr.getInstance();
   java.sql.Connection conn = null;
 
-  // dept_id 기반 팀원 공유 서브쿼리 (재사용)
-  // 내가 등록한 사건 OR 같은 dept_id 팀원이 등록한 사건
+  // cases.dept_id 고정값 기반 조건 (재사용)
+  // 사건 등록 시 고정된 cases.dept_id = 내 현재 dept_id
+  // → 등록자가 부서를 옮겨도 사건은 원래 부서에 고정되고,
+  //   나는 현재 소속 부서의 사건만 조회함
   String teamCaseCond =
-    "(c.user_id = ? OR c.user_id IN (" +
-    "  SELECT u2.user_id FROM users u2 " +
-    "  JOIN users me ON me.user_id = ? " +
-    "  WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL" +
-    "))";
+    "c.dept_id = (SELECT me.dept_id FROM users me WHERE me.user_id = ?)";
 
   try {
     conn = mgr.getConnection();
@@ -255,7 +253,6 @@
     java.sql.PreparedStatement ps1 = conn.prepareStatement(
       "SELECT COUNT(*) FROM cases c WHERE " + teamCaseCond + " AND c.status != '완료'");
     ps1.setString(1, loginUser);
-    ps1.setString(2, loginUser);
     java.sql.ResultSet rs1 = ps1.executeQuery();
     if (rs1.next()) cntActive = rs1.getInt(1);
     rs1.close(); ps1.close();
@@ -266,15 +263,22 @@
       "JOIN cases c ON t.case_id = c.case_id " +
       "WHERE " + teamCaseCond + " AND t.has_contradiction = 1");
     ps2.setString(1, loginUser);
-    ps2.setString(2, loginUser);
     java.sql.ResultSet rs2 = ps2.executeQuery();
     if (rs2.next()) cntContradiction = rs2.getInt(1);
     rs2.close(); ps2.close();
 
-    // ── 내가 작성한 조서 수 ───────────────────────────────────
+    // ── 내가 작성한 조서 수 (현재 부서 사건만, 부서 미배정 시 전체) ───
     java.sql.PreparedStatement ps3 = conn.prepareStatement(
-      "SELECT COUNT(*) FROM transcripts WHERE user_id = ?");
+      "SELECT COUNT(*) FROM transcripts t " +
+      "JOIN cases c ON t.case_id = c.case_id " +
+      "WHERE t.user_id = ? " +
+      "  AND ( " +
+      "    (SELECT me.dept_id FROM users me WHERE me.user_id = ?) IS NULL " +
+      "    OR c.dept_id = (SELECT me.dept_id FROM users me WHERE me.user_id = ?) " +
+      "  )");
     ps3.setString(1, loginUser);
+    ps3.setString(2, loginUser);
+    ps3.setString(3, loginUser);
     java.sql.ResultSet rs3 = ps3.executeQuery();
     if (rs3.next()) cntTranscript = rs3.getInt(1);
     rs3.close(); ps3.close();
@@ -284,7 +288,6 @@
       "SELECT c.case_id, c.case_name FROM cases c WHERE " + teamCaseCond +
       " AND c.status = '모순탐지' ORDER BY c.updated_at DESC LIMIT 1");
     ps4.setString(1, loginUser);
-    ps4.setString(2, loginUser);
     java.sql.ResultSet rs4 = ps4.executeQuery();
     if (rs4.next()) { alertCaseId = rs4.getString(1); alertCaseName = rs4.getString(2); }
     rs4.close(); ps4.close();
@@ -294,7 +297,6 @@
       "SELECT c.case_id, c.case_name, c.status, c.updated_at FROM cases c WHERE " + teamCaseCond +
       " ORDER BY c.updated_at DESC LIMIT 3");
     ps5.setString(1, loginUser);
-    ps5.setString(2, loginUser);
     java.sql.ResultSet rs5 = ps5.executeQuery();
     while (rs5.next()) {
       String upd = rs5.getString("updated_at");

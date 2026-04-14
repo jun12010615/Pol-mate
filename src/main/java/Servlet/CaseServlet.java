@@ -133,19 +133,13 @@ public class CaseServlet extends HttpServlet {
                 "       (SELECT COUNT(*) FROM transcripts t WHERE t.case_id = c.case_id AND t.has_contradiction = 1) AS contradiction_count " +
                 "FROM cases c " +
                 "LEFT JOIN users u ON c.user_id = u.user_id " +
-                // 내가 등록한 사건 OR 같은 부서(dept_id) 팀원이 등록한 사건
-                "WHERE (c.user_id = ? " +
-                "   OR c.user_id IN ( " +
-                "       SELECT u2.user_id FROM users u2 " +
-                "       JOIN users me ON me.user_id = ? " +
-                "       WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL AND u2.user_id != ? " +
-                "   )) "
+                // 사건 등록 시 고정된 cases.dept_id = 내 현재 dept_id 인 사건만 조회
+                // 등록자가 부서를 옮겨도 사건은 cases.dept_id(고정)에 묶여 원래 부서에 남음
+                "WHERE c.dept_id = (SELECT me.dept_id FROM users me WHERE me.user_id = ?) "
             );
 
             List<Object> params = new ArrayList<>();
-            params.add(loginUser); // 내가 등록한 사건
             params.add(loginUser); // me.user_id
-            params.add(loginUser); // 본인 제외 (이미 위에서 포함)
 
             if (!"all".equals(status)) {
                 sql.append("AND c.status = ? ");
@@ -217,22 +211,16 @@ public class CaseServlet extends HttpServlet {
             // 사건 기본 정보 + 접근 권한 확인
             ps = conn.prepareStatement(
                 "SELECT c.case_id, c.case_name, c.suspect, c.charge, c.status, " +
-                "       c.created_at, c.user_id, " +
+                "       c.created_at, c.user_id, c.dept_id AS case_dept_id, " +
                 "       u.user_name, u.user_rank, " +
                 "       d.dept_name, d.org_name " +
                 "FROM cases c " +
                 "LEFT JOIN users u ON c.user_id = u.user_id " +
-                "LEFT JOIN departments d ON u.dept_id = d.dept_id " +
+                "LEFT JOIN departments d ON c.dept_id = d.dept_id " +
                 "WHERE c.case_id = ? " +
-                "AND (c.user_id = ? " +
-                "   OR c.user_id IN ( " +
-                "       SELECT u2.user_id FROM users u2 " +
-                "       JOIN users me ON me.user_id = ? " +
-                "       WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
-                "   ))");
+                "AND c.dept_id = (SELECT me.dept_id FROM users me WHERE me.user_id = ?)");
             ps.setString(1, caseId);
             ps.setString(2, loginUser);
-            ps.setString(3, loginUser);
             rs = ps.executeQuery();
 
             if (!rs.next()) {
@@ -345,44 +333,57 @@ public class CaseServlet extends HttpServlet {
             rs.close();
             mgr.freeConnection(null, ps);
 
-            // 사건 INSERT (team_id 없이 user_id만 저장 — dept_id로 팀 공유)
+            // 등록자의 dept_id 조회 (등록 시점 고정용)
             ps = conn.prepareStatement(
-                "INSERT INTO cases (case_id, user_id, case_name, suspect, charge, status) " +
-                "VALUES (?, ?, ?, ?, ?, '진행중')");
-            ps.setString(1, caseId);
-            ps.setString(2, loginUser);
-            ps.setString(3, caseName.trim());
-            ps.setString(4, suspect.isEmpty() ? null : suspect.trim());
-            ps.setString(5, charge.isEmpty()  ? null : charge.trim());
-            ps.executeUpdate();
-
-            // 내 부서 정보 조회 (응답용)
-            mgr.freeConnection(null, ps);
-            ps = conn.prepareStatement(
-                "SELECT d.dept_name, d.org_name FROM users u " +
+                "SELECT u.dept_id, d.dept_name, d.org_name FROM users u " +
                 "LEFT JOIN departments d ON u.dept_id = d.dept_id " +
                 "WHERE u.user_id = ?");
             ps.setString(1, loginUser);
             rs = ps.executeQuery();
 
+            Integer creatorDeptId = null;
             String deptLabel = "부서 미배정";
             if (rs.next()) {
-                String dn = rs.getString("dept_name");
-                String on = rs.getString("org_name");
-                if (dn != null && !dn.isEmpty()) {
-                    deptLabel = on != null && !on.isEmpty() ? dn + " (" + on + ")" : dn;
+                int deptIdVal = rs.getInt("dept_id");
+                if (!rs.wasNull()) {
+                    creatorDeptId = deptIdVal;
+                    String dn = rs.getString("dept_name");
+                    String on = rs.getString("org_name");
+                    if (dn != null && !dn.isEmpty()) {
+                        deptLabel = on != null && !on.isEmpty() ? dn + " (" + on + ")" : dn;
+                    }
                 }
             }
+            rs.close();
+            mgr.freeConnection(null, ps);
+
+            // 사건 INSERT — 등록 시점의 dept_id를 cases 테이블에 함께 저장
+            ps = conn.prepareStatement(
+                "INSERT INTO cases (case_id, user_id, dept_id, case_name, suspect, charge, status) " +
+                "VALUES (?, ?, ?, ?, ?, ?, '진행중')");
+            ps.setString(1, caseId);
+            ps.setString(2, loginUser);
+            if (creatorDeptId != null) ps.setInt(3, creatorDeptId);
+            else                       ps.setNull(3, java.sql.Types.INTEGER);
+            ps.setString(4, caseName.trim());
+            ps.setString(5, suspect.isEmpty() ? null : suspect.trim());
+            ps.setString(6, charge.isEmpty()  ? null : charge.trim());
+            ps.executeUpdate();
+            mgr.freeConnection(null, ps);
+
+            // 응답용 부서 정보는 이미 위에서 조회함
+            rs = null;
+            ps = null;
 
             // ── 같은 부서 팀원(본인 제외)에게 알림 발송 (실패해도 등록은 유지) ──
             try {
-                mgr.freeConnection(null, ps);
+                // cases.dept_id(고정값) 기준으로 같은 부서 팀원 조회
                 ps = conn.prepareStatement(
                     "SELECT u2.user_id FROM users u2 " +
-                    "JOIN users me ON me.user_id = ? " +
-                    "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
+                    "WHERE u2.dept_id = ? AND u2.dept_id IS NOT NULL " +
                     "  AND u2.user_id != ? AND u2.notif_relation = 1");
-                ps.setString(1, loginUser);
+                if (creatorDeptId != null) ps.setInt(1, creatorDeptId);
+                else                       ps.setNull(1, java.sql.Types.INTEGER);
                 ps.setString(2, loginUser);
                 ResultSet rsTeam = ps.executeQuery();
                 List<String> teammates = new ArrayList<>();
@@ -484,15 +485,9 @@ public class CaseServlet extends HttpServlet {
             // 접근 권한 확인
             ps = conn.prepareStatement(
                 "SELECT 1 FROM cases WHERE case_id = ? " +
-                "AND (user_id = ? " +
-                "   OR user_id IN ( " +
-                "       SELECT u2.user_id FROM users u2 " +
-                "       JOIN users me ON me.user_id = ? " +
-                "       WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
-                "   ))");
+                "AND dept_id = (SELECT me.dept_id FROM users me WHERE me.user_id = ?)");
             ps.setString(1, caseId);
             ps.setString(2, loginUser);
-            ps.setString(3, loginUser);
             ResultSet rs = ps.executeQuery();
             if (!rs.next()) {
                 rs.close();
@@ -521,12 +516,13 @@ public class CaseServlet extends HttpServlet {
                 mgr.freeConnection(null, ps);
                 boolean isCritical = "모순탐지".equals(status);
                 String notifCol   = isCritical ? "notif_contradiction" : "notif_relation";
+                // 사건에 고정된 dept_id 기준으로 팀원 조회
                 ps = conn.prepareStatement(
                     "SELECT u2.user_id FROM users u2 " +
-                    "JOIN users me ON me.user_id = ? " +
-                    "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
+                    "JOIN cases c ON c.case_id = ? " +
+                    "WHERE u2.dept_id = c.dept_id AND c.dept_id IS NOT NULL " +
                     "  AND u2.user_id != ? AND u2." + notifCol + " = 1");
-                ps.setString(1, loginUser);
+                ps.setString(1, caseId);
                 ps.setString(2, loginUser);
                 ResultSet rsTeam = ps.executeQuery();
                 List<String> teammates = new ArrayList<>();
@@ -704,18 +700,12 @@ public class CaseServlet extends HttpServlet {
         try {
             conn = mgr.getConnection();
 
-            // 접근 권한 확인 (내 사건 또는 같은 부서 팀원 사건)
+            // 접근 권한 확인 (내 사건 또는 같은 부서 팀원 사건 — 등록 시 고정된 dept_id 기준)
             ps = conn.prepareStatement(
                 "SELECT 1 FROM cases WHERE case_id = ? " +
-                "AND (user_id = ? " +
-                "   OR user_id IN ( " +
-                "       SELECT u2.user_id FROM users u2 " +
-                "       JOIN users me ON me.user_id = ? " +
-                "       WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
-                "   ))");
+                "AND dept_id = (SELECT me.dept_id FROM users me WHERE me.user_id = ?)");
             ps.setString(1, caseId);
             ps.setString(2, loginUser);
-            ps.setString(3, loginUser);
             rs = ps.executeQuery();
             if (!rs.next()) {
                 writeResult(res, false, "해당 사건에 접근 권한이 없습니다.");
@@ -740,14 +730,14 @@ public class CaseServlet extends HttpServlet {
             rs.next();
             int newId = rs.getInt(1);
 
-            // ── 같은 부서 팀원(본인 제외)에게 알림 발송 ──────────
+            // ── 같은 부서 팀원(본인 제외)에게 알림 발송 — 사건 고정 dept_id 기준 ──────────
             mgr.freeConnection(null, ps);
             ps = conn.prepareStatement(
                 "SELECT u2.user_id FROM users u2 " +
-                "JOIN users me ON me.user_id = ? " +
-                "WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
+                "JOIN cases c ON c.case_id = ? " +
+                "WHERE u2.dept_id = c.dept_id AND c.dept_id IS NOT NULL " +
                 "  AND u2.user_id != ? AND u2.notif_contradiction = 1");
-            ps.setString(1, loginUser);
+            ps.setString(1, caseId);
             ps.setString(2, loginUser);
             ResultSet rsTeam = ps.executeQuery();
             List<String> teammates = new ArrayList<>();
@@ -807,15 +797,9 @@ public class CaseServlet extends HttpServlet {
                 "FROM transcripts t " +
                 "JOIN cases c ON t.case_id = c.case_id " +
                 "WHERE t.transcript_id = ? " +
-                "AND (c.user_id = ? " +
-                "   OR c.user_id IN ( " +
-                "       SELECT u2.user_id FROM users u2 " +
-                "       JOIN users me ON me.user_id = ? " +
-                "       WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
-                "   ))");
+                "AND c.dept_id = (SELECT me.dept_id FROM users me WHERE me.user_id = ?)");
             ps.setInt(1, transcriptId);
             ps.setString(2, loginUser);
-            ps.setString(3, loginUser);
             rs = ps.executeQuery();
 
             if (!rs.next()) {
@@ -872,15 +856,9 @@ public class CaseServlet extends HttpServlet {
                 "FROM transcripts t " +
                 "JOIN cases c ON t.case_id = c.case_id " +
                 "WHERE t.transcript_id = ? " +
-                "AND (c.user_id = ? " +
-                "   OR c.user_id IN ( " +
-                "       SELECT u2.user_id FROM users u2 " +
-                "       JOIN users me ON me.user_id = ? " +
-                "       WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL " +
-                "   ))");
+                "AND c.dept_id = (SELECT me.dept_id FROM users me WHERE me.user_id = ?)");
             ps.setInt(1, transcriptId);
             ps.setString(2, loginUser);
-            ps.setString(3, loginUser);
             rs = ps.executeQuery();
 
             if (!rs.next()) {

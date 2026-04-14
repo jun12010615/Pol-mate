@@ -1215,6 +1215,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (data.user) {
         currentDeptId   = data.user.deptId   || null;
         currentDeptName = data.user.userDept  || null;
+        // 프로필 정보 보기 드로어의 부서명 세팅
+        var deptEl = document.getElementById('viewDeptName');
+        if (deptEl) deptEl.textContent = currentDeptName || '-';
       }
     })
     .catch(function(e) { console.error('초기 로드 실패', e); });
@@ -1320,7 +1323,8 @@ function saveProfile() {
       if (data.success) {
         alert('프로필이 저장되었습니다.');
         closeDrawer('profileDrawer');
-        location.reload();
+        // 부서가 바뀌었을 수 있으므로 통계·이력·카운트 즉시 갱신
+        reloadAfterDeptChange();
       } else {
         alert(data.message || '저장에 실패했습니다.');
       }
@@ -1328,7 +1332,45 @@ function saveProfile() {
     .catch(function(e) { alert('오류가 발생했습니다.'); console.error(e); });
 }
 
-// ── 비밀번호 변경 ──────────────────────────────────────────────────
+// ── 부서 변경 후 통계·이력·카운트 전체 갱신 ──────────────────────
+function reloadAfterDeptChange() {
+  // ① 상단 통계 띠 재로드 (작성 조서 수 & 진행 사건 수)
+  fetch('mypage?action=load&_=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data.user) return;
+      var s = data.stats;
+      document.getElementById('statActiveCases').textContent  = s.activeCases;
+      document.getElementById('statCompleted').textContent    = s.totalTranscripts;
+      document.getElementById('menuHistoryCount').textContent = s.totalTranscripts + '건';
+
+      // 현재 dept 정보 갱신
+      currentDeptId   = data.user.deptId  || null;
+      currentDeptName = data.user.userDept || null;
+      // 프로필 뷰 드로어 부서명 갱신
+      var deptEl = document.getElementById('viewDeptName');
+      if (deptEl) deptEl.textContent = currentDeptName || '-';
+      // 설정 토글 유지
+      if (data.settings) {
+        document.getElementById('toggleContradiction').checked = data.settings.notifContradiction !== false;
+        document.getElementById('toggleRelation').checked      = data.settings.notifRelation      !== false;
+        document.getElementById('toggleNightMode').checked     = data.settings.nightMode          === true;
+      }
+    })
+    .catch(function(e) { console.error('통계 갱신 실패', e); });
+
+  // ② 활동 통계 드로어 재로드
+  loadStats(_currentPeriod || 'week');
+
+  // ③ 조서 이력 드로어 재로드 (드로어가 열려 있을 때도 반영)
+  var historyList = document.getElementById('historyList');
+  if (historyList) loadHistory();
+
+  // ④ 모순탐지 카운트 재로드
+  loadContraCount();
+}
+
+
 function changePw() {
   var cur   = document.getElementById('curPw').value;
   var nw    = document.getElementById('newPw').value;

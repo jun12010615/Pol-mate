@@ -155,17 +155,25 @@ public class MypageDAO {
 
         try {
             conn = mgr.getConnection();
+            // 현재 사용자의 dept_id에 속한 사건의 조서만 조회
+            // dept_id가 NULL인 경우(부서 미배정)에는 전체 조서 표시
             String sql = "SELECT t.transcript_id, t.case_id, t.user_id, " +
                          "       t.stmt_name, t.stmt_type, t.has_contradiction, t.created_at, " +
                          "       c.case_name, c.status AS case_status " +
                          "FROM transcripts t " +
                          "JOIN cases c ON t.case_id = c.case_id " +
                          "WHERE t.user_id = ? " +
+                         "  AND ( " +
+                         "    (SELECT me.dept_id FROM users me WHERE me.user_id = ?) IS NULL " +
+                         "    OR c.dept_id = (SELECT me.dept_id FROM users me WHERE me.user_id = ?) " +
+                         "  ) " +
                          "ORDER BY t.created_at DESC " +
                          "LIMIT ?";
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, userId);
-            pstmt.setInt(2, limit);
+            pstmt.setString(2, userId);
+            pstmt.setString(3, userId);
+            pstmt.setInt(4, limit);
             rs = pstmt.executeQuery();
 
             while (rs.next()) {
@@ -199,7 +207,7 @@ public class MypageDAO {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
 
-        // ① 조서 기준 통계 (transcripts JOIN cases)
+        // ① 조서 기준 통계 — 현재 부서 사건만 (부서 미배정 시 전체)
         try {
             conn = mgr.getConnection();
             String sql =
@@ -208,9 +216,15 @@ public class MypageDAO {
                 "  SUM(CASE WHEN c.status = '완료' THEN 1 ELSE 0 END) AS completed_transcripts " +
                 "FROM transcripts t " +
                 "JOIN cases c ON t.case_id = c.case_id " +
-                "WHERE t.user_id = ?";
+                "WHERE t.user_id = ? " +
+                "  AND ( " +
+                "    (SELECT me.dept_id FROM users me WHERE me.user_id = ?) IS NULL " +
+                "    OR c.dept_id = (SELECT me.dept_id FROM users me WHERE me.user_id = ?) " +
+                "  )";
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, userId);
+            pstmt.setString(2, userId);
+            pstmt.setString(3, userId);
             rs = pstmt.executeQuery();
             if (rs.next()) {
                 stats.setTotalTranscripts(rs.getInt("total_transcripts"));
@@ -223,21 +237,16 @@ public class MypageDAO {
             mgr.freeConnection(conn, pstmt, rs);
         }
 
-        // ② 팀 사건 통계 (dept_id 기반 — main.jsp와 동일 로직)
+        // ② 팀 사건 통계 (cases.dept_id 고정값 기반 — 등록자가 부서를 옮겨도 사건은 원래 부서에 고정)
         try {
             conn = mgr.getConnection();
             String sql =
                 "SELECT COUNT(*) AS total_cases, " +
                 "  SUM(CASE WHEN c.status != '완료' THEN 1 ELSE 0 END) AS active_cases " +
                 "FROM cases c " +
-                "WHERE (c.user_id = ? OR c.user_id IN (" +
-                "  SELECT u2.user_id FROM users u2 " +
-                "  JOIN users me ON me.user_id = ? " +
-                "  WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL" +
-                "))";
+                "WHERE c.dept_id = (SELECT me.dept_id FROM users me WHERE me.user_id = ?)";
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, userId);
-            pstmt.setString(2, userId);
             rs = pstmt.executeQuery();
             if (rs.next()) {
                 stats.setTotalCases(rs.getInt("total_cases"));
@@ -291,9 +300,15 @@ public class MypageDAO {
                 "  SUM(t.has_contradiction) AS contradiction_count " +
                 "FROM transcripts t " +
                 "JOIN cases c ON t.case_id = c.case_id " +
-                "WHERE t.user_id = ?" + dateFilter;
+                "WHERE t.user_id = ? " +
+                "  AND ( " +
+                "    (SELECT me.dept_id FROM users me WHERE me.user_id = ?) IS NULL " +
+                "    OR c.dept_id = (SELECT me.dept_id FROM users me WHERE me.user_id = ?) " +
+                "  )" + dateFilter;
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, userId);
+            pstmt.setString(2, userId);
+            pstmt.setString(3, userId);
             rs = pstmt.executeQuery();
             if (rs.next()) {
                 stats.setTotalTranscripts(rs.getInt("total_transcripts"));
@@ -305,21 +320,16 @@ public class MypageDAO {
             mgr.freeConnection(conn, pstmt, rs);
         }
 
-        // 팀 사건 (기간 필터 없음 — 사건은 생성일 기준이 아닌 현재 상태 기반)
+        // 팀 사건 (기간 필터 없음 — cases.dept_id 고정값 기준)
         try {
             conn = mgr.getConnection();
             String sql =
                 "SELECT COUNT(*) AS total_cases, " +
                 "  SUM(CASE WHEN c.status != '완료' THEN 1 ELSE 0 END) AS active_cases " +
                 "FROM cases c " +
-                "WHERE (c.user_id = ? OR c.user_id IN (" +
-                "  SELECT u2.user_id FROM users u2 " +
-                "  JOIN users me ON me.user_id = ? " +
-                "  WHERE u2.dept_id = me.dept_id AND me.dept_id IS NOT NULL" +
-                "))";
+                "WHERE c.dept_id = (SELECT me.dept_id FROM users me WHERE me.user_id = ?)";
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, userId);
-            pstmt.setString(2, userId);
             rs = pstmt.executeQuery();
             if (rs.next()) {
                 stats.setTotalCases(rs.getInt("total_cases"));
@@ -373,11 +383,19 @@ public class MypageDAO {
         try {
             conn = mgr.getConnection();
             pstmt = conn.prepareStatement(
-                "SELECT DATE_FORMAT(created_at, '%Y.%m') AS ym, COUNT(*) AS cnt " +
-                "FROM transcripts " +
-                "WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH) " +
+                "SELECT DATE_FORMAT(t.created_at, '%Y.%m') AS ym, COUNT(*) AS cnt " +
+                "FROM transcripts t " +
+                "JOIN cases c ON t.case_id = c.case_id " +
+                "WHERE t.user_id = ? " +
+                "  AND t.created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH) " +
+                "  AND ( " +
+                "    (SELECT me.dept_id FROM users me WHERE me.user_id = ?) IS NULL " +
+                "    OR c.dept_id = (SELECT me.dept_id FROM users me WHERE me.user_id = ?) " +
+                "  ) " +
                 "GROUP BY ym ORDER BY ym");
             pstmt.setString(1, userId);
+            pstmt.setString(2, userId);
+            pstmt.setString(3, userId);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 String ym = rs.getString("ym");
