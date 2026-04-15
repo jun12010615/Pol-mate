@@ -41,7 +41,7 @@
   --success:#16a34a; --success-bg:#f0fdf4;
   --danger-bg:#fef2f2; --danger-bd:#fecaca;
   --bottom-nav-h:64px;
-  --c-suspect:#dc2626; --c-victim:#f97316; --c-witness:#4a7cdc; --c-reference:#8b5cf6;
+  --c-suspect:#dc2626; --c-victim:#3d8f6a; --c-witness:#4a7cdc; --c-reference:#8b5cf6;
 }
 html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(--bg); }
 .screen { width:100%; max-width:420px; min-height:100vh; margin:0 auto; background:var(--bg); display:flex; flex-direction:column; }
@@ -104,7 +104,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 /* ── 관계선 리스트 ── */
 .edge-list { padding:8px 12px 12px; display:flex; flex-direction:column; gap:7px; }
 .edge-item { padding:10px 12px; background:var(--bg); border-radius:12px; border:1px solid var(--border); border-left:3px solid var(--border); display:flex; align-items:center; gap:10px; }
-.edge-item.accomplice { border-left-color:#dc2626; } .edge-item.harm    { border-left-color:#f97316; }
+.edge-item.accomplice { border-left-color:#f97316; } .edge-item.harm    { border-left-color:#dc2626; }
 .edge-item.witness   { border-left-color:#4a7cdc; } .edge-item.acquaint{ border-left-color:#9ca3af; }
 .edge-item.family    { border-left-color:#16a34a; }
 .edge-text { flex:1; }
@@ -135,7 +135,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 .role-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:7px; margin-bottom:14px; }
 .role-opt { padding:10px; border-radius:11px; border:2px solid var(--border); text-align:center; cursor:pointer; font-size:12px; font-weight:500; color:var(--text-secondary); transition:all 0.15s; }
 .role-opt.sel-suspect   { border-color:var(--c-suspect);  background:#fef2f2; color:var(--c-suspect); }
-.role-opt.sel-victim    { border-color:var(--c-victim);   background:#fff7ed; color:var(--c-victim); }
+.role-opt.sel-victim    { border-color:var(--c-victim);   background:#e8f4ef; color:var(--c-victim); }
 .role-opt.sel-witness   { border-color:var(--c-witness);  background:#eff6ff; color:var(--c-witness); }
 .role-opt.sel-reference { border-color:var(--c-reference);background:#f5f3ff; color:var(--c-reference); }
 
@@ -240,12 +240,12 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
         <div class="legend-item"><div class="legend-dot" style="background:var(--c-victim)"></div>피해자</div>
         <div class="legend-item"><div class="legend-dot" style="background:var(--c-witness)"></div>목격자</div>
         <div class="legend-item"><div class="legend-dot" style="background:var(--c-reference)"></div>참고인</div>
-        <div class="legend-item"><div class="legend-line" style="background:#dc2626"></div>공범</div>
-        <div class="legend-item"><div class="legend-line" style="background:#f97316"></div>피해관계</div>
+        <div class="legend-item"><div class="legend-line" style="background:#f97316"></div>공범</div>
+        <div class="legend-item"><div class="legend-line" style="background:#dc2626"></div>피해관계</div>
         <div class="legend-item"><div class="legend-line" style="background:#4a7cdc"></div>목격</div>
         <div class="legend-item"><div class="legend-line" style="background:#16a34a"></div>가족</div>
         <div class="legend-item"><div class="legend-line" style="background:#9ca3af"></div>지인·기타</div>
-        <div class="legend-item"><div class="legend-line" style="background:#f59e0b"></div>진술 불일치</div>
+        <div class="legend-item"><div class="legend-line" style="background:#f97316"></div>진술 불일치</div>
       </div>
     </div>
 
@@ -269,7 +269,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
     <div class="section-card">
       <div class="section-header">
         <div class="section-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
           관계선 <span class="count-badge" id="edgeCountBadge">0개</span>
         </div>
         <button type="button" class="btn-add-inline" onclick="openEdgeDrawer()" title="관계선 추가">
@@ -320,7 +320,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
       <label class="form-label">역할 <span style="color:var(--danger)">*</span></label>
       <div class="role-grid">
         <div class="role-opt" id="role-suspect"   onclick="selRole('suspect')">🔴 피의자</div>
-        <div class="role-opt" id="role-victim"    onclick="selRole('victim')">🟠 피해자</div>
+        <div class="role-opt" id="role-victim"    onclick="selRole('victim')">🟢 피해자</div>
         <div class="role-opt" id="role-witness"   onclick="selRole('witness')">🔵 목격자</div>
         <div class="role-opt" id="role-reference" onclick="selRole('reference')">🟣 참고인</div>
       </div>
@@ -349,8 +349,8 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
       <select class="form-input" id="eDst"><option value="">선택하세요</option></select>
       <label class="form-label">관계 유형 <span style="color:var(--danger)">*</span></label>
       <div class="rel-list">
-        <div class="rel-opt" id="rel-accomplice" onclick="selRel('accomplice')"><div class="rel-dot" style="background:#dc2626"></div>공범</div>
-        <div class="rel-opt" id="rel-harm"       onclick="selRel('harm')"><div class="rel-dot" style="background:#f97316"></div>피해관계</div>
+        <div class="rel-opt" id="rel-accomplice" onclick="selRel('accomplice')"><div class="rel-dot" style="background:#f97316"></div>공범</div>
+        <div class="rel-opt" id="rel-harm"       onclick="selRel('harm')"><div class="rel-dot" style="background:#dc2626"></div>피해관계</div>
         <div class="rel-opt" id="rel-witness"    onclick="selRel('witness')"><div class="rel-dot" style="background:#4a7cdc"></div>목격</div>
         <div class="rel-opt" id="rel-acquaint"   onclick="selRel('acquaint')"><div class="rel-dot" style="background:#9ca3af"></div>지인</div>
         <div class="rel-opt" id="rel-family"     onclick="selRel('family')"><div class="rel-dot" style="background:#16a34a"></div>가족/친인척</div>
@@ -393,11 +393,11 @@ var _fdInit = false;
 var editingPersonId = null;
 var selectedRole = '', selectedRel = '';
 
-// 인물: 피의자 빨강 · 피해 주황 · 목격 파랑 · 참고 보라
-var ROLE_COLOR = {suspect:'#dc2626',victim:'#f97316',witness:'#4a7cdc',reference:'#8b5cf6'};
+// 인물: 피의자 빨강 · 피해자 중간톤 초록 · 목격 파랑 · 참고 보라
+var ROLE_COLOR = {suspect:'#dc2626',victim:'#3d8f6a',witness:'#4a7cdc',reference:'#8b5cf6'};
 var ROLE_LABEL = {suspect:'피의자',victim:'피해자',witness:'목격자',reference:'참고인'};
-// 관계선: 공범 빨강 · 피해 주황 · 목격 파랑 · 가족 초록 · 그 외(지인 등) 회색
-var REL_COLOR  = {accomplice:'#dc2626',harm:'#f97316',witness:'#4a7cdc',acquaint:'#9ca3af',family:'#16a34a'};
+// 관계선: 피해관계=피의자색 · 공범=진술불일치(주황) · 목격·가족·지인 동일
+var REL_COLOR  = {accomplice:'#f97316',harm:'#dc2626',witness:'#4a7cdc',acquaint:'#9ca3af',family:'#16a34a'};
 var REL_LABEL  = {accomplice:'공범',harm:'피해관계',witness:'목격',acquaint:'지인',family:'가족'};
 var EDGE_MISMATCH_STROKE = '#f97316';
 
@@ -485,8 +485,10 @@ function mergeEdgeGroupForDrawBE(edgeList) {
   var subMis = nonMisLabs.length ? nonMisLabs.join(' · ') : orderLabs.join(' · ');
   var rts = edgeList.map(function(e) { return normalizeRelTypeBE(e.relType); });
   var sameRt = rts.length && rts.every(function(rt) { return rt === rts[0]; });
+  var anyHarm = rts.indexOf('harm') >= 0;
   var strokeColor;
-  if (anyMis) strokeColor = EDGE_MISMATCH_STROKE;
+  if (anyHarm) strokeColor = REL_COLOR.harm;
+  else if (anyMis) strokeColor = EDGE_MISMATCH_STROKE;
   else if (sameRt) strokeColor = REL_COLOR[rts[0]] || '#9ca3af';
   else strokeColor = '#9ca3af';
   return { anyMis: anyMis, subMis: subMis, lines: orderLabs, strokeColor: strokeColor, rep: edgeList[0] };
@@ -753,7 +755,7 @@ function renderEdgeList() {
     var txt = document.createElement('div');
     txt.className = 'edge-text';
     txt.innerHTML =
-      '<div class="edge-names">' + escHtml(sp.name) + ' <span style="color:var(--text-muted)">→</span> ' + escHtml(dp.name) + '</div>' +
+      '<div class="edge-names">' + escHtml(sp.name) + ' <span style="color:var(--text-muted)">—</span> ' + escHtml(dp.name) + '</div>' +
       '<div class="edge-rel">' + (REL_LABEL[e.relType]||e.relType) + '</div>';
 
     var delBtn = document.createElement('button');
@@ -765,7 +767,7 @@ function renderEdgeList() {
       delBtn.addEventListener('click', function() {
         showConfirm(
           '관계선 삭제',
-          '"' + sn + ' → ' + dn + '" 관계선을 삭제할까요?',
+          '"' + sn + ' — ' + dn + '" 관계선을 삭제할까요?',
           function() {
             edges = edges.filter(function(x){ return x.id !== eid; });
             renderAll();
@@ -1243,9 +1245,6 @@ function drawCanvas(){
     var mx=(sp._x+dp._x)/2,my=(sp._y+dp._y)/2,dx=dp._x-sp._x,dy=dp._y-sp._y,len=Math.sqrt(dx*dx+dy*dy)||1;
     ctx.beginPath();ctx.moveTo(sp._x,sp._y);ctx.lineTo(dp._x,dp._y);
     ctx.stroke();ctx.setLineDash([]);
-    var ang=Math.atan2(dp._y-sp._y,dp._x-sp._x);
-    var nr=22,ax=dp._x-Math.cos(ang)*nr,ay=dp._y-Math.sin(ang)*nr;
-    ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(ax-9*Math.cos(ang-0.4),ay-9*Math.sin(ang-0.4));ctx.lineTo(ax-9*Math.cos(ang+0.4),ay-9*Math.sin(ang+0.4));ctx.closePath();ctx.fillStyle=merged.strokeColor;ctx.fill();
     var lx=mx, ly=my;
     var perpX=-(dy/len),perpY=dx/len;
     lx+=perpX*12;ly+=perpY*12;

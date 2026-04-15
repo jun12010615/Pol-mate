@@ -12,7 +12,6 @@ import com.google.gson.JsonParser;
  * AiChatServlet
  * - 기존 LLMTestServlet(test.jsp) 대체
  * - URL: /askAI (기존 매핑 유지 — aiChat.jsp form action과 일치)
- * - Ollama gemma3:1b 로컬 LLM 호출
  * - 수사 전문 시스템 프롬프트 내장
  */
 @WebServlet("/askAI")

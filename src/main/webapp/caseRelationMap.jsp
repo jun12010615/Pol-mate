@@ -14,6 +14,22 @@
   String safeOpenBoardAttr = "true".equalsIgnoreCase(paramOpenBoard) ? "true" : "false";
   String safeDocIdsAttr = paramDocIds.replace("&", "&amp;").replace("\"", "&quot;").replace("'", "&#39;").replace("<", "&lt;");
 
+  String polMateServBaseUrl = "http://113.198.238.111:5001";
+  try {
+    java.util.Properties props = new java.util.Properties();
+    java.io.InputStream is = application.getResourceAsStream("/WEB-INF/config.properties");
+    if (is != null) {
+      props.load(is);
+      String u = props.getProperty("POL_MATE_SERV_BASE_URL", "").trim();
+      if (!u.isEmpty()) {
+        while (u.endsWith("/")) u = u.substring(0, u.length() - 1);
+        polMateServBaseUrl = u;
+      }
+      is.close();
+    }
+  } catch (Exception ignored) {}
+  String safePolMateServBaseUrl = polMateServBaseUrl.replace("\\", "\\\\").replace("'", "\\'");
+
   // ── 팀 사건 목록 조회 ────────────────────────────────────────────
   DBConnectionMgr mgr = DBConnectionMgr.getInstance();
   java.sql.Connection conn = null;
@@ -58,7 +74,7 @@
     --danger-bg:#fef2f2; --danger-bd:#fecaca;
     --info-bg:#eff6ff; --info-text:#1e40af;
     --bnav:64px;
-    --c-suspect:#dc2626; --c-victim:#f97316; --c-witness:#4a7cdc; --c-reference:#8b5cf6;
+    --c-suspect:#dc2626; --c-victim:#3d8f6a; --c-witness:#4a7cdc; --c-reference:#8b5cf6;
   }
 html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(--bg); overflow-x:hidden; }
 .screen { width:100%; max-width:420px; min-height:100vh; margin:0 auto; background:var(--bg); display:flex; flex-direction:column; }
@@ -162,14 +178,14 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 /* 관계선 리스트 */
 .edge-list { display:flex; flex-direction:column; gap:7px; margin-bottom:14px; }
 .edge-item { padding:10px 13px; background:var(--bg); border-radius:11px; border:1px solid var(--bd); border-left:3px solid var(--bd); }
-.edge-item.accomplice { border-left-color:#dc2626; }
-.edge-item.harm       { border-left-color:#f97316; }
+.edge-item.accomplice { border-left-color:#f97316; }
+.edge-item.harm       { border-left-color:#dc2626; }
 .edge-item.witness    { border-left-color:#4a7cdc; }
 .edge-item.acquaint   { border-left-color:var(--tm); }
 .edge-item.family     { border-left-color:#16a34a; }
 .edge-names { font-size:13px; font-weight:500; color:var(--tp); }
 .edge-rel   { font-size:11px; color:var(--tm); margin-top:3px; }
-.edge-arrow { color:var(--tm); margin:0 4px; }
+.edge-connector { color:var(--tm); margin:0 5px; font-weight:500; letter-spacing:0.02em; }
 
 /* 보드 그리기 버튼 */
 .btn-draw { width:100%; padding:14px; border-radius:13px; border:none; background:var(--accent); color:#fff; font-size:14px; font-weight:500; font-family:'Noto Sans KR',sans-serif; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:transform 0.1s; margin-bottom:12px; }
@@ -302,8 +318,8 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
   border:1px solid var(--bd); border-left:3px solid var(--bd);
   margin-bottom:8px; display:flex; align-items:center; gap:8px;
 }
-.popup-edge-item.accomplice { border-left-color:#dc2626; }
-.popup-edge-item.harm       { border-left-color:#f97316; }
+.popup-edge-item.accomplice { border-left-color:#f97316; }
+.popup-edge-item.harm       { border-left-color:#dc2626; }
 .popup-edge-item.witness    { border-left-color:#4a7cdc; }
 .popup-edge-item.acquaint   { border-left-color:var(--tm); }
 .popup-edge-item.family     { border-left-color:#16a34a; }
@@ -324,7 +340,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
   transition:all 0.15s;
 }
 .mini-role-btn.sel-suspect  { border-color:var(--c-suspect);  background:#fef2f2; color:var(--c-suspect); }
-.mini-role-btn.sel-victim   { border-color:var(--c-victim);   background:#fff7ed; color:var(--c-victim); }
+.mini-role-btn.sel-victim   { border-color:var(--c-victim);   background:#e8f4ef; color:var(--c-victim); }
 .mini-role-btn.sel-witness  { border-color:var(--c-witness);  background:#eff6ff; color:var(--c-witness); }
 .mini-role-btn.sel-reference{ border-color:var(--c-reference);background:#f5f3ff; color:var(--c-reference); }
 .mini-role-btn.sel-active   { border-color:var(--accent); background:#eff6ff; color:var(--accent); font-weight:600; }
@@ -459,7 +475,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
       <div class="board-section">
         <div class="board-section-title">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
-            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
           관계선 &nbsp;<span id="edgeCountBadge" style="font-size:11px;background:#f0f3f9;color:var(--navy);padding:2px 8px;border-radius:20px;font-weight:400;">0개</span>
         </div>
@@ -502,8 +518,8 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-victim)"></div>피해자</div>
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-witness)"></div>목격자</div>
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-reference)"></div>참고인</div>
-            <div class="legend-item"><div class="legend-line" style="background:#dc2626;height:2px;"></div>공범</div>
-            <div class="legend-item"><div class="legend-line" style="background:#f97316;height:2px;"></div>피해관계</div>
+            <div class="legend-item"><div class="legend-line" style="background:#f97316;height:2px;"></div>공범</div>
+            <div class="legend-item"><div class="legend-line" style="background:#dc2626;height:2px;"></div>피해관계</div>
             <div class="legend-item"><div class="legend-line" style="background:#4a7cdc;height:2px;"></div>목격</div>
             <div class="legend-item"><div class="legend-line" style="background:#16a34a;height:2px;"></div>가족</div>
             <div class="legend-item"><div class="legend-line" style="background:#9ca3af;height:2px;"></div>지인</div>
@@ -565,8 +581,8 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-victim)"></div>피해자</div>
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-witness)"></div>목격자</div>
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-reference)"></div>참고인</div>
-            <div class="legend-item"><div class="legend-line" style="background:#dc2626;height:2px;"></div>공범</div>
-            <div class="legend-item"><div class="legend-line" style="background:#f97316;height:2px;"></div>피해관계</div>
+            <div class="legend-item"><div class="legend-line" style="background:#f97316;height:2px;"></div>공범</div>
+            <div class="legend-item"><div class="legend-line" style="background:#dc2626;height:2px;"></div>피해관계</div>
             <div class="legend-item"><div class="legend-line" style="background:#4a7cdc;height:2px;"></div>목격</div>
             <div class="legend-item"><div class="legend-line" style="background:#16a34a;height:2px;"></div>가족</div>
             <div class="legend-item"><div class="legend-line" style="background:#9ca3af;height:2px;"></div>지인</div>
@@ -584,7 +600,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
           <input class="mini-input" id="miniPersonMemo" placeholder="메모 (선택)">
           <div class="mini-role-row">
             <button type="button" class="mini-role-btn" id="mrole-suspect"   onclick="selectMiniRole('suspect')">🔴 피의자</button>
-            <button type="button" class="mini-role-btn" id="mrole-victim"    onclick="selectMiniRole('victim')">🟠 피해자</button>
+            <button type="button" class="mini-role-btn" id="mrole-victim"    onclick="selectMiniRole('victim')">🟢 피해자</button>
             <button type="button" class="mini-role-btn" id="mrole-witness"   onclick="selectMiniRole('witness')">🔵 목격자</button>
             <button type="button" class="mini-role-btn" id="mrole-reference" onclick="selectMiniRole('reference')">🟣 참고인</button>
           </div>
@@ -665,16 +681,15 @@ var persons = [];
 var edges   = [];
 var checkedTranscripts = [];
 
-// 인물: 피의자 빨강 · 피해 주황 · 목격 파랑 · 참고 보라 / 관계선: 공범 빨강 · 피해 주황 · 목격 파랑 · 가족 초록 · 기타 회색
-var ROLE_COLOR = {suspect:'#dc2626',victim:'#f97316',witness:'#4a7cdc',reference:'#8b5cf6'};
+// 인물: 피의자 빨강 · 피해자 초록 · 목격 파랑 · 참고 보라 / 관계선: 피해관계=피의자색 · 공범=진술불일치(주황)
+var ROLE_COLOR = {suspect:'#dc2626',victim:'#3d8f6a',witness:'#4a7cdc',reference:'#8b5cf6'};
 var ROLE_LABEL = {suspect:'피의자',victim:'피해자',witness:'목격자',reference:'참고인'};
-var REL_COLOR  = {accomplice:'#dc2626',harm:'#f97316',witness:'#4a7cdc',acquaint:'#9ca3af',family:'#16a34a'};
-// mismatch 상태 선색: 공범(빨강)과 혼동 방지
-var EDGE_MISMATCH_STROKE = '#f97316'; // 진술 불일치(다른 관계색보다 우선) — 주황
+var REL_COLOR  = {accomplice:'#f97316',harm:'#dc2626',witness:'#4a7cdc',acquaint:'#9ca3af',family:'#16a34a'};
+var EDGE_MISMATCH_STROKE = '#f97316'; // 진술 불일치 = 공범색(피해관계는 피의자색으로 구분)
 var REL_LABEL  = {accomplice:'공범',harm:'피해관계',witness:'목격',acquaint:'지인',family:'가족'};
 
 /** Pol-mate-Serv (Flask app.py) — Ollama는 서버에서만 호출. 로컬 개발 시 http://127.0.0.1:5001 로 바꿀 것. */
-var POL_MATE_SERV_BASE = 'http://113.198.238.108:5001';
+var POL_MATE_SERV_BASE = '<%= safePolMateServBaseUrl %>';
 var RELATION_MAP_URL   = POL_MATE_SERV_BASE.replace(/\/$/, '') + '/relation_map';
 
 // ── STEP 1: 사건 선택 ────────────────────────────────────────────
@@ -912,6 +927,68 @@ function normalizeStatus(s) {
   return 'unknown';
 }
 
+// 조서 선택 메타와 동일 실명이면 피의자·피해자 역할이 참고·목격보다 우선 (서버 polmate_serv 후처리와 동일 취지)
+var ROLE_PRIORITY_NUM = { suspect: 4, victim: 3, witness: 2, reference: 1 };
+function personNameCompactKey(name) {
+  return String(name || '').replace(/\s+/g, '').toLowerCase();
+}
+function transcriptRoleHintStronger(a, b) {
+  return (ROLE_PRIORITY_NUM[b] || 0) > (ROLE_PRIORITY_NUM[a] || 0) ? b : a;
+}
+function buildTranscriptRoleHintsFromChecked() {
+  var hints = {};
+  if (!Array.isArray(checkedTranscripts)) return hints;
+  checkedTranscripts.forEach(function(t) {
+    var nm = String(t.name || '').trim();
+    if (!nm) return;
+    var k = personNameCompactKey(nm);
+    var role = normalizeRole(t.type || '');
+    if (!hints[k]) hints[k] = role;
+    else hints[k] = transcriptRoleHintStronger(hints[k], role);
+  });
+  return hints;
+}
+function applyTranscriptRoleHintsToPersons(personArr) {
+  var hints = buildTranscriptRoleHintsFromChecked();
+  return personArr.map(function(p) {
+    var k = personNameCompactKey(p.name);
+    if (hints[k]) return { id: p.id, name: p.name, role: hints[k], memo: p.memo || '' };
+    return p;
+  });
+}
+function mergePersonsByCompactNameStrongestRole(personArr) {
+  var buckets = {};
+  personArr.forEach(function(p) {
+    var k = personNameCompactKey(p.name);
+    if (!k) return;
+    if (!buckets[k]) buckets[k] = [];
+    buckets[k].push(p);
+  });
+  var out = [];
+  Object.keys(buckets).forEach(function(k) {
+    var group = buckets[k];
+    if (group.length === 1) {
+      out.push(group[0]);
+      return;
+    }
+    var best = group.reduce(function(a, b) {
+      return (ROLE_PRIORITY_NUM[b.role] || 0) > (ROLE_PRIORITY_NUM[a.role] || 0) ? b : a;
+    });
+    var role = best.role;
+    var winners = group.filter(function(x) { return x.role === role; });
+    var canonical = winners.reduce(function(a, b) {
+      return String(b.name).trim().length > String(a.name).trim().length ? b : a;
+    }).name.trim();
+    var memos = [];
+    group.forEach(function(x) {
+      var m = String(x.memo || '').trim();
+      if (m && memos.indexOf(m) < 0) memos.push(m);
+    });
+    out.push({ id: uid(), name: canonical, role: role, memo: memos.join(' / ') });
+  });
+  return out;
+}
+
 function extractJsonFromRaw(raw) {
   if (!raw) return null;
 
@@ -1010,14 +1087,16 @@ function parseAndApplyAiResult(raw) {
         memo: String(p.memo || '').trim()
       };
     }).filter(function(p) { return p.name; }); // 이름 없는 인물 제외
-    parsedPersons = dedupePersons(parsedPersons); // 이름 중복 제거
+    parsedPersons = applyTranscriptRoleHintsToPersons(parsedPersons);
+    parsedPersons = mergePersonsByCompactNameStrongestRole(parsedPersons);
 
-    // 엣지: src/dst 이름 → id 변환 + relType/status 정규화
+    // 엣지: src/dst 이름 → id 변환 + relType/status 정규화 (이름 공백 무시 매칭)
     var parsedEdges = rawEdges.map(function(e) {
       var srcName = String(e.src || e.srcName || '').trim();
       var dstName = String(e.dst || e.dstName || '').trim();
-      var sp = parsedPersons.find(function(p) { return p.name === srcName; });
-      var dp = parsedPersons.find(function(p) { return p.name === dstName; });
+      var sk = personNameCompactKey(srcName), dk = personNameCompactKey(dstName);
+      var sp = parsedPersons.find(function(p) { return personNameCompactKey(p.name) === sk; });
+      var dp = parsedPersons.find(function(p) { return personNameCompactKey(p.name) === dk; });
       if (!sp || !dp) return null;
       return {
         id:      uid(),
@@ -1268,7 +1347,7 @@ function renderEdgeList() {
       relBlock = escHtml((REL_LABEL[rt]||e.relType||'') + (st === 'match' ? ' · 일치' : ''));
     }
     return '<div class="edge-item ' + e.relType + '">' +
-      '<div class="edge-names">' + escHtml(sp.name) + '<span class="edge-arrow">→</span>' + escHtml(dp.name) + '</div>' +
+      '<div class="edge-names">' + escHtml(sp.name) + '<span class="edge-connector">—</span>' + escHtml(dp.name) + '</div>' +
       '<div class="edge-rel">' + relBlock + '</div>' +
     '</div>';
   }).join('');
@@ -1553,8 +1632,10 @@ function mergeEdgeGroupForDraw(edgeList) {
   var subMis = nonMisLabs.length ? nonMisLabs.join(' · ') : orderLabs.join(' · ');
   var rts = edgeList.map(function(e) { return normalizeRelType(e.relType); });
   var sameRt = rts.length && rts.every(function(rt) { return rt === rts[0]; });
+  var anyHarm = rts.indexOf('harm') >= 0;
   var strokeColor;
-  if (anyMis) strokeColor = EDGE_MISMATCH_STROKE;
+  if (anyHarm) strokeColor = REL_COLOR.harm;
+  else if (anyMis) strokeColor = EDGE_MISMATCH_STROKE;
   else if (sameRt) strokeColor = REL_COLOR[rts[0]] || '#9ca3af';
   else strokeColor = '#9ca3af';
   return { anyMis: anyMis, subMis: subMis, lines: orderLabs, strokeColor: strokeColor, rep: edgeList[0] };
@@ -1779,7 +1860,6 @@ function drawPopupCanvas() {
 function drawEdgeScaled(ctx, sp, dp, edgeGroup) {
   var merged = mergeEdgeGroupForDraw(edgeGroup);
   var strokeC = merged.strokeColor;
-  var curve = 0;
 
   ctx.lineWidth   = 2;
   ctx.strokeStyle = strokeC;
@@ -1794,19 +1874,6 @@ function drawEdgeScaled(ctx, sp, dp, edgeGroup) {
   ctx.moveTo(sp._px, sp._py);
   ctx.lineTo(dp._px, dp._py);
   ctx.stroke();
-  ctx.setLineDash([]);
-
-  var nr = 22;
-  var arrowAng = Math.atan2(dp._py - sp._py, dp._px - sp._px);
-  var ax = dp._px - Math.cos(arrowAng) * nr;
-  var ay = dp._py - Math.sin(arrowAng) * nr;
-  ctx.beginPath();
-  ctx.moveTo(ax, ay);
-  ctx.lineTo(ax - 9*Math.cos(arrowAng-0.4), ay - 9*Math.sin(arrowAng-0.4));
-  ctx.lineTo(ax - 9*Math.cos(arrowAng+0.4), ay - 9*Math.sin(arrowAng+0.4));
-  ctx.closePath();
-  ctx.fillStyle = strokeC; ctx.fill();
-  ctx.setLineDash([]);
 
   var lx = mx, ly = my;
   var perpX = -(dy / len), perpY = (dx / len);
@@ -1929,7 +1996,7 @@ function renderPopupEdgeList() {
         dp = persons.find(function(p){return p.id===e.dst;});
     if (!sp||!dp) return;
     var rt = normalizeRelType(e.relType), st = normalizeStatus(e.status);
-    var edgeAccent = st === 'mismatch' ? EDGE_MISMATCH_STROKE : (REL_COLOR[rt]||'#9ca3af');
+    var edgeAccent = (rt === 'harm') ? REL_COLOR.harm : (st === 'mismatch' ? EDGE_MISMATCH_STROKE : (REL_COLOR[rt]||'#9ca3af'));
     var subRel = REL_LABEL[rt] || e.relType || '';
     var subHtml = st === 'mismatch'
       ? ('<span style="display:block;color:var(--tp)">진술 불일치</span>' +
@@ -1941,14 +2008,14 @@ function renderPopupEdgeList() {
     var info = document.createElement('div');
     info.style.flex='1';
     info.innerHTML =
-      '<div style="font-size:13px;font-weight:500;color:var(--tp);">' + escHtml(sp.name) + ' → ' + escHtml(dp.name) + '</div>' +
+      '<div style="font-size:13px;font-weight:500;color:var(--tp);">' + escHtml(sp.name) + ' — ' + escHtml(dp.name) + '</div>' +
       '<div style="font-size:11px;color:var(--tm);margin-top:2px;">' + subHtml + '</div>';
     var delBtn = document.createElement('button');
     delBtn.style.cssText = 'width:26px;height:26px;border-radius:7px;background:var(--danger-bg);border:1px solid var(--danger-bd);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;';
     delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
     (function(eid, sn, dn) {
       delBtn.addEventListener('click', function() {
-        if (!confirm('"' + sn + ' → ' + dn + '" 관계선을 삭제할까요?')) return;
+        if (!confirm('"' + sn + ' — ' + dn + '" 관계선을 삭제할까요?')) return;
         edges = edges.filter(function(x) { return x.id !== eid; });
         renderEdgeList(); renderPopupEdgeList(); drawPopupCanvas();
         autoSaveBoard();
@@ -2266,17 +2333,8 @@ function drawCanvas() {
     ctx.strokeStyle = merged.strokeColor;
     ctx.stroke();
 
-    var ang=Math.atan2(dp._y-sp._y,dp._x-sp._x), nr=20*scale,
-        ax=dp._x-Math.cos(ang)*nr, ay=dp._y-Math.sin(ang)*nr;
-    ctx.beginPath();
-    ctx.moveTo(ax,ay);
-    ctx.lineTo(ax-8*scale*Math.cos(ang-0.4), ay-8*scale*Math.sin(ang-0.4));
-    ctx.lineTo(ax-8*scale*Math.cos(ang+0.4), ay-8*scale*Math.sin(ang+0.4));
-    ctx.closePath();
-    ctx.fillStyle = merged.strokeColor;
-    ctx.fill();
-
     var mx=(sp._x+dp._x)/2, my=(sp._y+dp._y)/2;
+    var ang = Math.atan2(dp._y - sp._y, dp._x - sp._x);
     var perpX=-Math.sin(ang), perpY=Math.cos(ang);
     mx += perpX*10*scale; my += perpY*10*scale;
     ctx.textAlign='center';

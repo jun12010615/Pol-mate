@@ -614,7 +614,16 @@ document.getElementById('stmtText').addEventListener('input', function() {
 var writeContraTicket = 0;
 
 function normalizeStatementLabels(s) {
-  return String(s || '').replace(/statement_a/gi, '조서A').replace(/statement_b/gi, '조서B');
+  return String(s || '').replace(/statement_([a-z]+)/gi, function(_, letters) {
+    var n = 0;
+    var t = String(letters || '').toLowerCase();
+    for (var i = 0; i < t.length; i++) {
+      var c = t.charCodeAt(i);
+      if (c < 97 || c > 122) return 'statement_' + letters;
+      n = n * 26 + (c - 96);
+    }
+    return '조서' + n;
+  });
 }
 
 /** myCase.jsp·contradictionList.jsp와 동일 (단순 '불일치' 단독 등 오탐·미탐 줄임) */
@@ -672,47 +681,6 @@ function finishWriteTranscriptContradictionSave(caseId, stmtType, stmtName, stmt
       }
     })
     .catch(function() { /* 저장 성공과 무관 */ });
-}
-
-function scheduleContradictionAfterTranscriptSave(caseId, stmtType, stmtName, originalText) {
-  var ticket = ++writeContraTicket;
-  var stmtLabel = (stmtName && stmtName.trim()) ? stmtName.trim() : '미입력';
-  var prompt =
-    '다음은 형사사건 수사 진술입니다. 아래 내용을 분석하여 결과를 반드시 한국어로 답해주세요.\n\n' +
-    '[사건번호: ' + caseId + ']\n' +
-    '[진술 유형: ' + stmtType + ']\n' +
-    '[진술자: ' + stmtLabel + ']\n\n' +
-    '[진술 내용]\n' + originalText + '\n\n' +
-    '다음 항목을 분석해주세요:\n' +
-    '1. 진술 요약 (3줄 이내)\n' +
-    '2. 모순 또는 불일치 항목 (있다면 구체적으로)\n' +
-    '3. 추가 확인이 필요한 사항\n' +
-    '4. 종합 평가';
-
-  fetch('http://localhost:11434/api/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'gemma3:1b',
-      prompt: prompt,
-      stream: false
-    })
-  })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (ticket !== writeContraTicket) return;
-      var aiResponse = (data && data.response) ? data.response : '응답 없음';
-      finishWriteTranscriptContradictionSave(caseId, stmtType, stmtName, originalText, aiResponse, ticket);
-    })
-    .catch(function() {
-      if (ticket !== writeContraTicket) return;
-      var demoResult =
-        '【진술 요약】\n저장된 조서 본문을 기준으로 한 요약입니다.\n\n' +
-        '【모순 항목】\n- Ollama 미연결: 진술 전체를 직접 검토해 주세요.\n\n' +
-        '【추가 확인 필요】\n- 관련 증거·참고인 진술\n\n' +
-        '【종합 평가】\n로컬 분석기 미연결 시 데모 응답입니다.\n\n⚠ (Ollama 미연결 — 데모 결과입니다)';
-      finishWriteTranscriptContradictionSave(caseId, stmtType, stmtName, originalText, demoResult, ticket);
-    });
 }
 
 /* ══════════════════════════════════════════════════════
@@ -786,8 +754,6 @@ function saveTranscript() {
         });
       }
 
-      // 모순 분석(Ollama) 후 contradiction_results 자동 저장 (백그라운드)
-      scheduleContradictionAfterTranscriptSave(caseId, stmtType, stmtName, originalText);
 
       window.scrollTo(0, 0);
     } else {

@@ -16,6 +16,7 @@
     --bg:#f4f6fb; --card:#ffffff; --border:#e5e7eb;
     --warn-bg:#fffbeb; --warn-text:#92400e;
     --bottom-nav-h:64px;
+    --contra-section-accent:#c2410c;
   }
   html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(--bg); overflow-x:hidden; }
 
@@ -142,6 +143,10 @@
     font-size:13px; color:var(--text-primary); line-height:1.65;
     background:var(--bg); border-radius:10px; padding:12px 14px;
     white-space:pre-wrap; word-break:break-all;
+  }
+  .contra-analyze-section-title {
+    color:var(--contra-section-accent);
+    font-weight:600;
   }
 
   .detail-meta-row {
@@ -417,7 +422,38 @@ function normCaseId(v) {
 }
 
 function normalizeStatementLabels(s) {
-  return String(s || '').replace(/statement_a/gi, '조서A').replace(/statement_b/gi, '조서B');
+  return String(s || '').replace(/statement_([a-z]+)/gi, function(_, letters) {
+    var n = 0;
+    var t = String(letters || '').toLowerCase();
+    for (var i = 0; i < t.length; i++) {
+      var c = t.charCodeAt(i);
+      if (c < 97 || c > 122) return 'statement_' + letters;
+      n = n * 26 + (c - 96);
+    }
+    return '조서' + n;
+  });
+}
+
+/** polmate_serv _pass1_prompt 소제목 — myCase.jsp 모순 팝업과 동일 색(#c2410c) */
+function stripAnalyzeSectionNumberPrefix(trimmed) {
+  return String(trimmed || '').replace(/^\d+[\).]\s*/, '');
+}
+function formatContradictionAnalyzeHtml(plain) {
+  var raw = String(plain || '');
+  if (!raw) return '';
+  var lines = raw.split(/\r?\n/);
+  var parts = [];
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    var tr = line.trim();
+    var core = stripAnalyzeSectionNumberPrefix(tr);
+    var isTitle = (core === '시간순 정리된 사건 흐름' || core === '모순점 분석');
+    if (isTitle)
+      parts.push('<span class="contra-analyze-section-title">' + esc(line) + '</span>');
+    else
+      parts.push(esc(line));
+  }
+  return parts.join('<br>');
 }
 
 /**
@@ -639,7 +675,7 @@ function renderDetail(d) {
   html +=
     '<div class="detail-section">' +
       '<div class="detail-label">AI 분석 결과</div>' +
-      '<div class="detail-value" style="max-height:200px;overflow-y:auto;">' + esc(normalizeStatementLabels(d.aiResult)) + '</div>' +
+      '<div class="detail-value" style="max-height:200px;overflow-y:auto;">' + formatContradictionAnalyzeHtml(normalizeStatementLabels(d.aiResult)) + '</div>' +
     '</div>' +
     '<button class="btn-delete" onclick="deleteResult(' + d.resultId + ')">' +
       '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>' +

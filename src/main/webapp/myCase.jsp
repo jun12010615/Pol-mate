@@ -4,6 +4,23 @@
     String userName  = (String) session.getAttribute("userName");
     if (loginUser == null) { response.sendRedirect("login.jsp"); return; }
     String paramCaseId = request.getParameter("caseId") != null ? request.getParameter("caseId") : "";
+    String safeParamCaseIdJs = paramCaseId.replace("\\", "\\\\").replace("'", "\\'");
+
+    String polMateServBaseUrl = "http://113.198.238.111:5001";
+    try {
+        java.util.Properties props = new java.util.Properties();
+        java.io.InputStream is = application.getResourceAsStream("/WEB-INF/config.properties");
+        if (is != null) {
+            props.load(is);
+            String u = props.getProperty("POL_MATE_SERV_BASE_URL", "").trim();
+            if (!u.isEmpty()) {
+                while (u.endsWith("/")) u = u.substring(0, u.length() - 1);
+                polMateServBaseUrl = u;
+            }
+            is.close();
+        }
+    } catch (Exception ignored) {}
+    String safePolMateServBaseUrl = polMateServBaseUrl.replace("\\", "\\\\").replace("'", "\\'");
 %>
 <!DOCTYPE html>
 <html lang="ko">
@@ -16,6 +33,7 @@
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   :root {
     --navy:#1a2744; --accent:#4a7cdc; --danger:#dc2626;
+    --contra-section-accent:#c2410c;
     --text-primary:#1a1a2e; --text-secondary:#6b7280; --text-muted:#9ca3af;
     --bg:#f4f6fb; --card:#ffffff; --border:#e5e7eb;
     --success:#16a34a; --success-bg:#f0fdf4; --success-border:#bbf7d0;
@@ -217,6 +235,10 @@
     white-space:pre-wrap; word-break:break-word;
   }
   .contra-type-text { min-height:1.4em; }
+  .contra-analyze-section-title {
+    color:var(--contra-section-accent);
+    font-weight:600;
+  }
   .contra-bubble-caret {
     display:inline-block; width:2px; height:14px; margin-left:2px;
     background:var(--navy); border-radius:1px; vertical-align:-2px;
@@ -514,8 +536,8 @@ function openCase(id) {
 }
 
 function renderDrawerDocs(docs) {
-  var im={'피의자':'#fee2e2','피해자':'#ffedd5','목격자':'#dbeafe','참고인':'#ede9fe'};
-  var sm={'피의자':'#dc2626','피해자':'#f97316','목격자':'#4a7cdc','참고인':'#8b5cf6'};
+  var im={'피의자':'#fee2e2','피해자':'#e8f4ef','목격자':'#dbeafe','참고인':'#ede9fe'};
+  var sm={'피의자':'#dc2626','피해자':'#3d8f6a','목격자':'#4a7cdc','참고인':'#8b5cf6'};
   if(!docs.length){document.getElementById('drawerDocList').innerHTML='<div style="text-align:center;padding:24px 0;color:var(--text-muted);font-size:12px;">등록된 조서가 없습니다.<br>조서 추가 버튼으로 첫 조서를 작성하세요.</div>';return;}
   var html='<div class="drawer-doc-list">';
   docs.forEach(function(d,i){
@@ -606,9 +628,11 @@ function renderTranscriptSummary(summary){
   }
 }
 
-var ANALYZE_STREAM_URL='http://113.198.238.111:5001/analyze/stream';
+var POL_MATE_SERV_BASE='<%= safePolMateServBaseUrl %>';
+var ANALYZE_STREAM_URL=POL_MATE_SERV_BASE+'/analyze/stream';
 var contraTypeSession=0;
 var contraStreamAbort=null;
+var contraHasContradictionFromServer=null;
 function removeContraCaret(caret){if(caret&&caret.parentNode)caret.parentNode.removeChild(caret);}
 function consumeAnalyzeStream(response,session){
   return new Promise(function(resolve,reject){
@@ -620,6 +644,7 @@ function consumeAnalyzeStream(response,session){
     var textSpan=null;
     var caret=null;
     var outputStarted=false;
+    var accPlain='';
     function ensureOutputPanel(){
       if(outputStarted)return;
       outputStarted=true;
@@ -641,13 +666,19 @@ function consumeAnalyzeStream(response,session){
         try{ev=JSON.parse(jsonStr);}catch(e){continue;}
         if(ev.event==='chunk'&&ev.text){
           ensureOutputPanel();
-          textSpan.textContent+=ev.text;
+          accPlain+=normalizeStatementLabels(ev.text);
+          textSpan.innerHTML=formatContradictionAnalyzeHtml(accPlain);
         }else if(ev.event==='error'){
           finished=true;
           removeContraCaret(caret);
           reject(new Error(ev.message||'분석 오류'));
           return;
         }else if(ev.event==='done'){
+          if(typeof ev.has_contradiction==='boolean'){
+            contraHasContradictionFromServer=ev.has_contradiction;
+          }else if(typeof ev.contradiction_count==='number'){
+            contraHasContradictionFromServer=ev.contradiction_count>0;
+          }
           finished=true;
           removeContraCaret(caret);
           resolve();
@@ -697,6 +728,7 @@ function consumeAnalyzeStream(response,session){
 function runContradiction(){
   if(checkedDocs.length<2) return;
   contraTypeSession++;
+  contraHasContradictionFromServer=null;
   contraSavePosting=false;
   // 저장 푸터 초기화 (자동 저장 실패 시에만 표시)
   document.getElementById('contraSaveFooter').style.display='none';
@@ -744,13 +776,14 @@ function runContradiction(){
   .catch(function(err){
     if(err.name==='AbortError')return;
     document.getElementById('contraPopupTitle').textContent='분석 실패';
-    document.getElementById('contraPopupBody').innerHTML='<div class="popup-empty">'+(err&&err.message?escHtml(err.message):'연결 실패')+'<br><br>서버(<code>113.198.238.111:5001</code>) <code>/analyze/stream</code>·CORS를 확인해 주세요.</div>';
+    document.getElementById('contraPopupBody').innerHTML='<div class="popup-empty">'+(err&&err.message?escHtml(err.message):'연결 실패')+'<br><br>서버(<code>'+escHtml(POL_MATE_SERV_BASE)+'</code>) <code>/analyze/stream</code>·CORS를 확인해 주세요.</div>';
   });
 }
 function closeContraPopup(e){
   if(!e||e.target===document.getElementById('contraPopup')||!e.target){
     if(contraStreamAbort)contraStreamAbort.abort();
     contraTypeSession++;
+    contraHasContradictionFromServer=null;
     document.getElementById('contraPopup').classList.remove('open');
     document.getElementById('contraSaveFooter').style.display='none';
     var h=document.getElementById('contraSaveHint');
@@ -760,9 +793,40 @@ function closeContraPopup(e){
 
 var contraSavePosting=false;
 
-/** 분석 출력의 statement_a/b 표기를 조서A/B로 통일 */
+/** 분석 출력의 statement_x 표기를 조서N(1-base)으로 통일 */
 function normalizeStatementLabels(s){
-  return String(s||'').replace(/statement_a/gi,'조서A').replace(/statement_b/gi,'조서B');
+  return String(s||'').replace(/statement_([a-z]+)/gi, function(_, letters){
+    var n = 0;
+    var t = String(letters || '').toLowerCase();
+    for (var i = 0; i < t.length; i++) {
+      var c = t.charCodeAt(i);
+      if (c < 97 || c > 122) return 'statement_' + letters;
+      n = n * 26 + (c - 96);
+    }
+    return '조서' + n;
+  });
+}
+
+/** polmate_serv _pass1_prompt 소제목(시간순 정리된 사건 흐름 / 모순점 분석) 표시 — contradictionList.jsp와 동일 색 */
+function stripAnalyzeSectionNumberPrefix(trimmed){
+  return String(trimmed||'').replace(/^\d+[\).]\s*/, '');
+}
+function formatContradictionAnalyzeHtml(plain){
+  var raw=String(plain||'');
+  if(!raw)return '';
+  var lines=raw.split(/\r?\n/);
+  var parts=[];
+  for(var i=0;i<lines.length;i++){
+    var line=lines[i];
+    var tr=line.trim();
+    var core=stripAnalyzeSectionNumberPrefix(tr);
+    var isTitle=(core==='시간순 정리된 사건 흐름'||core==='모순점 분석');
+    if(isTitle)
+      parts.push('<span class="contra-analyze-section-title">'+escHtml(line)+'</span>');
+    else
+      parts.push(escHtml(line));
+  }
+  return parts.join('<br>');
 }
 
 /** contradictionList.jsp·writeTranscript.jsp와 동일 기준 (저장 시 플래그 정확도) */
@@ -774,7 +838,7 @@ function inferHasContradictionFromAiText(ai){
     '모순 발견','모순이 탐지','모순이 확인','모순이 존재','진술 불일치',
     '진술 간에','진술 간 모순','진술에 모순','상충','엇갈린','앞뒤가 맞지',
     '일치하지 않','일치가 없','주장이 다름','서로 다른','행동 불일치','알리바이 불일치',
-    '불일치가 발견','불일치를 발견','불일치합니다','조서A','조서B','조서 A','조서 B',
+    '불일치가 발견','불일치를 발견','불일치합니다','조서1','조서2','조서 1','조서 2',
     '거짓 진술','허위 진술','시간대가 맞지','알리바이가 맞지','위반이 확인'
   ];
   if(strong.some(function(p){ return s.indexOf(p)>=0; }))return true;
@@ -800,7 +864,9 @@ function buildContraSavePayload(){
     var d=currentDocs.find(function(x){return x.id===id;});
     return d?(d.type||''):'';
   }).filter(Boolean).join(', ');
-  var hasContradiction=inferHasContradictionFromAiText(aiResult);
+  var hasContradiction=(typeof contraHasContradictionFromServer==='boolean')
+    ? contraHasContradictionFromServer
+    : inferHasContradictionFromAiText(aiResult);
   var caseId=currentCaseData?currentCaseData.id||'':'';
   return { aiResult:aiResult, stmtNames:stmtNames, stmtTypes:stmtTypes, hasContradiction:hasContradiction, caseId:caseId };
 }
@@ -940,7 +1006,7 @@ loadCaseList();
 
 // 알림에서 caseId 파라미터로 직접 진입 시 해당 사건 드로어 자동 오픈
 (function() {
-  var targetId = '<%= paramCaseId.replace("'", "\'") %>';
+  var targetId = '<%= safeParamCaseIdJs %>';
   if (!targetId) return;
   // 카드 렌더링 완료 후 해당 사건 드로어 오픈
   var maxTry = 20, tried = 0;
