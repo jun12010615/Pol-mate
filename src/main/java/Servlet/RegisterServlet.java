@@ -73,6 +73,47 @@ public class RegisterServlet extends HttpServlet {
                 mgr.freeConnection(conn, pstmt, rs);
             }
 
+        } else if ("verifyBadge".equals(action)) {
+            // ── 공무원증 번호 인증 ───────────────────────────────
+            response.setContentType("application/json; charset=UTF-8");
+            response.setCharacterEncoding("UTF-8");
+
+            String badgeNum = request.getParameter("badgeNum");
+            if (badgeNum == null || badgeNum.trim().isEmpty()) {
+                response.getWriter().print(jsonResult(false, "수사관 번호를 입력해 주세요."));
+                return;
+            }
+            badgeNum = badgeNum.trim();
+            if (!badgeNum.matches("^[0-9]{4}$")) {
+                response.getWriter().print(jsonResult(false, "수사관 번호는 숫자 4자리입니다."));
+                return;
+            }
+
+            DBConnectionMgr mgr = DBConnectionMgr.getInstance();
+            Connection conn = null;
+            PreparedStatement pstmt = null;
+            ResultSet rs = null;
+            try {
+                conn = mgr.getConnection();
+                pstmt = conn.prepareStatement(
+                    "SELECT is_used FROM officer_badges WHERE badge_num = ?"
+                );
+                pstmt.setString(1, badgeNum);
+                rs = pstmt.executeQuery();
+                if (!rs.next()) {
+                    response.getWriter().print(jsonResult(false, "등록되지 않은 수사관 번호입니다."));
+                } else if (rs.getInt("is_used") == 1) {
+                    response.getWriter().print(jsonResult(false, "이미 사용된 수사관 번호입니다."));
+                } else {
+                    response.getWriter().print(jsonResult(true, "인증되었습니다."));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                response.getWriter().print(jsonResult(false, "서버 오류: " + e.getMessage()));
+            } finally {
+                mgr.freeConnection(conn, pstmt, rs);
+            }
+
         } else if ("getDepts".equals(action)) {
             // ── 기관별 부서 목록 조회 ────────────────────────────
             response.setContentType("application/json; charset=UTF-8");
@@ -195,13 +236,20 @@ public class RegisterServlet extends HttpServlet {
             }
             chkRs.close(); chk.close();
 
-            // badge_num 중복 확인
-            PreparedStatement bChk = conn.prepareStatement("SELECT 1 FROM users WHERE badge_num = ?");
+            // officer_badges 테이블에서 번호 유효성 확인
+            PreparedStatement bChk = conn.prepareStatement(
+                "SELECT is_used FROM officer_badges WHERE badge_num = ?"
+            );
             bChk.setString(1, badgeNum);
             ResultSet bRs = bChk.executeQuery();
-            if (bRs.next()) {
+            if (!bRs.next()) {
                 bRs.close(); bChk.close();
-                response.getWriter().print(jsonResult(false, "이미 등록된 수사관 번호입니다."));
+                response.getWriter().print(jsonResult(false, "등록되지 않은 수사관 번호입니다."));
+                return;
+            }
+            if (bRs.getInt("is_used") == 1) {
+                bRs.close(); bChk.close();
+                response.getWriter().print(jsonResult(false, "이미 사용된 수사관 번호입니다."));
                 return;
             }
             bRs.close(); bChk.close();
@@ -240,6 +288,14 @@ public class RegisterServlet extends HttpServlet {
             }
             pstmt.setString(9, badgeNum);
             pstmt.executeUpdate();
+
+            // officer_badges 사용 처리
+            PreparedStatement upd = conn.prepareStatement(
+                "UPDATE officer_badges SET is_used = 1 WHERE badge_num = ?"
+            );
+            upd.setString(1, badgeNum);
+            upd.executeUpdate();
+            upd.close();
 
             response.getWriter().print(jsonResult(true, "회원가입이 완료되었습니다."));
 

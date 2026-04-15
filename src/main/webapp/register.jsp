@@ -280,11 +280,16 @@
         <!-- 수사관 번호 -->
         <div class="field-group" style="margin-bottom:0">
           <label class="field-label">수사관 번호 <span class="required">*</span></label>
-          <div class="field-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
-            <input type="text" id="badgeNum" class="field-input" placeholder="공무원증 번호 입력">
+          <div class="inline-row">
+            <div class="field-wrap" style="flex:1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
+              <input type="text" id="badgeNum" class="field-input" placeholder="4자리 번호 입력" maxlength="4" oninput="onBadgeInput()">
+            </div>
+            <button class="btn-check" id="badgeVerifyBtn" onclick="verifyBadge()">인증</button>
           </div>
-          <p class="field-hint">공무원증에 기재된 고유번호를 입력하세요</p>
+          <p class="field-hint"  id="badgeHint">공무원증에 기재된 4자리 번호를 입력하세요</p>
+          <p class="field-ok"   id="badgeOk"   style="display:none">✓ 인증되었습니다.</p>
+          <p class="field-err"  id="badgeErr"  style="display:none"></p>
         </div>
       </div>
 
@@ -381,11 +386,11 @@ var _TERMS = {
   },
   privacy: {
     title: '개인정보 수집·이용 동의', chk: 'chk2',
-    html: '<p style="margin-bottom:16px;">POL-MATE는 À개인정보 보호법À에 따라 아래와 같이 개인정보를 수집·이용합니다.</p><p style="font-weight:600;color:#1a1a2e;margin-bottom:6px;">1. 수집 항목</p><p style="margin-bottom:16px;">· <b>필수:</b> 아이디, 비밀번호(암호화), 이름, 계급, 소속 기관, 수사관 번호<br>· <b>선택:</b> 부서, 연락처<br>· <b>자동 수집:</b> 접속 로그, 이용 기록</p><p style="font-weight:600;color:#1a1a2e;margin-bottom:6px;">2. 수집 및 이용 목적</p><p style="margin-bottom:16px;">이용자 식별·자격 확인, 사건·조서 관리, 불법·부정 이용 방지, 서비스 개선</p><p style="font-weight:600;color:#1a1a2e;margin-bottom:6px;">3. 보유 및 이용 기간</p><p style="margin-bottom:16px;">회원 탈퇴 시 즉시 파기합니다. 단, 법령에 의거한 경우 해당 기간 보관합니다.</p><p style="font-weight:600;color:#1a1a2e;margin-bottom:6px;">4. 동의 거부 권리</p><p style="margin-bottom:20px;">필수 항목 미동의 시 서비스 이용이 제한됩니다.</p><p style="font-size:11px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:12px;">시행일: 2025년 3월 1일</p>'
+    html: '<p style="margin-bottom:16px;">POL-MATE는 개인정보 보호법에 따라 아래와 같이 개인정보를 수집·이용합니다.</p><p style="font-weight:600;color:#1a1a2e;margin-bottom:6px;">1. 수집 항목</p><p style="margin-bottom:16px;">· <b>필수:</b> 아이디, 비밀번호(암호화), 이름, 계급, 소속 기관, 수사관 번호<br>· <b>선택:</b> 부서, 연락처<br>· <b>자동 수집:</b> 접속 로그, 이용 기록</p><p style="font-weight:600;color:#1a1a2e;margin-bottom:6px;">2. 수집 및 이용 목적</p><p style="margin-bottom:16px;">이용자 식별·자격 확인, 사건·조서 관리, 불법·부정 이용 방지, 서비스 개선</p><p style="font-weight:600;color:#1a1a2e;margin-bottom:6px;">3. 보유 및 이용 기간</p><p style="margin-bottom:16px;">회원 탈퇴 시 즉시 파기합니다. 단, 법령에 의거한 경우 해당 기간 보관합니다.</p><p style="font-weight:600;color:#1a1a2e;margin-bottom:6px;">4. 동의 거부 권리</p><p style="margin-bottom:20px;">필수 항목 미동의 시 서비스 이용이 제한됩니다.</p><p style="font-size:11px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:12px;">시행일: 2025년 3월 1일</p>'
   },
   security: {
     title: '수사 정보 보안 서약', chk: 'chk3',
-    html: '<p style="margin-bottom:16px;">본 서약은 POL-MATE를 통해 접근하는 수사 정보의 보안 유지를 위한 것입니다.</p><p style="font-weight:600;color:#1a1a2e;margin-bottom:6px;">1. 기밀 유지 의무</p><p style="margin-bottom:16px;">서비스를 통해 취듹한 수사 정보, ���의자·������자·참고인 관련 정보, 조서 내용을 수사 목적 이외에 외부에 유출하지 않겠습니다.</p><p style="font-weight:600;color:#1a1a2e;margin-bottom:6px;">2. 계정 보안 책임</p><p style="margin-bottom:16px;">계정 정보를 타인과 공유하지 않으며, 비밀번호를 주기적으로 변경하고, 계정 도용이 의심될 경우 즉시 신고하겠습니다.</p><p style="font-weight:600;color:#1a1a2e;margin-bottom:6px;">3. 수사 목적 외 사용 길지</p><p style="margin-bottom:16px;">시스템 내 정보를 수사 목적 이외의 용도로 열람·복사·전송·활용하지 않겠습니다.</p><p style="font-weight:600;color:#1a1a2e;margin-bottom:6px;">4. 위반 시 책임</p><p style="margin-bottom:16px;">본 서약 위반 시 À형사소송법À, À개인정보 보호법À 등에 따라 민·형사상 책임을 질 수 있습니다.</p><p style="font-weight:600;color:#1a1a2e;margin-bottom:6px;">5. 퇴직 후 보안 유지</p><p style="margin-bottom:20px;">서비스 이용 종료 후에도 재직 중 취듹한 수사 정보에 대한 기밀 유지 의무는 계속됩니다.</p><p style="font-size:11px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:12px;">시행일: 2025년 3월 1일</p>'
+    html: '<p style="margin-bottom:16px;">본 서약은 POL-MATE를 통해 접근하는 수사 정보의 보안 유지를 위한 것입니다.</p><p style="font-weight:600;color:#1a1a2e;margin-bottom:6px;">1. 기밀 유지 의무</p><p style="margin-bottom:16px;">서비스를 통해 취듹한 수사 정보, 피의자·피해자·목격자·참고인 관련 정보, 조서 내용을 수사 목적 이외에 외부에 유출하지 않겠습니다.</p><p style="font-weight:600;color:#1a1a2e;margin-bottom:6px;">2. 계정 보안 책임</p><p style="margin-bottom:16px;">계정 정보를 타인과 공유하지 않으며, 비밀번호를 주기적으로 변경하고, 계정 도용이 의심될 경우 즉시 신고하겠습니다.</p><p style="font-weight:600;color:#1a1a2e;margin-bottom:6px;">3. 수사 목적 외 사용 길지</p><p style="margin-bottom:16px;">시스템 내 정보를 수사 목적 이외의 용도로 열람·복사·전송·활용하지 않겠습니다.</p><p style="font-weight:600;color:#1a1a2e;margin-bottom:6px;">4. 위반 시 책임</p><p style="margin-bottom:16px;">본 서약 위반 시 형사소송법, 개인정보 보호법 등에 따라 민·형사상 책임을 질 수 있습니다.</p><p style="font-weight:600;color:#1a1a2e;margin-bottom:6px;">5. 퇴직 후 보안 유지</p><p style="margin-bottom:20px;">서비스 이용 종료 후에도 재직 중 취듹한 수사 정보에 대한 기밀 유지 의무는 계속됩니다.</p><p style="font-size:11px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:12px;">시행일: 2025년 3월 1일</p>'
   }
 };
 var _currentTermsKey = null;
@@ -420,6 +425,54 @@ function agreeAndCloseDrawer() {
 
 <script>
 let idChecked = false;
+let badgeVerified = false;
+
+// ── 수사관 번호 입력 시 인증 초기화 ──
+function onBadgeInput() {
+  badgeVerified = false;
+  document.getElementById('badgeOk').style.display  = 'none';
+  document.getElementById('badgeErr').style.display = 'none';
+  document.getElementById('badgeHint').style.display = 'block';
+}
+
+// ── 수사관 번호 인증 ──
+function verifyBadge() {
+  const val = document.getElementById('badgeNum').value.trim();
+  const ok  = document.getElementById('badgeOk');
+  const err = document.getElementById('badgeErr');
+  const hint= document.getElementById('badgeHint');
+  if (!val) { alert('수사관 번호를 입력하세요.'); return; }
+  if (!/^[0-9]{4}$/.test(val)) {
+    err.textContent = '수사관 번호는 숫자 4자리입니다.';
+    err.style.display = 'block'; ok.style.display = 'none'; hint.style.display = 'none';
+    badgeVerified = false; return;
+  }
+  const btn = document.getElementById('badgeVerifyBtn');
+  btn.disabled = true; btn.textContent = '확인 중...';
+
+  fetch('register?action=verifyBadge&badgeNum=' + encodeURIComponent(val))
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false; btn.textContent = '인증';
+      hint.style.display = 'none';
+      if (data.success) {
+        ok.style.display  = 'block';
+        err.style.display = 'none';
+        badgeVerified = true;
+      } else {
+        err.textContent   = data.message;
+        err.style.display = 'block';
+        ok.style.display  = 'none';
+        badgeVerified = false;
+      }
+    })
+    .catch(() => {
+      btn.disabled = false; btn.textContent = '인증';
+      err.textContent = '서버 통신 오류가 발생했습니다.';
+      err.style.display = 'block'; ok.style.display = 'none';
+      badgeVerified = false;
+    });
+}
 
 // ── 아이디 중복 확인 ──
 
@@ -580,6 +633,7 @@ function goStep3() {
   if (!document.getElementById('userOrg').value)  { alert('소속 기관을 선택해 주세요.'); return; }
   if (!document.getElementById('userRank').value) { alert('계급을 선택해 주세요.'); return; }
   if (!document.getElementById('badgeNum').value.trim()) { alert('수사관 번호를 입력해 주세요.'); return; }
+  if (!badgeVerified) { alert('수사관 번호 인증을 완료해 주세요.'); return; }
   setStep(3);
 }
 
