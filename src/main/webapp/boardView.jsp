@@ -217,7 +217,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 <script>
 var ROLE_COLOR = {suspect:'#dc2626',victim:'#3d8f6a',witness:'#4a7cdc',reference:'#8b5cf6'};
 var ROLE_LABEL = {suspect:'피의자',victim:'피해자',witness:'목격자',reference:'참고인'};
-var REL_COLOR  = {accomplice:'#dc2626',harm:'#f97316',witness:'#4a7cdc',acquaint:'#9ca3af',family:'#16a34a'};
+var REL_COLOR  = {accomplice:'#f97316',harm:'#dc2626',witness:'#4a7cdc',acquaint:'#9ca3af',family:'#16a34a'};
 var REL_LABEL  = {accomplice:'공범',harm:'피해관계',witness:'목격',acquaint:'지인',family:'가족'};
 var EDGE_MISMATCH_STROKE = '#f97316';
 
@@ -305,8 +305,10 @@ function mergeEdgeGroupForDrawBV(edgeList) {
   var subMis = nonMisLabs.length ? nonMisLabs.join(' · ') : orderLabs.join(' · ');
   var rts = edgeList.map(function(e) { return normalizeRelTypeBV(e.relType); });
   var sameRt = rts.length && rts.every(function(rt) { return rt === rts[0]; });
+  var anyHarm = rts.indexOf('harm') >= 0;
   var strokeColor;
-  if (anyMis) strokeColor = EDGE_MISMATCH_STROKE;
+  if (anyHarm) strokeColor = REL_COLOR.harm;
+  else if (anyMis) strokeColor = EDGE_MISMATCH_STROKE;
   else if (sameRt) strokeColor = REL_COLOR[rts[0]] || '#9ca3af';
   else strokeColor = '#9ca3af';
   return { anyMis: anyMis, subMis: subMis, lines: orderLabs, strokeColor: strokeColor, rep: edgeList[0] };

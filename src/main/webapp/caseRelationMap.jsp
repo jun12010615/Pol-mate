@@ -178,8 +178,8 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 /* 관계선 리스트 */
 .edge-list { display:flex; flex-direction:column; gap:7px; margin-bottom:14px; }
 .edge-item { padding:10px 13px; background:var(--bg); border-radius:11px; border:1px solid var(--bd); border-left:3px solid var(--bd); }
-.edge-item.accomplice { border-left-color:#dc2626; }
-.edge-item.harm       { border-left-color:#f97316; }
+.edge-item.accomplice { border-left-color:#f97316; }
+.edge-item.harm       { border-left-color:#dc2626; }
 .edge-item.witness    { border-left-color:#4a7cdc; }
 .edge-item.acquaint   { border-left-color:var(--tm); }
 .edge-item.family     { border-left-color:#16a34a; }
@@ -318,8 +318,8 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
   border:1px solid var(--bd); border-left:3px solid var(--bd);
   margin-bottom:8px; display:flex; align-items:center; gap:8px;
 }
-.popup-edge-item.accomplice { border-left-color:#dc2626; }
-.popup-edge-item.harm       { border-left-color:#f97316; }
+.popup-edge-item.accomplice { border-left-color:#f97316; }
+.popup-edge-item.harm       { border-left-color:#dc2626; }
 .popup-edge-item.witness    { border-left-color:#4a7cdc; }
 .popup-edge-item.acquaint   { border-left-color:var(--tm); }
 .popup-edge-item.family     { border-left-color:#16a34a; }
@@ -518,8 +518,8 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-victim)"></div>피해자</div>
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-witness)"></div>목격자</div>
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-reference)"></div>참고인</div>
-            <div class="legend-item"><div class="legend-line" style="background:#dc2626;height:2px;"></div>공범</div>
-            <div class="legend-item"><div class="legend-line" style="background:#52ffb7;height:2px;"></div>피해관계</div>
+            <div class="legend-item"><div class="legend-line" style="background:#f97316;height:2px;"></div>공범</div>
+            <div class="legend-item"><div class="legend-line" style="background:#dc2626;height:2px;"></div>피해관계</div>
             <div class="legend-item"><div class="legend-line" style="background:#4a7cdc;height:2px;"></div>목격</div>
             <div class="legend-item"><div class="legend-line" style="background:#16a34a;height:2px;"></div>가족</div>
             <div class="legend-item"><div class="legend-line" style="background:#9ca3af;height:2px;"></div>지인</div>
@@ -581,8 +581,8 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-victim)"></div>피해자</div>
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-witness)"></div>목격자</div>
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-reference)"></div>참고인</div>
-            <div class="legend-item"><div class="legend-line" style="background:#dc2626;height:2px;"></div>공범</div>
-            <div class="legend-item"><div class="legend-line" style="background:#52ffb7;height:2px;"></div>피해관계</div>
+            <div class="legend-item"><div class="legend-line" style="background:#f97316;height:2px;"></div>공범</div>
+            <div class="legend-item"><div class="legend-line" style="background:#dc2626;height:2px;"></div>피해관계</div>
             <div class="legend-item"><div class="legend-line" style="background:#4a7cdc;height:2px;"></div>목격</div>
             <div class="legend-item"><div class="legend-line" style="background:#16a34a;height:2px;"></div>가족</div>
             <div class="legend-item"><div class="legend-line" style="background:#9ca3af;height:2px;"></div>지인</div>
@@ -681,12 +681,11 @@ var persons = [];
 var edges   = [];
 var checkedTranscripts = [];
 
-// 인물: 피의자 빨강 · 피해자 중간톤 초록 · 목격 파랑 · 참고 보라 / 관계선: 공범 빨강 · 피해관계 주황 · 목격 파랑 · 가족 초록 · 기타 회색
+// 인물: 피의자 빨강 · 피해자 초록 · 목격 파랑 · 참고 보라 / 관계선: 피해관계=피의자색 · 공범=진술불일치(주황)
 var ROLE_COLOR = {suspect:'#dc2626',victim:'#3d8f6a',witness:'#4a7cdc',reference:'#8b5cf6'};
 var ROLE_LABEL = {suspect:'피의자',victim:'피해자',witness:'목격자',reference:'참고인'};
-var REL_COLOR  = {accomplice:'#dc2626',harm:'#f97316',witness:'#4a7cdc',acquaint:'#9ca3af',family:'#16a34a'};
-// mismatch 상태 선색: 공범(빨강)과 혼동 방지
-var EDGE_MISMATCH_STROKE = '#f97316'; // 진술 불일치(다른 관계색보다 우선) — 주황
+var REL_COLOR  = {accomplice:'#f97316',harm:'#dc2626',witness:'#4a7cdc',acquaint:'#9ca3af',family:'#16a34a'};
+var EDGE_MISMATCH_STROKE = '#f97316'; // 진술 불일치 = 공범색(피해관계는 피의자색으로 구분)
 var REL_LABEL  = {accomplice:'공범',harm:'피해관계',witness:'목격',acquaint:'지인',family:'가족'};
 
 /** Pol-mate-Serv (Flask app.py) — Ollama는 서버에서만 호출. 로컬 개발 시 http://127.0.0.1:5001 로 바꿀 것. */
@@ -1633,8 +1632,10 @@ function mergeEdgeGroupForDraw(edgeList) {
   var subMis = nonMisLabs.length ? nonMisLabs.join(' · ') : orderLabs.join(' · ');
   var rts = edgeList.map(function(e) { return normalizeRelType(e.relType); });
   var sameRt = rts.length && rts.every(function(rt) { return rt === rts[0]; });
+  var anyHarm = rts.indexOf('harm') >= 0;
   var strokeColor;
-  if (anyMis) strokeColor = EDGE_MISMATCH_STROKE;
+  if (anyHarm) strokeColor = REL_COLOR.harm;
+  else if (anyMis) strokeColor = EDGE_MISMATCH_STROKE;
   else if (sameRt) strokeColor = REL_COLOR[rts[0]] || '#9ca3af';
   else strokeColor = '#9ca3af';
   return { anyMis: anyMis, subMis: subMis, lines: orderLabs, strokeColor: strokeColor, rep: edgeList[0] };
@@ -1995,7 +1996,7 @@ function renderPopupEdgeList() {
         dp = persons.find(function(p){return p.id===e.dst;});
     if (!sp||!dp) return;
     var rt = normalizeRelType(e.relType), st = normalizeStatus(e.status);
-    var edgeAccent = st === 'mismatch' ? EDGE_MISMATCH_STROKE : (REL_COLOR[rt]||'#9ca3af');
+    var edgeAccent = (rt === 'harm') ? REL_COLOR.harm : (st === 'mismatch' ? EDGE_MISMATCH_STROKE : (REL_COLOR[rt]||'#9ca3af'));
     var subRel = REL_LABEL[rt] || e.relType || '';
     var subHtml = st === 'mismatch'
       ? ('<span style="display:block;color:var(--tp)">진술 불일치</span>' +
