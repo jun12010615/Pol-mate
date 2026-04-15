@@ -372,15 +372,21 @@
   /* 조서 이력 리스트 */
   .history-list { padding: 0 20px; }
   .history-item {
-    padding: 14px 0;
     border-bottom: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin: 0 -20px;
+    padding: 14px 20px;
   }
   .history-item:last-child { border-bottom: none; }
+  .history-item:active { background: var(--bg); }
   .h-title { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; }
   .h-meta  { font-size: 11px; color: var(--text-muted); }
+  .h-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .h-arrow svg { width: 14px; height: 14px; stroke: var(--text-muted); }
   .h-badge {
     font-size: 10px; padding: 3px 9px; border-radius: 20px; white-space: nowrap; flex-shrink: 0;
   }
@@ -1496,12 +1502,16 @@ function loadHistory() {
     	      }).replace(/\. /g, '.').replace(/\.$/, '') 
     	    : '';
         var badge  = BADGE_MAP[t.caseStatus] || 'h-badge-done';
-        return '<div class="history-item">' +
-          '<div>' +
-            '<div class="h-title">' + t.caseId + ' ' + (t.caseName || '') + '</div>' +
-            '<div class="h-meta">' + date + (t.stmtName ? ' · ' + t.stmtName + ' 진술' : '') + '</div>' +
+        var caseIdEsc = (t.caseId || '').replace(/'/g, "\\'");
+        return '<div class="history-item" onclick="goToCase(\'' + caseIdEsc + '\')">' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div class="h-title">' + escHtml(t.caseId) + ' ' + escHtml(t.caseName || '') + '</div>' +
+            '<div class="h-meta">' + date + (t.stmtName ? ' · ' + escHtml(t.stmtType || '') + ' ' + escHtml(t.stmtName) + ' 진술' : '') + '</div>' +
           '</div>' +
-          '<span class="h-badge ' + badge + '">' + (t.caseStatus || '') + '</span>' +
+          '<div class="h-right">' +
+            '<span class="h-badge ' + badge + '">' + escHtml(t.caseStatus || '') + '</span>' +
+            '<div class="h-arrow"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></div>' +
+          '</div>' +
         '</div>';
       }).join('');
     })
@@ -1764,6 +1774,16 @@ function setPeriod(btn, period) {
   document.querySelectorAll('.period-btn').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
   loadStats(period);
+}
+
+// ── 조서 이력 → 사건 화면 이동 ──────────────────────────────────────
+function goToCase(caseId) {
+  if (!caseId) return;
+  location.href = 'myCase.jsp?caseId=' + encodeURIComponent(caseId);
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ── 설정 저장 (토글 변경 시 즉시 호출) ───────────────────────────

@@ -403,10 +403,6 @@
           <label style="font-size:11px;color:var(--text-muted);font-weight:500;display:block;margin-bottom:5px;">피의자 성명 (선택)</label>
           <input id="newSuspect" type="text" placeholder="홍길동" maxlength="30" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;">
         </div>
-        <div>
-          <label style="font-size:11px;color:var(--text-muted);font-weight:500;display:block;margin-bottom:5px;">적용 법조 (선택)</label>
-          <input id="newCharge" type="text" placeholder="형법 제329조" maxlength="100" style="width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;">
-        </div>
         <button onclick="submitNewCase()" style="width:100%;padding:14px;background:var(--navy);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:500;font-family:'Noto Sans KR',sans-serif;cursor:pointer;margin-top:4px;">등록하기</button>
       </div>
     </div>
@@ -924,7 +920,7 @@ function saveContraResult(){
 
 function openNewCaseDrawer(){
   document.getElementById('newCaseId').value=''; document.getElementById('newCaseName').value='';
-  document.getElementById('newSuspect').value=''; document.getElementById('newCharge').value='';
+  document.getElementById('newSuspect').value='';
   document.getElementById('newCaseDeptLabel').textContent='불러오는 중...';
   document.getElementById('newCaseDeptLabel').style.color='var(--text-muted)';
   document.getElementById('newCaseDrawer').classList.add('open');
@@ -939,9 +935,9 @@ function openNewCaseDrawer(){
 
 function submitNewCase(){
   var ci=document.getElementById('newCaseId').value.trim(), cn=document.getElementById('newCaseName').value.trim();
-  var ss=document.getElementById('newSuspect').value.trim(), ch=document.getElementById('newCharge').value.trim();
+  var ss=document.getElementById('newSuspect').value.trim();
   if(!ci){showToast('사건번호를 입력하세요.');return;} if(!cn){showToast('사건명을 입력하세요.');return;}
-  var p=new URLSearchParams();p.append('action','caseCreate');p.append('caseId',ci);p.append('caseName',cn);p.append('suspect',ss);p.append('charge',ch);
+  var p=new URLSearchParams();p.append('action','caseCreate');p.append('caseId',ci);p.append('caseName',cn);p.append('suspect',ss);
   fetch('caseApi',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:p.toString()}).then(function(r){return r.json();}).then(function(d){
     if(d.success){closeDrawer('newCaseDrawer');showToast('✓ 사건이 등록됐습니다'+(d.deptLabel?' · '+d.deptLabel:''));loadCaseList();}
     else showToast(d.message||'등록 실패');
