@@ -285,7 +285,7 @@
 </div>
 
 <script>
-var PYTHON_SERVER = 'http://113.198.238.115:5001';
+var PYTHON_SERVER = 'http://113.198.238.110:5001';
 var videoFiles = []; // { file, id, status, jobId, results, pollTimer }
 var uidSeq = 0;
 
