@@ -536,8 +536,8 @@ function openCase(id) {
 }
 
 function renderDrawerDocs(docs) {
-  var im={'피의자':'#fee2e2','피해자':'#ffedd5','목격자':'#dbeafe','참고인':'#ede9fe'};
-  var sm={'피의자':'#dc2626','피해자':'#f97316','목격자':'#4a7cdc','참고인':'#8b5cf6'};
+  var im={'피의자':'#fee2e2','피해자':'#e8f4ef','목격자':'#dbeafe','참고인':'#ede9fe'};
+  var sm={'피의자':'#dc2626','피해자':'#3d8f6a','목격자':'#4a7cdc','참고인':'#8b5cf6'};
   if(!docs.length){document.getElementById('drawerDocList').innerHTML='<div style="text-align:center;padding:24px 0;color:var(--text-muted);font-size:12px;">등록된 조서가 없습니다.<br>조서 추가 버튼으로 첫 조서를 작성하세요.</div>';return;}
   var html='<div class="drawer-doc-list">';
   docs.forEach(function(d,i){

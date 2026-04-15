@@ -26,7 +26,7 @@
   --warn-bg:#fffbeb; --warn-text:#92400e;
   --danger-bg:#fef2f2; --danger-bd:#fecaca;
   --bottom-nav-h:64px;
-  --c-suspect:#dc2626; --c-victim:#f97316; --c-witness:#4a7cdc; --c-reference:#8b5cf6;
+  --c-suspect:#dc2626; --c-victim:#3d8f6a; --c-witness:#4a7cdc; --c-reference:#8b5cf6;
 }
 html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(--bg); overflow-x:hidden; }
 .screen { width:100%; max-width:420px; min-height:100vh; margin:0 auto; background:var(--bg); display:flex; flex-direction:column; }
@@ -215,7 +215,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 </div>
 
 <script>
-var ROLE_COLOR = {suspect:'#dc2626',victim:'#f97316',witness:'#4a7cdc',reference:'#8b5cf6'};
+var ROLE_COLOR = {suspect:'#dc2626',victim:'#3d8f6a',witness:'#4a7cdc',reference:'#8b5cf6'};
 var ROLE_LABEL = {suspect:'피의자',victim:'피해자',witness:'목격자',reference:'참고인'};
 var REL_COLOR  = {accomplice:'#dc2626',harm:'#f97316',witness:'#4a7cdc',acquaint:'#9ca3af',family:'#16a34a'};
 var REL_LABEL  = {accomplice:'공범',harm:'피해관계',witness:'목격',acquaint:'지인',family:'가족'};
@@ -374,7 +374,7 @@ function loadBoardList() {
               b.personCount + '명' +
             '</div>' +
             '<div class="board-meta-item">' +
-              '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
               b.edgeCount + '개' +
             '</div>' +
             '<div class="board-meta-item">' +
@@ -604,12 +604,6 @@ function drawDetailCanvas() {
     var dx=dp._x-sp._x, dy=dp._y-sp._y, len=Math.sqrt(dx*dx+dy*dy)||1;
     ctx.beginPath(); ctx.moveTo(sp._x,sp._y); ctx.lineTo(dp._x,dp._y);
     ctx.stroke(); ctx.setLineDash([]);
-    var ang=Math.atan2(dp._y-sp._y,dp._x-sp._x);
-    var nr=22, ax=dp._x-Math.cos(ang)*nr, ay=dp._y-Math.sin(ang)*nr;
-    ctx.beginPath(); ctx.moveTo(ax,ay);
-    ctx.lineTo(ax-9*Math.cos(ang-0.4),ay-9*Math.sin(ang-0.4));
-    ctx.lineTo(ax-9*Math.cos(ang+0.4),ay-9*Math.sin(ang+0.4));
-    ctx.closePath(); ctx.fillStyle=merged.strokeColor; ctx.fill(); ctx.setLineDash([]);
     var lx=mx, ly=my;
     var perpX=-(dy/len), perpY=dx/len;
     lx+=perpX*12; ly+=perpY*12;

@@ -74,7 +74,7 @@
     --danger-bg:#fef2f2; --danger-bd:#fecaca;
     --info-bg:#eff6ff; --info-text:#1e40af;
     --bnav:64px;
-    --c-suspect:#dc2626; --c-victim:#f97316; --c-witness:#4a7cdc; --c-reference:#8b5cf6;
+    --c-suspect:#dc2626; --c-victim:#3d8f6a; --c-witness:#4a7cdc; --c-reference:#8b5cf6;
   }
 html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(--bg); overflow-x:hidden; }
 .screen { width:100%; max-width:420px; min-height:100vh; margin:0 auto; background:var(--bg); display:flex; flex-direction:column; }
@@ -185,7 +185,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
 .edge-item.family     { border-left-color:#16a34a; }
 .edge-names { font-size:13px; font-weight:500; color:var(--tp); }
 .edge-rel   { font-size:11px; color:var(--tm); margin-top:3px; }
-.edge-arrow { color:var(--tm); margin:0 4px; }
+.edge-connector { color:var(--tm); margin:0 5px; font-weight:500; letter-spacing:0.02em; }
 
 /* 보드 그리기 버튼 */
 .btn-draw { width:100%; padding:14px; border-radius:13px; border:none; background:var(--accent); color:#fff; font-size:14px; font-weight:500; font-family:'Noto Sans KR',sans-serif; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:transform 0.1s; margin-bottom:12px; }
@@ -340,7 +340,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
   transition:all 0.15s;
 }
 .mini-role-btn.sel-suspect  { border-color:var(--c-suspect);  background:#fef2f2; color:var(--c-suspect); }
-.mini-role-btn.sel-victim   { border-color:var(--c-victim);   background:#fff7ed; color:var(--c-victim); }
+.mini-role-btn.sel-victim   { border-color:var(--c-victim);   background:#e8f4ef; color:var(--c-victim); }
 .mini-role-btn.sel-witness  { border-color:var(--c-witness);  background:#eff6ff; color:var(--c-witness); }
 .mini-role-btn.sel-reference{ border-color:var(--c-reference);background:#f5f3ff; color:var(--c-reference); }
 .mini-role-btn.sel-active   { border-color:var(--accent); background:#eff6ff; color:var(--accent); font-weight:600; }
@@ -475,7 +475,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
       <div class="board-section">
         <div class="board-section-title">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
-            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
           관계선 &nbsp;<span id="edgeCountBadge" style="font-size:11px;background:#f0f3f9;color:var(--navy);padding:2px 8px;border-radius:20px;font-weight:400;">0개</span>
         </div>
@@ -519,7 +519,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-witness)"></div>목격자</div>
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-reference)"></div>참고인</div>
             <div class="legend-item"><div class="legend-line" style="background:#dc2626;height:2px;"></div>공범</div>
-            <div class="legend-item"><div class="legend-line" style="background:#f97316;height:2px;"></div>피해관계</div>
+            <div class="legend-item"><div class="legend-line" style="background:#52ffb7;height:2px;"></div>피해관계</div>
             <div class="legend-item"><div class="legend-line" style="background:#4a7cdc;height:2px;"></div>목격</div>
             <div class="legend-item"><div class="legend-line" style="background:#16a34a;height:2px;"></div>가족</div>
             <div class="legend-item"><div class="legend-line" style="background:#9ca3af;height:2px;"></div>지인</div>
@@ -582,7 +582,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-witness)"></div>목격자</div>
             <div class="legend-item"><div class="legend-dot" style="background:var(--c-reference)"></div>참고인</div>
             <div class="legend-item"><div class="legend-line" style="background:#dc2626;height:2px;"></div>공범</div>
-            <div class="legend-item"><div class="legend-line" style="background:#f97316;height:2px;"></div>피해관계</div>
+            <div class="legend-item"><div class="legend-line" style="background:#52ffb7;height:2px;"></div>피해관계</div>
             <div class="legend-item"><div class="legend-line" style="background:#4a7cdc;height:2px;"></div>목격</div>
             <div class="legend-item"><div class="legend-line" style="background:#16a34a;height:2px;"></div>가족</div>
             <div class="legend-item"><div class="legend-line" style="background:#9ca3af;height:2px;"></div>지인</div>
@@ -600,7 +600,7 @@ html,body { height:100%; font-family:'Noto Sans KR',sans-serif; background:var(-
           <input class="mini-input" id="miniPersonMemo" placeholder="메모 (선택)">
           <div class="mini-role-row">
             <button type="button" class="mini-role-btn" id="mrole-suspect"   onclick="selectMiniRole('suspect')">🔴 피의자</button>
-            <button type="button" class="mini-role-btn" id="mrole-victim"    onclick="selectMiniRole('victim')">🟠 피해자</button>
+            <button type="button" class="mini-role-btn" id="mrole-victim"    onclick="selectMiniRole('victim')">🟢 피해자</button>
             <button type="button" class="mini-role-btn" id="mrole-witness"   onclick="selectMiniRole('witness')">🔵 목격자</button>
             <button type="button" class="mini-role-btn" id="mrole-reference" onclick="selectMiniRole('reference')">🟣 참고인</button>
           </div>
@@ -681,8 +681,8 @@ var persons = [];
 var edges   = [];
 var checkedTranscripts = [];
 
-// 인물: 피의자 빨강 · 피해 주황 · 목격 파랑 · 참고 보라 / 관계선: 공범 빨강 · 피해 주황 · 목격 파랑 · 가족 초록 · 기타 회색
-var ROLE_COLOR = {suspect:'#dc2626',victim:'#f97316',witness:'#4a7cdc',reference:'#8b5cf6'};
+// 인물: 피의자 빨강 · 피해자 중간톤 초록 · 목격 파랑 · 참고 보라 / 관계선: 공범 빨강 · 피해관계 주황 · 목격 파랑 · 가족 초록 · 기타 회색
+var ROLE_COLOR = {suspect:'#dc2626',victim:'#3d8f6a',witness:'#4a7cdc',reference:'#8b5cf6'};
 var ROLE_LABEL = {suspect:'피의자',victim:'피해자',witness:'목격자',reference:'참고인'};
 var REL_COLOR  = {accomplice:'#dc2626',harm:'#f97316',witness:'#4a7cdc',acquaint:'#9ca3af',family:'#16a34a'};
 // mismatch 상태 선색: 공범(빨강)과 혼동 방지
@@ -1284,7 +1284,7 @@ function renderEdgeList() {
       relBlock = escHtml((REL_LABEL[rt]||e.relType||'') + (st === 'match' ? ' · 일치' : ''));
     }
     return '<div class="edge-item ' + e.relType + '">' +
-      '<div class="edge-names">' + escHtml(sp.name) + '<span class="edge-arrow">→</span>' + escHtml(dp.name) + '</div>' +
+      '<div class="edge-names">' + escHtml(sp.name) + '<span class="edge-connector">—</span>' + escHtml(dp.name) + '</div>' +
       '<div class="edge-rel">' + relBlock + '</div>' +
     '</div>';
   }).join('');
@@ -1795,7 +1795,6 @@ function drawPopupCanvas() {
 function drawEdgeScaled(ctx, sp, dp, edgeGroup) {
   var merged = mergeEdgeGroupForDraw(edgeGroup);
   var strokeC = merged.strokeColor;
-  var curve = 0;
 
   ctx.lineWidth   = 2;
   ctx.strokeStyle = strokeC;
@@ -1810,19 +1809,6 @@ function drawEdgeScaled(ctx, sp, dp, edgeGroup) {
   ctx.moveTo(sp._px, sp._py);
   ctx.lineTo(dp._px, dp._py);
   ctx.stroke();
-  ctx.setLineDash([]);
-
-  var nr = 22;
-  var arrowAng = Math.atan2(dp._py - sp._py, dp._px - sp._px);
-  var ax = dp._px - Math.cos(arrowAng) * nr;
-  var ay = dp._py - Math.sin(arrowAng) * nr;
-  ctx.beginPath();
-  ctx.moveTo(ax, ay);
-  ctx.lineTo(ax - 9*Math.cos(arrowAng-0.4), ay - 9*Math.sin(arrowAng-0.4));
-  ctx.lineTo(ax - 9*Math.cos(arrowAng+0.4), ay - 9*Math.sin(arrowAng+0.4));
-  ctx.closePath();
-  ctx.fillStyle = strokeC; ctx.fill();
-  ctx.setLineDash([]);
 
   var lx = mx, ly = my;
   var perpX = -(dy / len), perpY = (dx / len);
@@ -1957,14 +1943,14 @@ function renderPopupEdgeList() {
     var info = document.createElement('div');
     info.style.flex='1';
     info.innerHTML =
-      '<div style="font-size:13px;font-weight:500;color:var(--tp);">' + escHtml(sp.name) + ' → ' + escHtml(dp.name) + '</div>' +
+      '<div style="font-size:13px;font-weight:500;color:var(--tp);">' + escHtml(sp.name) + ' — ' + escHtml(dp.name) + '</div>' +
       '<div style="font-size:11px;color:var(--tm);margin-top:2px;">' + subHtml + '</div>';
     var delBtn = document.createElement('button');
     delBtn.style.cssText = 'width:26px;height:26px;border-radius:7px;background:var(--danger-bg);border:1px solid var(--danger-bd);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;';
     delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
     (function(eid, sn, dn) {
       delBtn.addEventListener('click', function() {
-        if (!confirm('"' + sn + ' → ' + dn + '" 관계선을 삭제할까요?')) return;
+        if (!confirm('"' + sn + ' — ' + dn + '" 관계선을 삭제할까요?')) return;
         edges = edges.filter(function(x) { return x.id !== eid; });
         renderEdgeList(); renderPopupEdgeList(); drawPopupCanvas();
         autoSaveBoard();
@@ -2282,17 +2268,8 @@ function drawCanvas() {
     ctx.strokeStyle = merged.strokeColor;
     ctx.stroke();
 
-    var ang=Math.atan2(dp._y-sp._y,dp._x-sp._x), nr=20*scale,
-        ax=dp._x-Math.cos(ang)*nr, ay=dp._y-Math.sin(ang)*nr;
-    ctx.beginPath();
-    ctx.moveTo(ax,ay);
-    ctx.lineTo(ax-8*scale*Math.cos(ang-0.4), ay-8*scale*Math.sin(ang-0.4));
-    ctx.lineTo(ax-8*scale*Math.cos(ang+0.4), ay-8*scale*Math.sin(ang+0.4));
-    ctx.closePath();
-    ctx.fillStyle = merged.strokeColor;
-    ctx.fill();
-
     var mx=(sp._x+dp._x)/2, my=(sp._y+dp._y)/2;
+    var ang = Math.atan2(dp._y - sp._y, dp._x - sp._x);
     var perpX=-Math.sin(ang), perpY=Math.cos(ang);
     mx += perpX*10*scale; my += perpY*10*scale;
     ctx.textAlign='center';
