@@ -33,6 +33,7 @@
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   :root {
     --navy:#1a2744; --accent:#4a7cdc; --danger:#dc2626;
+    --contra-section-accent:#c2410c;
     --text-primary:#1a1a2e; --text-secondary:#6b7280; --text-muted:#9ca3af;
     --bg:#f4f6fb; --card:#ffffff; --border:#e5e7eb;
     --success:#16a34a; --success-bg:#f0fdf4; --success-border:#bbf7d0;
@@ -234,6 +235,10 @@
     white-space:pre-wrap; word-break:break-word;
   }
   .contra-type-text { min-height:1.4em; }
+  .contra-analyze-section-title {
+    color:var(--contra-section-accent);
+    font-weight:600;
+  }
   .contra-bubble-caret {
     display:inline-block; width:2px; height:14px; margin-left:2px;
     background:var(--navy); border-radius:1px; vertical-align:-2px;
@@ -639,6 +644,7 @@ function consumeAnalyzeStream(response,session){
     var textSpan=null;
     var caret=null;
     var outputStarted=false;
+    var accPlain='';
     function ensureOutputPanel(){
       if(outputStarted)return;
       outputStarted=true;
@@ -660,7 +666,8 @@ function consumeAnalyzeStream(response,session){
         try{ev=JSON.parse(jsonStr);}catch(e){continue;}
         if(ev.event==='chunk'&&ev.text){
           ensureOutputPanel();
-          textSpan.textContent+=normalizeStatementLabels(ev.text);
+          accPlain+=normalizeStatementLabels(ev.text);
+          textSpan.innerHTML=formatContradictionAnalyzeHtml(accPlain);
         }else if(ev.event==='error'){
           finished=true;
           removeContraCaret(caret);
@@ -798,6 +805,28 @@ function normalizeStatementLabels(s){
     }
     return '조서' + n;
   });
+}
+
+/** polmate_serv _pass1_prompt 소제목(시간순 정리된 사건 흐름 / 모순점 분석) 표시 — contradictionList.jsp와 동일 색 */
+function stripAnalyzeSectionNumberPrefix(trimmed){
+  return String(trimmed||'').replace(/^\d+[\).]\s*/, '');
+}
+function formatContradictionAnalyzeHtml(plain){
+  var raw=String(plain||'');
+  if(!raw)return '';
+  var lines=raw.split(/\r?\n/);
+  var parts=[];
+  for(var i=0;i<lines.length;i++){
+    var line=lines[i];
+    var tr=line.trim();
+    var core=stripAnalyzeSectionNumberPrefix(tr);
+    var isTitle=(core==='시간순 정리된 사건 흐름'||core==='모순점 분석');
+    if(isTitle)
+      parts.push('<span class="contra-analyze-section-title">'+escHtml(line)+'</span>');
+    else
+      parts.push(escHtml(line));
+  }
+  return parts.join('<br>');
 }
 
 /** contradictionList.jsp·writeTranscript.jsp와 동일 기준 (저장 시 플래그 정확도) */
