@@ -1698,10 +1698,59 @@ function paintMultilineRelLabels(ctx, lx, ly, lines, sc, bgRgba) {
 // ── Force-directed 레이아웃 초기화 ──────────────────────────────
 var _fdInitialized = false; // 현재 사건 기준 초기화 여부
 
+function getPersonDegreeMapRM(list, edgeList) {
+  var deg = {};
+  (list || []).forEach(function(p) { deg[p.id] = 0; });
+  (edgeList || []).forEach(function(e) {
+    if (typeof deg[e.src] === 'number') deg[e.src] += 1;
+    if (typeof deg[e.dst] === 'number') deg[e.dst] += 1;
+  });
+  return deg;
+}
+function pickCenterSuspectRM(list, edgeList) {
+  var suspects = (list || []).filter(function(p) { return p.role === 'suspect'; });
+  if (!suspects.length) return null;
+  var deg = getPersonDegreeMapRM(list, edgeList);
+  return suspects.reduce(function(best, cur) {
+    var bDeg = deg[best.id] || 0, cDeg = deg[cur.id] || 0;
+    if (cDeg !== bDeg) return cDeg > bDeg ? cur : best;
+    return String(cur.name || '').localeCompare(String(best.name || '')) < 0 ? cur : best;
+  });
+}
+function isDirectlyLinkedRM(aId, bId) {
+  return edges.some(function(e) {
+    return (e.src === aId && e.dst === bId) || (e.src === bId && e.dst === aId);
+  });
+}
+function ringAngleSpreadRM(index, count) {
+  if (count <= 1) return -Math.PI / 2;
+  var span = Math.min(5.15, 2.6 + Math.max(0, count - 2) * 0.14);
+  var start = -Math.PI / 2 - span / 2;
+  return start + (span * index / (count - 1));
+}
+function stableUnitFromKeyRM(key) {
+  var s = String(key || '');
+  var h = 2166136261;
+  for (var i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = (h * 16777619) >>> 0;
+  }
+  return (h >>> 0) / 4294967295;
+}
+
 function initForceLayout(canvasW, canvasH) {
   var cx = canvasW / 2, cy = canvasH / 2;
   var n = persons.length;
   if (!n) return;
+  var centerSuspect = pickCenterSuspectRM(persons, edges);
+  var deg = getPersonDegreeMapRM(persons, edges);
+  var minDim = Math.min(canvasW, canvasH);
+  var area = Math.max(canvasW * canvasH, 1);
+  var k0 = Math.sqrt(area / Math.max(n, 1)) * 0.82;
+  var innerR = Math.min(minDim * 0.27, k0 * Math.sqrt(Math.max(n, 2)) * 0.37);
+  var outerR = Math.min(minDim * 0.35, k0 * Math.sqrt(Math.max(n, 2)) * 0.51);
+  var jitter = k0 * 0.16;
+
   persons.forEach(function(p, i) {
     var hasPos = typeof p._px === 'number' && typeof p._py === 'number' && !isNaN(p._px) && !isNaN(p._py);
     var lx = Number(p.layoutX), ly = Number(p.layoutY);
@@ -1711,17 +1760,53 @@ function initForceLayout(canvasW, canvasH) {
       p._px = lx;
       p._py = ly;
     } else {
-      var minDim = Math.min(canvasW, canvasH);
-      var area = Math.max(canvasW * canvasH, 1);
-      var k0 = Math.sqrt(area / Math.max(n, 1)) * 0.82;
-      var r = Math.min(minDim * 0.36, k0 * Math.sqrt(Math.max(n, 2)) * 0.52);
-      var jitter = k0 * 0.16;
-      var a = (2 * Math.PI * i / n) - Math.PI / 2;
-      p._px = cx + Math.cos(a) * r + (Math.random() - 0.5) * jitter;
-      p._py = cy + Math.sin(a) * r + (Math.random() - 0.5) * jitter;
+      p._px = NaN;
+      p._py = NaN;
     }
     p._vx = 0; p._vy = 0;
   });
+  var unpositioned = persons.filter(function(p) {
+    return typeof p._px !== 'number' || typeof p._py !== 'number' || isNaN(p._px) || isNaN(p._py);
+  });
+  if (centerSuspect && unpositioned.indexOf(centerSuspect) >= 0) {
+    centerSuspect._px = cx; centerSuspect._py = cy;
+    centerSuspect._vx = 0; centerSuspect._vy = 0;
+  }
+  if (unpositioned.length) {
+    var others = unpositioned.filter(function(p) { return !centerSuspect || p.id !== centerSuspect.id; });
+    var firstRing = centerSuspect
+      ? others.filter(function(p) { return isDirectlyLinkedRM(centerSuspect.id, p.id); })
+      : others.slice();
+    var secondRing = others.filter(function(p) { return firstRing.indexOf(p) < 0; });
+    firstRing.sort(function(a, b) {
+      var ad = deg[a.id] || 0, bd = deg[b.id] || 0;
+      if (ad !== bd) return bd - ad;
+      return String(a.name || '').localeCompare(String(b.name || ''));
+    });
+    secondRing.sort(function(a, b) {
+      var ad = deg[a.id] || 0, bd = deg[b.id] || 0;
+      if (ad !== bd) return bd - ad;
+      return String(a.name || '').localeCompare(String(b.name || ''));
+    });
+    firstRing.forEach(function(p, i) {
+      var a = ringAngleSpreadRM(i, firstRing.length);
+      var seed = personNameCompactKey(p.name) || p.id;
+      var jx = stableUnitFromKeyRM(seed + '|ix|' + i) - 0.5;
+      var jy = stableUnitFromKeyRM(seed + '|iy|' + i) - 0.5;
+      p._px = cx + Math.cos(a) * innerR + jx * jitter * 0.65;
+      p._py = cy + Math.sin(a) * innerR + jy * jitter * 0.65;
+      p._vx = 0; p._vy = 0;
+    });
+    secondRing.forEach(function(p, i) {
+      var a = ringAngleSpreadRM(i, secondRing.length);
+      var seed = personNameCompactKey(p.name) || p.id;
+      var jx = stableUnitFromKeyRM(seed + '|ox|' + i) - 0.5;
+      var jy = stableUnitFromKeyRM(seed + '|oy|' + i) - 0.5;
+      p._px = cx + Math.cos(a) * outerR + jx * jitter;
+      p._py = cy + Math.sin(a) * outerR + jy * jitter;
+      p._vx = 0; p._vy = 0;
+    });
+  }
   if (n === 1) {
     var p0 = persons[0];
     var h = typeof p0._px === 'number' && typeof p0._py === 'number' && !isNaN(p0._px) && !isNaN(p0._py);
@@ -1748,6 +1833,9 @@ function runForceStep(canvasW, canvasH) {
   var cx = canvasW / 2, cy = canvasH / 2;
   var padding = 52;
   var grav = 0.018;
+  var centerSuspect = pickCenterSuspectRM(persons, edges);
+  var minNodeGap = 58;
+  var collideK = 0.24;
 
   persons.forEach(function(p) { p._fx = 0; p._fy = 0; });
 
@@ -1761,6 +1849,12 @@ function runForceStep(canvasW, canvasH) {
       var fx = (dx / dist) * force, fy = (dy / dist) * force;
       pi._fx += fx; pi._fy += fy;
       pj._fx -= fx; pj._fy -= fy;
+      if (dist < minNodeGap) {
+        var push = (minNodeGap - dist) * collideK;
+        var cfx = (dx / dist) * push, cfy = (dy / dist) * push;
+        pi._fx += cfx; pi._fy += cfy;
+        pj._fx -= cfx; pj._fy -= cfy;
+      }
     }
   }
 
@@ -1776,10 +1870,34 @@ function runForceStep(canvasW, canvasH) {
     sp._fx += fx; sp._fy += fy;
     dp._fx -= fx; dp._fy -= fy;
   });
+  if (centerSuspect) {
+    var neigh = persons.filter(function(p) { return p.id !== centerSuspect.id && isDirectlyLinkedRM(centerSuspect.id, p.id); });
+    for (var aIdx = 0; aIdx < neigh.length; aIdx++) {
+      for (var bIdx = aIdx + 1; bIdx < neigh.length; bIdx++) {
+        var n1 = neigh[aIdx], n2 = neigh[bIdx];
+        var v1x = n1._px - centerSuspect._px, v1y = n1._py - centerSuspect._py;
+        var v2x = n2._px - centerSuspect._px, v2y = n2._py - centerSuspect._py;
+        var d1 = Math.sqrt(v1x * v1x + v1y * v1y), d2 = Math.sqrt(v2x * v2x + v2y * v2y);
+        if (d1 < 0.01 || d2 < 0.01) continue;
+        var cosA = (v1x * v2x + v1y * v2y) / (d1 * d2);
+        if (cosA < -0.92) {
+          var opp = Math.min(1, (-cosA - 0.92) / 0.08);
+          var tx = -v1y / d1, ty = v1x / d1;
+          var am = opp * 0.92;
+          n1._fx += tx * am; n1._fy += ty * am;
+          n2._fx -= tx * am; n2._fy -= ty * am;
+        }
+      }
+    }
+  }
 
   persons.forEach(function(p) {
     p._fx += (cx - p._px) * grav;
     p._fy += (cy - p._py) * grav;
+    if (centerSuspect && p.id === centerSuspect.id) {
+      p._fx += (cx - p._px) * 0.52;
+      p._fy += (cy - p._py) * 0.52;
+    }
   });
 
   var vmax = k * 0.38;
@@ -1793,6 +1911,10 @@ function runForceStep(canvasW, canvasH) {
     }
     p._px = Math.max(padding, Math.min(canvasW - padding, p._px + p._vx));
     p._py = Math.max(padding, Math.min(canvasH - padding, p._py + p._vy));
+    if (centerSuspect && p.id === centerSuspect.id) {
+      p._px = cx; p._py = cy;
+      p._vx = 0; p._vy = 0;
+    }
   });
 }
 
@@ -2307,15 +2429,18 @@ function drawCanvas() {
     return;
   }
 
-  var cx = canvas.width/2, cy = canvas.height/2;
-  var r  = Math.min(cx, cy) * 0.52;
-
-  persons.forEach(function(p, i) {
-    var a = (2*Math.PI*i/persons.length) - Math.PI/2;
-    p._x = cx + Math.cos(a)*r + offsetX*scale;
-    p._y = cy + Math.sin(a)*r + offsetY*scale;
+  if (!_fdInitialized) {
+    initForceLayout(canvas.width, canvas.height);
+    var allSaved = persons.length && persons.every(function(p) {
+      var lx = Number(p.layoutX), ly = Number(p.layoutY);
+      return !isNaN(lx) && !isNaN(ly);
+    });
+    if (!allSaved) preRunForce(canvas.width, canvas.height);
+  }
+  persons.forEach(function(p) {
+    p._x = p._px + offsetX * scale;
+    p._y = p._py + offsetY * scale;
   });
-  if (persons.length === 1) { persons[0]._x = cx+offsetX*scale; persons[0]._y = cy+offsetY*scale; }
 
   ctx.save();
 
@@ -2470,8 +2595,9 @@ window.addEventListener('resize', resizeCanvas);
         var loadedEdges = (bj.edges || []).map(function(e) {
           var srcN = e.srcName || e.src || '';
           var dstN = e.dstName || e.dst || '';
-          var sp = loadedPersons.find(function(p){ return p.name === srcN; });
-          var dp = loadedPersons.find(function(p){ return p.name === dstN; });
+          var sk = personNameCompactKey(srcN), dk = personNameCompactKey(dstN);
+          var sp = loadedPersons.find(function(p){ return personNameCompactKey(p.name) === sk; });
+          var dp = loadedPersons.find(function(p){ return personNameCompactKey(p.name) === dk; });
           if (!sp || !dp) return null;
           return {id:uid(), src:sp.id, dst:dp.id,
                   relType:e.relType||'acquaint', status:e.status||'unknown', context:''};

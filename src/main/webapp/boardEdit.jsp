@@ -534,8 +534,8 @@ window.addEventListener('load', function() {
         return o;
       }).filter(function(p){ return p.name; });
       edges = (bj.edges || []).map(function(e) {
-        var sp = persons.find(function(p){ return p.name === (e.srcName||''); });
-        var dp = persons.find(function(p){ return p.name === (e.dstName||''); });
+        var sp = findPersonByNameBE(persons, e.srcName || e.src || '');
+        var dp = findPersonByNameBE(persons, e.dstName || e.dst || '');
         if (!sp||!dp) return null;
         return {id:uid(),src:sp.id,dst:dp.id,relType:e.relType||'acquaint',status:e.status||'unknown'};
       }).filter(Boolean);
@@ -595,8 +595,8 @@ function loadFromDb() {
           return o;
         }).filter(function(p){ return p.name; });
         edges = (bj.edges||[]).map(function(e){
-          var sp=persons.find(function(p){ return p.name===(e.srcName||e.src||''); });
-          var dp=persons.find(function(p){ return p.name===(e.dstName||e.dst||''); });
+          var sp = findPersonByNameBE(persons, e.srcName || e.src || '');
+          var dp = findPersonByNameBE(persons, e.dstName || e.dst || '');
           if(!sp||!dp) return null;
           return {id:uid(),src:sp.id,dst:dp.id,relType:e.relType||'acquaint',status:e.status||'unknown'};
         }).filter(Boolean);
@@ -1169,48 +1169,166 @@ function resizeCanvas() {
   drawCanvas();
 }
 
-// Force-directed 레이아웃
-function initForce() {
-  var n=persons.length, cx=canvas.width/2, cy=canvas.height/2;
-  var minDim=Math.min(cx,cy)*2, area=Math.max(canvas.width*canvas.height,1);
-  var k0=Math.sqrt(area/Math.max(n,1))*1.1;
-  var r=Math.min(minDim*0.42, k0*Math.sqrt(Math.max(n,2))*0.58);
-  var jitter=k0*0.2;
-  persons.forEach(function(p,i){
-    var a=(2*Math.PI*i/n)-Math.PI/2;
-    p._x=cx+Math.cos(a)*r+(Math.random()-0.5)*jitter;
-    p._y=cy+Math.sin(a)*r+(Math.random()-0.5)*jitter;
-    p._vx=0; p._vy=0;
-  });
-  if(n===1){persons[0]._x=cx;persons[0]._y=cy;}
-  for(var i=0;i<300;i++) runForce();
-  _fdInit=true;
+// 이름 기반 매칭 유틸 (관계선 복원용)
+function personNameCompactKeyBE(name) {
+  return String(name || '').replace(/\s+/g, '').toLowerCase();
 }
-function runForce(){
-  var n=persons.length, w=canvas.width, h=canvas.height, pad=40;
-  var area=Math.max(w*h,1), k=Math.sqrt(area/n)*1.1, repK=k*k, attract=0.038;
-  var cx=w/2, cy=h/2, damping=0.86, grav=0.012, vmax=k*0.38;
-  persons.forEach(function(p){p._fx=0;p._fy=0;});
-  for(var i=0;i<n;i++){for(var j=i+1;j<n;j++){
-    var pi=persons[i],pj=persons[j],dx=pi._x-pj._x,dy=pi._y-pj._y;
-    var dist=Math.sqrt(dx*dx+dy*dy); if(dist<0.01)dist=0.01;
-    var f=repK/dist; pi._fx+=dx/dist*f;pi._fy+=dy/dist*f;pj._fx-=dx/dist*f;pj._fy-=dy/dist*f;
-  }}
-  edges.forEach(function(e){
-    var sp=persons.find(function(p){return p.id===e.src;}),dp=persons.find(function(p){return p.id===e.dst;});
-    if(!sp||!dp)return;
-    var dx=dp._x-sp._x,dy=dp._y-sp._y,dist=Math.sqrt(dx*dx+dy*dy); if(dist<0.01)dist=0.01;
-    var f=attract*(dist-k);
-    sp._fx+=dx/dist*f;sp._fy+=dy/dist*f;dp._fx-=dx/dist*f;dp._fy-=dy/dist*f;
+function findPersonByNameBE(list, name) {
+  var k = personNameCompactKeyBE(name);
+  if (!k) return null;
+  return list.find(function(p) { return personNameCompactKeyBE(p.name) === k; }) || null;
+}
+function stableUnitFromKeyBE(key) {
+  var s = String(key || '');
+  var h = 2166136261;
+  for (var i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = (h * 16777619) >>> 0;
+  }
+  return (h >>> 0) / 4294967295;
+}
+function ringAngleSpreadBE(index, count) {
+  if (count <= 1) return -Math.PI / 2;
+  if (count === 2) {
+    // 2노드는 좌/우 상단으로 벌어져 V자 느낌이 나도록 고정
+    return index === 0 ? (-Math.PI * 0.83) : (-Math.PI * 0.17);
+  }
+  // 3명 이상은 중앙 피의자 주변으로 원형에 가깝게 분산 (상단 몰림 방지)
+  var start = -Math.PI * 0.75; // 좌상단 기준
+  var step = (2 * Math.PI) / count;
+  return start + step * index;
+}
+function getDegreeMapBE(list) {
+  var deg = {};
+  list.forEach(function(p) { deg[p.id] = 0; });
+  edges.forEach(function(e) {
+    if (typeof deg[e.src] === 'number') deg[e.src] += 1;
+    if (typeof deg[e.dst] === 'number') deg[e.dst] += 1;
   });
-  persons.forEach(function(p){
-    p._fx+=(cx-p._x)*grav;p._fy+=(cy-p._y)*grav;
-    p._vx=(p._vx+p._fx)*damping;p._vy=(p._vy+p._fy)*damping;
-    var v=Math.sqrt(p._vx*p._vx+p._vy*p._vy);
-    if(v>vmax&&v>0){p._vx*=vmax/v;p._vy*=vmax/v;}
-    p._x=Math.max(pad,Math.min(w-pad,p._x+p._vx));
-    p._y=Math.max(pad,Math.min(h-pad,p._y+p._vy));
+  return deg;
+}
+function isLinkedBE(aId, bId) {
+  return edges.some(function(e) {
+    return (e.src === aId && e.dst === bId) || (e.src === bId && e.dst === aId);
   });
+}
+function autoArrangeMissingPersonsBE(missing, w, h) {
+  if (!missing || !missing.length) return;
+  var cx = w / 2, cy = h / 2;
+  var minDim = Math.min(w, h);
+  var n = Math.max(persons.length, 1);
+  var k0 = Math.sqrt(Math.max(w * h, 1) / n) * 0.9;
+  var innerR = Math.min(minDim * 0.37, k0 * Math.sqrt(Math.max(n, 2)) * 0.50);
+  var outerR = Math.min(minDim * 0.48, k0 * Math.sqrt(Math.max(n, 2)) * 0.66);
+  var jitter = k0 * 0.14;
+  var deg = getDegreeMapBE(persons);
+
+  var suspects = missing.filter(function(p) { return p.role === 'suspect'; });
+  var centerSuspect = suspects.length ? suspects.reduce(function(best, cur) {
+    var bDeg = deg[best.id] || 0, cDeg = deg[cur.id] || 0;
+    if (cDeg !== bDeg) return cDeg > bDeg ? cur : best;
+    return String(cur.name || '').localeCompare(String(best.name || '')) < 0 ? cur : best;
+  }) : null;
+  if (centerSuspect) {
+    centerSuspect._x = cx;
+    centerSuspect._y = cy;
+  }
+
+  var others = missing.filter(function(p) { return !centerSuspect || p.id !== centerSuspect.id; });
+  if (centerSuspect && others.length) {
+    // 연결 거리 기반으로 상단(기타) / 하단(피해자)를 분리해 선 교차를 줄인다.
+    var distMap = {};
+    distMap[centerSuspect.id] = 0;
+    var q = [centerSuspect.id];
+    for (var qi = 0; qi < q.length; qi++) {
+      var cur = q[qi];
+      edges.forEach(function(e) {
+        var nxt = null;
+        if (e.src === cur) nxt = e.dst;
+        else if (e.dst === cur) nxt = e.src;
+        if (nxt && distMap[nxt] == null) {
+          distMap[nxt] = distMap[cur] + 1;
+          q.push(nxt);
+        }
+      });
+    }
+    var victims = others.filter(function(p) { return p.role === 'victim'; });
+    var nonVictims = others.filter(function(p) { return p.role !== 'victim'; });
+    var hop1 = nonVictims.filter(function(p) { return (distMap[p.id] || 99) <= 1; });
+    var hop2 = nonVictims.filter(function(p) { return (distMap[p.id] || 99) > 1; });
+    var sorter = function(a, b) {
+      var ad = deg[a.id] || 0, bd = deg[b.id] || 0;
+      if (ad !== bd) return bd - ad;
+      return String(a.name || '').localeCompare(String(b.name || ''));
+    };
+    victims.sort(sorter); hop1.sort(sorter); hop2.sort(sorter);
+
+    function placeArc(nodes, startA, endA, radius, seedTag) {
+      if (!nodes.length) return;
+      nodes.forEach(function(p, i) {
+        var seed = personNameCompactKeyBE(p.name) || p.id;
+        var a = nodes.length === 1
+          ? (startA + endA) / 2
+          : (startA + (endA - startA) * (i / (nodes.length - 1)));
+        var jx = stableUnitFromKeyBE(seed + '|' + seedTag + 'x|' + i) - 0.5;
+        var jy = stableUnitFromKeyBE(seed + '|' + seedTag + 'y|' + i) - 0.5;
+        p._x = cx + Math.cos(a) * radius + jx * jitter * 0.9;
+        p._y = cy + Math.sin(a) * radius + jy * jitter * 0.9;
+      });
+    }
+
+    // 상단 계층(목격/참고/기타): 좌상단~우상단
+    placeArc(hop2, -Math.PI * 0.92, -Math.PI * 0.08, outerR, 'top2');
+    placeArc(hop1, -Math.PI * 0.86, -Math.PI * 0.14, innerR, 'top1');
+    // 하단 계층(피해자): 우하단 우선으로 배치
+    placeArc(victims, Math.PI * 0.18, Math.PI * 0.72, innerR * 1.04, 'victim');
+  } else {
+    // 피의자 기준이 없으면 기존 원형 분산
+    others.sort(function(a, b) {
+      var ad = deg[a.id] || 0, bd = deg[b.id] || 0;
+      if (ad !== bd) return bd - ad;
+      return String(a.name || '').localeCompare(String(b.name || ''));
+    });
+    others.forEach(function(p, i) {
+      var seed = personNameCompactKeyBE(p.name) || p.id;
+      var a = ringAngleSpreadBE(i, others.length);
+      var jx = stableUnitFromKeyBE(seed + '|ox|' + i) - 0.5;
+      var jy = stableUnitFromKeyBE(seed + '|oy|' + i) - 0.5;
+      p._x = cx + Math.cos(a) * outerR + jx * jitter;
+      p._y = cy + Math.sin(a) * outerR + jy * jitter;
+    });
+  }
+
+  // 마지막으로 최소 간격을 강제해서 노드끼리 너무 붙지 않게 보정
+  var placed = missing.filter(function(p) {
+    return typeof p._x === 'number' && typeof p._y === 'number' && !isNaN(p._x) && !isNaN(p._y);
+  });
+  var minGap = 104;
+  var pad = 40;
+  for (var iter = 0; iter < 26; iter++) {
+    for (var i = 0; i < placed.length; i++) {
+      for (var j = i + 1; j < placed.length; j++) {
+        var aNode = placed[i], bNode = placed[j];
+        var dx = aNode._x - bNode._x, dy = aNode._y - bNode._y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 0.001) {
+          dx = (stableUnitFromKeyBE(aNode.id + '|dx|' + iter) - 0.5) || 0.5;
+          dy = (stableUnitFromKeyBE(aNode.id + '|dy|' + iter) - 0.5) || -0.5;
+          dist = Math.sqrt(dx * dx + dy * dy);
+        }
+        if (dist < minGap) {
+          var push = (minGap - dist) * 0.5;
+          var ux = dx / dist, uy = dy / dist;
+          aNode._x += ux * push; aNode._y += uy * push;
+          bNode._x -= ux * push; bNode._y -= uy * push;
+        }
+      }
+    }
+    placed.forEach(function(p) {
+      p._x = Math.max(pad, Math.min(w - pad, p._x));
+      p._y = Math.max(pad, Math.min(h - pad, p._y));
+    });
+  }
 }
 function drawCanvas(){
   if(!ctx)return;
@@ -1221,15 +1339,29 @@ function drawCanvas(){
     ctx.textAlign='center';ctx.fillText('인물을 추가하면 관계망이 표시됩니다',canvas.width/2,canvas.height/2);
     return;
   }
-  var needForce = !_fdInit || persons.some(function(p){ return typeof p._x !== 'number' || typeof p._y !== 'number' || isNaN(p._x) || isNaN(p._y); });
-  if (needForce) initForce();
-  else {
-    var pad = 40;
+  if (!_fdInit) {
+    var missing = [];
     persons.forEach(function(p) {
-      p._x = Math.max(pad, Math.min(canvas.width - pad, p._x));
-      p._y = Math.max(pad, Math.min(canvas.height - pad, p._y));
+      var ok = typeof p._x === 'number' && typeof p._y === 'number' && !isNaN(p._x) && !isNaN(p._y);
+      if (!ok) {
+        var lx = Number(p.layoutX), ly = Number(p.layoutY);
+        if (!isNaN(lx) && !isNaN(ly)) {
+          p._x = lx; p._y = ly;
+        } else {
+          missing.push(p);
+        }
+      }
+      p._vx = 0; p._vy = 0;
     });
+    if (missing.length >= 2) autoArrangeMissingPersonsBE(missing, canvas.width, canvas.height);
+    else if (missing.length === 1) placeNewPersonOnCanvas(missing[0]);
+    _fdInit = true;
   }
+  var pad = 40;
+  persons.forEach(function(p) {
+    p._x = Math.max(pad, Math.min(canvas.width - pad, p._x));
+    p._y = Math.max(pad, Math.min(canvas.height - pad, p._y));
+  });
   ctx.save();
   ctx.translate(cOffsetX*cScale,cOffsetY*cScale);
   ctx.scale(cScale,cScale);
