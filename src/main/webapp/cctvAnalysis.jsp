@@ -366,6 +366,7 @@ function removeVideo(id) {
 function syncUI() {
   document.getElementById('videoCount').textContent = videoFiles.length + '개 선택됨';
   var plate = document.getElementById('plateInput').value.trim();
+  var plate = document.getElementById("plateInput").value.trim();
   var canStart = videoFiles.length > 0 && plate;
   document.getElementById('analyzeBtn').disabled = !canStart;
 }
@@ -373,6 +374,7 @@ function syncUI() {
 /* ── 분석 시작 ─────────────────────── */
 function startAnalysis() {
   var plate = document.getElementById('plateInput').value.trim();
+
   if (!plate) {
     alert('번호판을 입력해주세요.');
     document.getElementById('plateInput').focus();
