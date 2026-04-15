@@ -439,8 +439,8 @@ function openDetail(board) {
       detailEdges = (bj.edges || []).map(function(e) {
         var srcN = e.srcName || e.src || '';
         var dstN = e.dstName || e.dst || '';
-        var sp = detailPersons.find(function(p){ return p.name === srcN; });
-        var dp = detailPersons.find(function(p){ return p.name === dstN; });
+        var sp = findPersonByNameBV(detailPersons, srcN);
+        var dp = findPersonByNameBV(detailPersons, dstN);
         if (!sp || !dp) return null;
         return {id:uid(), src:sp.id, dst:dp.id,
                 relType:e.relType||'acquaint', status:e.status||'unknown'};
@@ -512,17 +512,88 @@ function resizeDetailCanvas() {
   drawDetailCanvas();
 }
 // Force-directed 레이아웃 (boardView용)
+function ringAngleSpreadBV(index, count) {
+  if (count <= 1) return -Math.PI / 2;
+  var span = Math.min(5.15, 2.6 + Math.max(0, count - 2) * 0.14);
+  var start = -Math.PI / 2 - span / 2;
+  return start + (span * index / (count - 1));
+}
+function stableUnitFromKeyBV(key) {
+  var s = String(key || '');
+  var h = 2166136261;
+  for (var i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = (h * 16777619) >>> 0;
+  }
+  return (h >>> 0) / 4294967295;
+}
+function personNameCompactKeyBV(name) {
+  return String(name || '').replace(/\s+/g, '').toLowerCase();
+}
+function findPersonByNameBV(list, name) {
+  var k = personNameCompactKeyBV(name);
+  if (!k) return null;
+  return list.find(function(p) { return personNameCompactKeyBV(p.name) === k; }) || null;
+}
 function initDetailForce(w, h) {
   var cx = w/2, cy = h/2, n = detailPersons.length;
   var minDim = Math.min(w, h);
   var area = Math.max(w * h, 1);
   var k0 = Math.sqrt(area / Math.max(n, 1)) * 0.82;
-  var r = Math.min(minDim * 0.36, k0 * Math.sqrt(Math.max(n, 2)) * 0.52);
+  var innerR = Math.min(minDim * 0.27, k0 * Math.sqrt(Math.max(n, 2)) * 0.37);
+  var outerR = Math.min(minDim * 0.35, k0 * Math.sqrt(Math.max(n, 2)) * 0.51);
   var jitter = k0 * 0.16;
-  detailPersons.forEach(function(p, i) {
-    var a = (2*Math.PI*i/n) - Math.PI/2;
-    p._x = cx + Math.cos(a)*r + (Math.random()-0.5)*jitter;
-    p._y = cy + Math.sin(a)*r + (Math.random()-0.5)*jitter;
+  var deg = {};
+  detailPersons.forEach(function(p) { deg[p.id] = 0; });
+  detailEdges.forEach(function(e) {
+    if (typeof deg[e.src] === 'number') deg[e.src] += 1;
+    if (typeof deg[e.dst] === 'number') deg[e.dst] += 1;
+  });
+  var suspects = detailPersons.filter(function(p) { return p.role === 'suspect'; });
+  var centerSuspect = suspects.length ? suspects.reduce(function(best, cur) {
+    var bDeg = deg[best.id] || 0, cDeg = deg[cur.id] || 0;
+    if (cDeg !== bDeg) return cDeg > bDeg ? cur : best;
+    return String(cur.name || '').localeCompare(String(best.name || '')) < 0 ? cur : best;
+  }) : null;
+  if (centerSuspect) {
+    centerSuspect._x = cx; centerSuspect._y = cy;
+    centerSuspect._vx = 0; centerSuspect._vy = 0;
+  }
+  function linkedToCenter(pid) {
+    if (!centerSuspect) return false;
+    return detailEdges.some(function(e) {
+      return (e.src === centerSuspect.id && e.dst === pid) || (e.dst === centerSuspect.id && e.src === pid);
+    });
+  }
+  var others = detailPersons.filter(function(p) { return !centerSuspect || p.id !== centerSuspect.id; });
+  var firstRing = centerSuspect ? others.filter(function(p) { return linkedToCenter(p.id); }) : others.slice();
+  var secondRing = others.filter(function(p) { return firstRing.indexOf(p) < 0; });
+  firstRing.sort(function(a, b) {
+    var ad = deg[a.id] || 0, bd = deg[b.id] || 0;
+    if (ad !== bd) return bd - ad;
+    return String(a.name || '').localeCompare(String(b.name || ''));
+  });
+  secondRing.sort(function(a, b) {
+    var ad = deg[a.id] || 0, bd = deg[b.id] || 0;
+    if (ad !== bd) return bd - ad;
+    return String(a.name || '').localeCompare(String(b.name || ''));
+  });
+  firstRing.forEach(function(p, i) {
+    var a = ringAngleSpreadBV(i, firstRing.length);
+    var seed = personNameCompactKeyBV(p.name) || p.id;
+    var jx = stableUnitFromKeyBV(seed + '|ix|' + i) - 0.5;
+    var jy = stableUnitFromKeyBV(seed + '|iy|' + i) - 0.5;
+    p._x = cx + Math.cos(a)*innerR + jx*jitter*0.65;
+    p._y = cy + Math.sin(a)*innerR + jy*jitter*0.65;
+    p._vx = 0; p._vy = 0;
+  });
+  secondRing.forEach(function(p, i) {
+    var a = ringAngleSpreadBV(i, secondRing.length);
+    var seed = personNameCompactKeyBV(p.name) || p.id;
+    var jx = stableUnitFromKeyBV(seed + '|ox|' + i) - 0.5;
+    var jy = stableUnitFromKeyBV(seed + '|oy|' + i) - 0.5;
+    p._x = cx + Math.cos(a)*outerR + jx*jitter;
+    p._y = cy + Math.sin(a)*outerR + jy*jitter;
     p._vx = 0; p._vy = 0;
   });
   if (n===1) { detailPersons[0]._x=cx; detailPersons[0]._y=cy; }
@@ -535,6 +606,19 @@ function runDetailForce(w, h) {
   var k = Math.sqrt(area / n) * 0.82;
   var repK = k * k, attract = 0.052, pad = 62;
   var cx = w/2, cy = h/2, damping = 0.86, grav = 0.018, vmax = k * 0.38;
+  var minNodeGap = 58, collideK = 0.24;
+  var deg = {};
+  detailPersons.forEach(function(p) { deg[p.id] = 0; });
+  detailEdges.forEach(function(e) {
+    if (typeof deg[e.src] === 'number') deg[e.src] += 1;
+    if (typeof deg[e.dst] === 'number') deg[e.dst] += 1;
+  });
+  var suspects = detailPersons.filter(function(p) { return p.role === 'suspect'; });
+  var centerSuspect = suspects.length ? suspects.reduce(function(best, cur) {
+    var bDeg = deg[best.id] || 0, cDeg = deg[cur.id] || 0;
+    if (cDeg !== bDeg) return cDeg > bDeg ? cur : best;
+    return String(cur.name || '').localeCompare(String(best.name || '')) < 0 ? cur : best;
+  }) : null;
   detailPersons.forEach(function(p){ p._fx=0; p._fy=0; });
   for (var i=0; i<n; i++) {
     for (var j=i+1; j<n; j++) {
@@ -544,6 +628,12 @@ function runDetailForce(w, h) {
       var f=repK/dist;
       pi._fx+=dx/dist*f; pi._fy+=dy/dist*f;
       pj._fx-=dx/dist*f; pj._fy-=dy/dist*f;
+      if (dist < minNodeGap) {
+        var push = (minNodeGap - dist) * collideK;
+        var cfx = (dx / dist) * push, cfy = (dy / dist) * push;
+        pi._fx += cfx; pi._fy += cfy;
+        pj._fx -= cfx; pj._fy -= cfy;
+      }
     }
   }
   detailEdges.forEach(function(e){
@@ -556,13 +646,46 @@ function runDetailForce(w, h) {
     sp._fx+=dx/dist*f; sp._fy+=dy/dist*f;
     dp._fx-=dx/dist*f; dp._fy-=dy/dist*f;
   });
+  if (centerSuspect) {
+    var neigh = detailPersons.filter(function(p) {
+      if (p.id === centerSuspect.id) return false;
+      return detailEdges.some(function(e) {
+        return (e.src === centerSuspect.id && e.dst === p.id) || (e.dst === centerSuspect.id && e.src === p.id);
+      });
+    });
+    for (var aIdx = 0; aIdx < neigh.length; aIdx++) {
+      for (var bIdx = aIdx + 1; bIdx < neigh.length; bIdx++) {
+        var n1 = neigh[aIdx], n2 = neigh[bIdx];
+        var v1x = n1._x - centerSuspect._x, v1y = n1._y - centerSuspect._y;
+        var v2x = n2._x - centerSuspect._x, v2y = n2._y - centerSuspect._y;
+        var d1 = Math.sqrt(v1x*v1x + v1y*v1y), d2 = Math.sqrt(v2x*v2x + v2y*v2y);
+        if (d1 < 0.01 || d2 < 0.01) continue;
+        var cosA = (v1x*v2x + v1y*v2y) / (d1*d2);
+        if (cosA < -0.92) {
+          var opp = Math.min(1, (-cosA - 0.92) / 0.08);
+          var tx = -v1y / d1, ty = v1x / d1;
+          var am = opp * 0.92;
+          n1._fx += tx * am; n1._fy += ty * am;
+          n2._fx -= tx * am; n2._fy -= ty * am;
+        }
+      }
+    }
+  }
   detailPersons.forEach(function(p){
     p._fx+=(cx-p._x)*grav; p._fy+=(cy-p._y)*grav;
+    if (centerSuspect && p.id === centerSuspect.id) {
+      p._fx += (cx - p._x) * 0.52;
+      p._fy += (cy - p._y) * 0.52;
+    }
     p._vx=(p._vx+p._fx)*damping; p._vy=(p._vy+p._fy)*damping;
     var v = Math.sqrt(p._vx*p._vx + p._vy*p._vy);
     if (v > vmax && v > 0) { p._vx *= vmax/v; p._vy *= vmax/v; }
     p._x=Math.max(pad,Math.min(w-pad, p._x+p._vx));
     p._y=Math.max(pad,Math.min(h-pad, p._y+p._vy));
+    if (centerSuspect && p.id === centerSuspect.id) {
+      p._x = cx; p._y = cy;
+      p._vx = 0; p._vy = 0;
+    }
   });
 }
 function drawDetailCanvas() {
