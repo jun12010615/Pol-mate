@@ -1,4 +1,43 @@
-/build/
+# ── Eclipse ──────────────────────────────────────────
+.metadata/
+.settings/
+.project
 .classpath
-.settings/org.eclipse.wst.common.project.facet.core.xml
-.classpath
+*.launch
+.factorypath
+RemoteSystemsTempFiles/
+
+# ── 빌드 산출물 ───────────────────────────────────────
+bin/
+build/
+target/
+*.class
+*.war
+*.ear
+*.jar
+!WEB-INF/lib/*.jar
+
+# ── Tomcat 배포 임시 파일 ─────────────────────────────
+wtpwebapps/
+.wtpwebapps/
+
+# ── 로그 ──────────────────────────────────────────────
+*.log
+logs/
+
+# ── OS 시스템 파일 ────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ── IntelliJ (혹시 팀원이 다른 IDE 쓸 경우 대비) ──────
+.idea/
+*.iml
+*.iws
+
+# ── 환경 설정 (보안) ──────────────────────────────────
+*.env
+application-local.properties
+
+# API 키 보안
+WEB-INF/config.properties
