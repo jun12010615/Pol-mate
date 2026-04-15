@@ -99,7 +99,7 @@
   max-width: 420px;
   /* padding: 0 0 32px;  <-- 이 줄을 지워주세요 (body로 이동) */
   animation: slideUp 0.28s ease both;
-  max-height: 85dvh; /* 모바일 대응을 위해 dvh로 변경 */
+  max-height: 96dvh; /* AI 상세 확인을 위해 높이 소폭 추가 확대 */
   display: flex;          /* 추가: 내부 요소 배치를 위해 */
   flex-direction: column; /* 추가: 세로 방향 배치 */
 }
@@ -447,7 +447,7 @@ function formatContradictionAnalyzeHtml(plain) {
     var line = lines[i];
     var tr = line.trim();
     var core = stripAnalyzeSectionNumberPrefix(tr);
-    var isTitle = (core === '시간순 정리된 사건 흐름' || core === '모순점 분석');
+    var isTitle = (core === '시간순 정리된 사건 흐름' || core === '진술자의 알리바이 요약' || core === '모순점 분석' || core === '추가 확인 사항');
     if (isTitle)
       parts.push('<span class="contra-analyze-section-title">' + esc(line) + '</span>');
     else
@@ -675,7 +675,7 @@ function renderDetail(d) {
   html +=
     '<div class="detail-section">' +
       '<div class="detail-label">AI 분석 결과</div>' +
-      '<div class="detail-value" style="max-height:200px;overflow-y:auto;">' + formatContradictionAnalyzeHtml(normalizeStatementLabels(d.aiResult)) + '</div>' +
+      '<div class="detail-value" style="max-height:400px;overflow-y:auto;">' + formatContradictionAnalyzeHtml(normalizeStatementLabels(d.aiResult)) + '</div>' +
     '</div>' +
     '<button class="btn-delete" onclick="deleteResult(' + d.resultId + ')">' +
       '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>' +

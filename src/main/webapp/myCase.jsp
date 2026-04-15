@@ -807,7 +807,7 @@ function normalizeStatementLabels(s){
   });
 }
 
-/** polmate_serv _pass1_prompt 소제목(시간순 정리된 사건 흐름 / 모순점 분석) 표시 — contradictionList.jsp와 동일 색 */
+/** polmate_serv _pass1_prompt 소제목(시간순 정리된 사건 흐름 / 진술자의 알리바이 요약 / 모순점 분석) 표시 — contradictionList.jsp와 동일 색 */
 function stripAnalyzeSectionNumberPrefix(trimmed){
   return String(trimmed||'').replace(/^\d+[\).]\s*/, '');
 }
@@ -820,7 +820,7 @@ function formatContradictionAnalyzeHtml(plain){
     var line=lines[i];
     var tr=line.trim();
     var core=stripAnalyzeSectionNumberPrefix(tr);
-    var isTitle=(core==='시간순 정리된 사건 흐름'||core==='모순점 분석');
+    var isTitle=(core==='시간순 정리된 사건 흐름'||core==='진술자의 알리바이 요약'||core==='모순점 분석'||core==='추가 확인 사항');
     if(isTitle)
       parts.push('<span class="contra-analyze-section-title">'+escHtml(line)+'</span>');
     else
@@ -854,7 +854,8 @@ function inferHasContradictionFromAiText(ai){
 function buildContraSavePayload(){
   var bodyEl=document.getElementById('contraPopupBody');
   var textSpan=bodyEl.querySelector('.contra-type-text');
-  var aiResult=textSpan?textSpan.textContent:(bodyEl?bodyEl.textContent:'');
+  // 저장 시 줄바꿈 보존: textContent는 <br>를 붙여버려 상세창에서 한 줄로 보일 수 있음
+  var aiResult=textSpan?(textSpan.innerText||textSpan.textContent):(bodyEl?(bodyEl.innerText||bodyEl.textContent):'');
   aiResult=normalizeStatementLabels(aiResult);
   var stmtNames=checkedDocs.map(function(id){
     var d=currentDocs.find(function(x){return x.id===id;});
@@ -864,9 +865,12 @@ function buildContraSavePayload(){
     var d=currentDocs.find(function(x){return x.id===id;});
     return d?(d.type||''):'';
   }).filter(Boolean).join(', ');
-  var hasContradiction=(typeof contraHasContradictionFromServer==='boolean')
-    ? contraHasContradictionFromServer
-    : inferHasContradictionFromAiText(aiResult);
+  // 저장 상태 불일치 방지:
+  // 서버 플래그가 false로 오더라도, 본문에 모순 서술이 있으면 true로 보수 판단
+  var inferred = inferHasContradictionFromAiText(aiResult);
+  var hasContradiction = (typeof contraHasContradictionFromServer==='boolean')
+    ? (contraHasContradictionFromServer || inferred)
+    : inferred;
   var caseId=currentCaseData?currentCaseData.id||'':'';
   return { aiResult:aiResult, stmtNames:stmtNames, stmtTypes:stmtTypes, hasContradiction:hasContradiction, caseId:caseId };
 }

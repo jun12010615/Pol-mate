@@ -668,10 +668,15 @@ function postContradictionResult(caseId, stmtName, stmtType, stmtText, aiResult,
   });
 }
 
-function finishWriteTranscriptContradictionSave(caseId, stmtType, stmtName, stmtText, aiResponse, ticket) {
+function finishWriteTranscriptContradictionSave(caseId, stmtType, stmtName, stmtText, aiResponse, ticket, serverHasContradiction) {
   if (ticket !== writeContraTicket) return;
   aiResponse = normalizeStatementLabels(aiResponse);
-  var hasContra = inferHasContradictionFromAiText(aiResponse);
+  // myCase.jsp와 동일 기준:
+  // 서버 플래그가 false여도 본문에 모순 서술이 있으면 true로 저장
+  var inferred = inferHasContradictionFromAiText(aiResponse);
+  var hasContra = (typeof serverHasContradiction === 'boolean')
+    ? (serverHasContradiction || inferred)
+    : inferred;
   postContradictionResult(caseId, stmtName || '', stmtType || '', stmtText, aiResponse, hasContra)
     .then(function(data) {
       if (ticket !== writeContraTicket) return;
