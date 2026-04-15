@@ -928,6 +928,68 @@ function normalizeStatus(s) {
   return 'unknown';
 }
 
+// 조서 선택 메타와 동일 실명이면 피의자·피해자 역할이 참고·목격보다 우선 (서버 polmate_serv 후처리와 동일 취지)
+var ROLE_PRIORITY_NUM = { suspect: 4, victim: 3, witness: 2, reference: 1 };
+function personNameCompactKey(name) {
+  return String(name || '').replace(/\s+/g, '').toLowerCase();
+}
+function transcriptRoleHintStronger(a, b) {
+  return (ROLE_PRIORITY_NUM[b] || 0) > (ROLE_PRIORITY_NUM[a] || 0) ? b : a;
+}
+function buildTranscriptRoleHintsFromChecked() {
+  var hints = {};
+  if (!Array.isArray(checkedTranscripts)) return hints;
+  checkedTranscripts.forEach(function(t) {
+    var nm = String(t.name || '').trim();
+    if (!nm) return;
+    var k = personNameCompactKey(nm);
+    var role = normalizeRole(t.type || '');
+    if (!hints[k]) hints[k] = role;
+    else hints[k] = transcriptRoleHintStronger(hints[k], role);
+  });
+  return hints;
+}
+function applyTranscriptRoleHintsToPersons(personArr) {
+  var hints = buildTranscriptRoleHintsFromChecked();
+  return personArr.map(function(p) {
+    var k = personNameCompactKey(p.name);
+    if (hints[k]) return { id: p.id, name: p.name, role: hints[k], memo: p.memo || '' };
+    return p;
+  });
+}
+function mergePersonsByCompactNameStrongestRole(personArr) {
+  var buckets = {};
+  personArr.forEach(function(p) {
+    var k = personNameCompactKey(p.name);
+    if (!k) return;
+    if (!buckets[k]) buckets[k] = [];
+    buckets[k].push(p);
+  });
+  var out = [];
+  Object.keys(buckets).forEach(function(k) {
+    var group = buckets[k];
+    if (group.length === 1) {
+      out.push(group[0]);
+      return;
+    }
+    var best = group.reduce(function(a, b) {
+      return (ROLE_PRIORITY_NUM[b.role] || 0) > (ROLE_PRIORITY_NUM[a.role] || 0) ? b : a;
+    });
+    var role = best.role;
+    var winners = group.filter(function(x) { return x.role === role; });
+    var canonical = winners.reduce(function(a, b) {
+      return String(b.name).trim().length > String(a.name).trim().length ? b : a;
+    }).name.trim();
+    var memos = [];
+    group.forEach(function(x) {
+      var m = String(x.memo || '').trim();
+      if (m && memos.indexOf(m) < 0) memos.push(m);
+    });
+    out.push({ id: uid(), name: canonical, role: role, memo: memos.join(' / ') });
+  });
+  return out;
+}
+
 function extractJsonFromRaw(raw) {
   if (!raw) return null;
 
@@ -1026,14 +1088,16 @@ function parseAndApplyAiResult(raw) {
         memo: String(p.memo || '').trim()
       };
     }).filter(function(p) { return p.name; }); // 이름 없는 인물 제외
-    parsedPersons = dedupePersons(parsedPersons); // 이름 중복 제거
+    parsedPersons = applyTranscriptRoleHintsToPersons(parsedPersons);
+    parsedPersons = mergePersonsByCompactNameStrongestRole(parsedPersons);
 
-    // 엣지: src/dst 이름 → id 변환 + relType/status 정규화
+    // 엣지: src/dst 이름 → id 변환 + relType/status 정규화 (이름 공백 무시 매칭)
     var parsedEdges = rawEdges.map(function(e) {
       var srcName = String(e.src || e.srcName || '').trim();
       var dstName = String(e.dst || e.dstName || '').trim();
-      var sp = parsedPersons.find(function(p) { return p.name === srcName; });
-      var dp = parsedPersons.find(function(p) { return p.name === dstName; });
+      var sk = personNameCompactKey(srcName), dk = personNameCompactKey(dstName);
+      var sp = parsedPersons.find(function(p) { return personNameCompactKey(p.name) === sk; });
+      var dp = parsedPersons.find(function(p) { return personNameCompactKey(p.name) === dk; });
       if (!sp || !dp) return null;
       return {
         id:      uid(),
