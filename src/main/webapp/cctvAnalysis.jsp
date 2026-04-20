@@ -5,7 +5,7 @@
     if (loginUser == null) { response.sendRedirect("login.jsp"); return; }
     String userInitial = (userName != null && userName.length() > 0) ? String.valueOf(userName.charAt(0)) : "경";
 
-    String polMateServBaseUrl = "http://113.198.238.110:5001";
+    String polMateServBaseUrl = "http://113.198.238.111:5001";
     /*
     try {
         java.util.Properties props = new java.util.Properties();
@@ -303,7 +303,7 @@
 </div>
 
 <script>
-var PYTHON_SERVER = 'http://113.198.238.110:5001';
+var PYTHON_SERVER = 'http://113.198.238.111:5001';
 var videoFiles = []; // { file, id, status, jobId, results, pollTimer }
 var uidSeq = 0;
 
