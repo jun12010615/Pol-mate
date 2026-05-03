@@ -58,7 +58,12 @@ public class LoginServlet extends HttpServlet {
                     session.setAttribute("userPhone", dbPhone);
                     
                     session.setMaxInactiveInterval(60 * 60); 
-                    response.sendRedirect("main.jsp");
+                    String redirectTo = request.getParameter("redirectTo");
+                    if ("desktop".equals(redirectTo)) {
+                        response.sendRedirect("desktop/main.jsp");
+                    } else {
+                        response.sendRedirect("main.jsp");
+                    }
                 } else {
                     // 비밀번호 불일치
                     request.setAttribute("loginError", "아이디 또는 비밀번호가 올바르지 않습니다.");
