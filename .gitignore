@@ -41,3 +41,19 @@ application-local.properties
 
 # API 키 보안
 WEB-INF/config.properties
+
+# ── AI/Python 관련 (Pol-mate 특화) ──────────────────
+**/__pycache__/          # 파이썬 실행 시 생성되는 캐시 폴더
+*.pyc                    # 파이썬 컴파일 파일
+.ipynb_checkpoints/      # 주피터 노트북 체크포인트
+
+# 모델 및 대용량 데이터 파일
+*.pt                     # license_plate_detector.pt 등 모델 파일
+*.pth                    # PyTorch 가중치 파일
+ocr_engine/saved_models/ # 학습된 모델 저장 폴더
+ocr_engine/log_database/ # 로그 데이터베이스 관련
+
+# ── 가상환경 (Python Virtual Environment) ──────────
+venv/
+.venv/
+env/
