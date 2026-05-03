@@ -41,3 +41,4 @@ application-local.properties
 
 # API 키 보안
 WEB-INF/config.properties
+ocr_engine

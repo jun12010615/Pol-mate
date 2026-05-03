@@ -1,0 +1,567 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="Servlet.DBConnectionMgr, java.sql.*" %>
+<%
+String loginUser = (String) session.getAttribute("loginUser");
+String userName  = (String) session.getAttribute("userName");
+if (loginUser == null) { response.sendRedirect(request.getContextPath() + "/desktop/login.jsp"); return; }
+request.setAttribute("currentPage", "transcript");
+request.setAttribute("breadcrumb",  new String[]{"POL-MATE", "&#49688;&#49324; &#46020;&#44396;", "&#51652;&#49696; &#51109;&#49436; &#51089;&#49457;"});
+
+String initCaseId = request.getParameter("caseId") != null ? request.getParameter("caseId") : "";
+String initTranscriptId = request.getParameter("transcriptId") != null ? request.getParameter("transcriptId") : "";
+
+// 사건 드롭다운용
+java.util.List<String[]> caseList = new java.util.ArrayList<>();
+DBConnectionMgr _mgr = DBConnectionMgr.getInstance();
+Connection _conn = null; PreparedStatement _ps = null; ResultSet _rs = null;
+try {
+    _conn = _mgr.getConnection();
+    _ps = _conn.prepareStatement(
+        "SELECT c.case_id, c.case_name FROM cases c " +
+        "WHERE c.dept_id = (SELECT me.dept_id FROM users me WHERE me.user_id = ?) " +
+        "ORDER BY c.updated_at DESC");
+    _ps.setString(1, loginUser);
+    _rs = _ps.executeQuery();
+    while (_rs.next()) caseList.add(new String[]{_rs.getString("case_id"), _rs.getString("case_name")});
+} catch (Exception _e) { _e.printStackTrace(); }
+finally { _mgr.freeConnection(_conn, _ps, _rs); }
+%>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POL-MATE | &#51652;&#49696; &#51109;&#49436; &#51089;&#49457;</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="<%= request.getContextPath() %>/css/polmate.css">
+<script>var _ctx = '<%= request.getContextPath() %>';</script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: #f4f6fb; color: #1a1a2e; -webkit-font-smoothing: antialiased; }
+
+.pm-page { padding: 28px 32px 48px; max-width: 1440px; margin: 0 auto; }
+
+.page-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 24px; }
+.page-eyebrow { font-size: 11px; color: #9ca3af; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 4px; }
+.page-title { font-size: 22px; font-weight: 500; }
+.header-actions { display: flex; gap: 8px; }
+.btn-secondary {
+    padding: 9px 16px; background: #fff; color: #1a1a2e;
+    border: 1.5px solid #e2e5ee; border-radius: 10px;
+    font-size: 13px; font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer; transition: border-color 0.13s, background 0.13s;
+}
+.btn-secondary:hover { border-color: #0d1a33; background: #f4f6fb; }
+.btn-primary {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 18px; background: #0d1a33; color: #fff;
+    border: none; border-radius: 10px;
+    font-size: 13px; font-family: 'Noto Sans KR', sans-serif; font-weight: 500;
+    cursor: pointer; transition: background 0.13s;
+}
+.btn-primary:hover { background: #1a2744; }
+.btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
+
+.main-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 20px; }
+
+.sec-label {
+    font-size: 11px; font-weight: 500; color: #6b7280;
+    text-transform: uppercase; letter-spacing: 0.8px;
+    display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: #e2e5ee; }
+.sec-label-action { font-size: 11px; color: #9ca3af; font-weight: 400; text-transform: none; letter-spacing: 0; margin-left: auto; }
+
+/* meta bar */
+.meta-bar {
+    background: #fff; border: 1px solid #e2e5ee; border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 16px;
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;
+}
+.meta-field label { display: block; font-size: 10px; font-weight: 500; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 5px; }
+.meta-select, .meta-input {
+    width: 100%; padding: 8px 10px;
+    border: 1.5px solid #e2e5ee; border-radius: 8px;
+    font-size: 13px; font-family: 'Noto Sans KR', sans-serif; color: #1a1a2e;
+    background: #f4f6fb; outline: none;
+    transition: border-color 0.15s, background 0.15s;
+}
+.meta-select:focus, .meta-input:focus { border-color: #0d1a33; background: #fff; box-shadow: 0 0 0 3px rgba(13,26,51,0.07); }
+
+/* recorder card */
+.recorder-card {
+    background: #0d1a33; color: #fff;
+    border-radius: 14px; padding: 20px 22px;
+    margin-bottom: 14px; position: relative; overflow: hidden;
+}
+.recorder-card::before {
+    content: ''; position: absolute; inset: 0; opacity: 0.05;
+    background: radial-gradient(circle at 20% 100%, #f0c040 0%, transparent 55%);
+}
+.recorder-inner { position: relative; display: flex; gap: 16px; align-items: center; }
+.rec-btn {
+    width: 60px; height: 60px; border-radius: 50%; flex-shrink: 0;
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+}
+.rec-btn.idle { background: #f0c040; color: #0d1a33; box-shadow: 0 0 0 4px rgba(240,192,64,0.2); }
+.rec-btn.recording { background: #dc2626; color: #fff; box-shadow: 0 0 0 8px rgba(220,38,38,0.15); animation: recPulse 1.2s infinite; }
+@keyframes recPulse { 0%,100%{box-shadow:0 0 0 8px rgba(220,38,38,0.15)} 50%{box-shadow:0 0 0 14px rgba(220,38,38,0.05)} }
+.rec-info { flex: 1; }
+.rec-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+.rec-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 10px; }
+.waveform { display: flex; gap: 2px; height: 18px; align-items: center; }
+.wave-bar { width: 2px; border-radius: 1px; background: rgba(255,255,255,0.2); transition: height 0.1s; }
+.wave-bar.active { background: #f0c040; }
+.rec-timer { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700; color: #f0c040; }
+.upload-btn {
+    padding: 7px 14px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px; color: rgba(255,255,255,0.7); font-size: 12px;
+    font-family: 'Noto Sans KR', sans-serif; cursor: pointer; display: flex; align-items: center; gap: 6px;
+    transition: background 0.13s;
+}
+.upload-btn:hover { background: rgba(255,255,255,0.18); }
+
+/* stt progress */
+.stt-progress-card {
+    background: #fff; border: 1px solid #e2e5ee; border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 14px;
+}
+.stt-icon { width: 32px; height: 32px; border-radius: 8px; background: #eff6ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.stt-bar-wrap { flex: 1; }
+.stt-bar-label { font-size: 12px; font-weight: 500; color: #1a1a2e; margin-bottom: 6px; }
+.stt-bar-track { height: 6px; background: #f0f2f8; border-radius: 3px; overflow: hidden; }
+.stt-bar-fill { height: 100%; background: #0d1a33; border-radius: 3px; transition: width 0.4s; }
+.stt-pct { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700; color: #0d1a33; flex-shrink: 0; }
+
+/* stt segments */
+.segment-list { display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto; }
+.segment-card {
+    background: #fff; border: 1px solid #e2e5ee; border-radius: 10px;
+    padding: 12px 14px;
+    display: grid; grid-template-columns: 44px 80px 1fr; gap: 10px; align-items: flex-start;
+    cursor: pointer; transition: border-color 0.13s;
+}
+.segment-card:hover { border-color: #0d1a33; }
+.segment-card.flagged { border-left: 3px solid #f59e0b; padding-left: 11px; }
+.seg-time { font-size: 10px; font-family: 'Space Grotesk', sans-serif; color: #9ca3af; padding-top: 2px; }
+.seg-spk {
+    display: inline-flex; align-items: center; font-size: 10px; font-weight: 500;
+    padding: 3px 8px; border-radius: 20px; align-self: flex-start;
+}
+.seg-spk.investigator { background: #eff6ff; color: #1e40af; }
+.seg-spk.suspect { background: #f4f6fb; color: #6b7280; }
+.seg-text { font-size: 13px; color: #1a1a2e; line-height: 1.7; }
+.flag-note { font-size: 10px; color: #92400e; font-weight: 500; margin-left: 6px; }
+
+/* editor */
+.editor-card { background: #fff; border: 1px solid #e2e5ee; border-radius: 14px; overflow: hidden; }
+.editor-toolbar {
+    padding: 10px 14px; border-bottom: 1px solid #e2e5ee;
+    display: flex; gap: 4px; align-items: center;
+}
+.tb-btn {
+    width: 28px; height: 28px; border-radius: 6px; border: none;
+    cursor: pointer; background: transparent; font-size: 12px; font-weight: 600;
+    color: #6b7280; transition: background 0.13s, color 0.13s;
+}
+.tb-btn:hover { background: #f0f2f8; color: #1a1a2e; }
+.tb-divider { width: 1px; height: 18px; background: #e2e5ee; margin: 0 4px; }
+.tb-text-btn {
+    padding: 0 10px; height: 28px; border-radius: 6px; border: none;
+    cursor: pointer; background: transparent; font-size: 11px; color: #6b7280;
+    font-family: 'Noto Sans KR', sans-serif; transition: background 0.13s;
+}
+.tb-text-btn:hover { background: #f0f2f8; }
+.char-count { font-size: 11px; color: #9ca3af; margin-left: auto; }
+.editor-body {
+    padding: 20px; font-size: 13px; line-height: 1.85; color: #1a1a2e;
+    min-height: 520px; outline: none;
+}
+.editor-body:empty::before { content: attr(data-placeholder); color: #9ca3af; }
+.editor-section-title { font-weight: 500; margin-bottom: 6px; margin-top: 16px; }
+.editor-section-title:first-child { margin-top: 0; }
+.highlight { background: rgba(240,192,64,0.25); padding: 0 3px; border-radius: 2px; }
+
+.toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: #1a2744; color: #fff; padding: 10px 22px; border-radius: 10px;
+    font-size: 13px; font-family: 'Noto Sans KR', sans-serif;
+    opacity: 0; transition: all 0.25s; z-index: 500;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 1100px) { .main-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="pm-layout">
+
+<%@ include file="sidebar.jsp" %>
+<%@ include file="appbar.jsp" %>
+
+<main class="pm-page">
+    <div class="page-header">
+        <div>
+            <div class="page-eyebrow">&#49688;&#49324; &#46020;&#44396; &middot; &#51652;&#49696; &#51109;&#49436; &#51089;&#49457;</div>
+            <div class="page-title" id="pageTitle">&#49352; &#51109;&#49436;</div>
+        </div>
+        <div class="header-actions">
+            <button class="btn-secondary" onclick="saveDraft()">&#51076;&#49884; &#51200;&#51109;</button>
+            <button class="btn-primary" id="btnConfirm" onclick="confirmSave()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                &#51109;&#49436; &#54869;&#51221;
+            </button>
+        </div>
+    </div>
+
+    <div class="meta-bar">
+        <div class="meta-field">
+            <label>&#49324;&#44148; &#49440;&#53469; <span style="color:#dc2626">*</span></label>
+            <select class="meta-select" id="selCase">
+                <option value="">-- &#49324;&#44148; &#49440;&#53469; --</option>
+                <% for (String[] c : caseList) { %>
+                <option value="<%= c[0] %>" <%= c[0].equals(initCaseId) ? "selected" : "" %>>
+                    <%= c[0] %> &middot; <%= c[1] %>
+                </option>
+                <% } %>
+            </select>
+        </div>
+        <div class="meta-field">
+            <label>&#51652;&#49696; &#51333;&#47448;</label>
+            <select class="meta-select" id="selStmtType">
+                <option value="">-- &#49440;&#53469; --</option>
+                <option>1&#52264; &#51652;&#49696;</option>
+                <option>2&#52264; &#51652;&#49696;</option>
+                <option>3&#52264; &#51652;&#49696;</option>
+                <option>&#48372;&#51613; &#51652;&#49696;</option>
+                <option>&#54788;&#51109; &#51652;&#49696;</option>
+            </select>
+        </div>
+        <div class="meta-field">
+            <label>&#51652;&#49696;&#51064; &#49457;&#47749;</label>
+            <input type="text" class="meta-input" id="inputStmtName" placeholder="&#49457;&#47749; &#51077;&#47141;">
+        </div>
+    </div>
+
+    <div class="main-grid">
+
+        <div>
+            <div class="sec-label">&#51020;&#49457; &#51077;&#47141; (STT)</div>
+
+            <div class="recorder-card">
+                <div class="recorder-inner">
+                    <button class="rec-btn idle" id="recBtn" onclick="toggleRecord()">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                            <line x1="12" y1="19" x2="12" y2="23"/>
+                        </svg>
+                    </button>
+                    <div class="rec-info">
+                        <div class="rec-title" id="recTitle">&#45085;&#51020; &#49884;&#51089;</div>
+                        <div class="rec-sub" id="recSub">&#47560;&#51060;&#53356; &#48260;&#53948;&#51012; &#45736;&#47084; &#51652;&#49696;&#47484; &#45085;&#51020;&#54616;&#49464;&#50836;</div>
+                        <div class="waveform" id="waveform">
+                            <% for (int wi = 0; wi < 48; wi++) { %><div class="wave-bar" style="height:<%= (Math.random() > 0.5 ? 20 : 10) %>%"></div><% } %>
+                        </div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+                        <div class="rec-timer" id="recTimer">00:00</div>
+                        <label class="upload-btn">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            &#54028;&#51068; &#50629;&#47196;&#46300;
+                            <input type="file" id="audioFile" accept=".mp3,.wav,.m4a,.ogg,.flac" style="display:none" onchange="uploadAudio(this)">
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stt-progress-card" id="sttProgressCard" style="display:none;">
+                <div class="stt-icon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <div class="stt-bar-wrap">
+                    <div class="stt-bar-label" id="sttLabel">&#51020;&#49457; &#47200;&#53581;&#49828;&#53944; &#48320;&#54872; &#51473;</div>
+                    <div class="stt-bar-track"><div class="stt-bar-fill" id="sttFill" style="width:0%"></div></div>
+                </div>
+                <div class="stt-pct" id="sttPct">0%</div>
+            </div>
+
+            <div class="sec-label">STT &#49464;&#44536;&#47544;&#53944;<span class="sec-label-action" id="segCount"></span></div>
+            <div class="segment-list" id="segmentList">
+                <div style="padding:24px;text-align:center;color:#9ca3af;font-size:13px;">
+                    &#45085;&#51020; &#46610;&#45716; &#54028;&#51068; &#50629;&#47196;&#46300; &#54980; &#49464;&#44536;&#47544;&#53944;&#44032; &#54364;&#49884;&#46121;&#45768;&#45796;
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="sec-label">
+                &#51109;&#49436; &#48376;&#47928; &#54200;&#51665;
+                <span class="sec-label-action" id="charCountLabel">0 / 5,000&#51088;</span>
+            </div>
+            <div class="editor-card">
+                <div class="editor-toolbar">
+                    <button class="tb-btn" onclick="document.execCommand('bold')" title="&#44417;&#44160;"><b>B</b></button>
+                    <button class="tb-btn" onclick="document.execCommand('italic')" title="&#44592;&#50872;&#44592;"><i>I</i></button>
+                    <button class="tb-btn" onclick="document.execCommand('underline')" title="&#48128;&#51904;"><u>U</u></button>
+                    <div class="tb-divider"></div>
+                    <button class="tb-text-btn" onclick="applyTemplate()">&#49436;&#49885; &#51088;&#46041; &#51201;&#50857;</button>
+                    <button class="tb-text-btn" onclick="insertSttText()">STT &#47928;&#48376; &#49275;&#51077;</button>
+                </div>
+                <div class="editor-body" id="editor"
+                     contenteditable="true"
+                     data-placeholder="&#51109;&#49436; &#45236;&#50857;&#51012; &#51077;&#47141;&#54616;&#49464;&#50836;. STT &#48320;&#54872; &#54980; [STT &#47928;&#48124; &#49275;&#51077;] &#48264;&#53948;&#51012; &#45348;&#47476;&#47732; &#51652;&#49696; &#45236;&#50857;&#51060; &#51088;&#46041; &#49275;&#51077;&#46121;&#45768;&#45796;."
+                     oninput="updateCharCount()"></div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var _isRecording = false;
+var _recTimer = null;
+var _recSeconds = 0;
+var _sttText = '';
+var _mediaRecorder = null;
+var _audioChunks = [];
+var _initCaseId = '<%= initCaseId %>';
+var _initTranscriptId = '<%= initTranscriptId %>';
+
+if (_initTranscriptId) {
+    fetch(_ctx + '/caseApi?action=transcriptText&transcriptId=' + _initTranscriptId, {credentials: 'same-origin'})
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.text) {
+                document.getElementById('editor').innerText = d.text;
+                updateCharCount();
+                document.getElementById('pageTitle').textContent = '&#51109;&#49436; &#54869;&#51064;';
+            }
+        }).catch(function() {});
+}
+
+function toggleRecord() {
+    if (!_isRecording) startRecord(); else stopRecord();
+}
+
+function startRecord() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showToast('&#47560;&#51060;&#53356; &#51217;&#44540; &#51216;&#54200;&#51060; &#54596;&#50836;&#54633;&#45768;&#45796;.');
+        return;
+    }
+    navigator.mediaDevices.getUserMedia({audio: true}).then(function(stream) {
+        _audioChunks = [];
+        _mediaRecorder = new MediaRecorder(stream);
+        _mediaRecorder.ondataavailable = function(e) { _audioChunks.push(e.data); };
+        _mediaRecorder.onstop = function() {
+            var blob = new Blob(_audioChunks, {type: 'audio/webm'});
+            sendAudioBlob(blob);
+        };
+        _mediaRecorder.start();
+        _isRecording = true;
+        document.getElementById('recBtn').className = 'rec-btn recording';
+        document.getElementById('recTitle').textContent = '&#45085;&#51020; &#51473;...';
+        document.getElementById('recSub').textContent = '&#48260;&#53948;&#51012; &#45716;&#47084; &#45085;&#51020;&#51012; &#51333;&#47308;&#54616;&#49464;&#50836;';
+        animateWave(true);
+        _recSeconds = 0;
+        _recTimer = setInterval(function() {
+            _recSeconds++;
+            var m = String(Math.floor(_recSeconds/60)).padStart(2,'0');
+            var s = String(_recSeconds%60).padStart(2,'0');
+            document.getElementById('recTimer').textContent = m + ':' + s;
+        }, 1000);
+    }).catch(function() { showToast('&#47560;&#51060;&#53356;&#47484; &#54876;&#49457;&#54624; &#49688; &#50630;&#49845;&#45768;&#45796;.'); });
+}
+
+function stopRecord() {
+    if (_mediaRecorder) _mediaRecorder.stop();
+    _isRecording = false;
+    clearInterval(_recTimer);
+    document.getElementById('recBtn').className = 'rec-btn idle';
+    document.getElementById('recTitle').textContent = '&#45085;&#51020; &#50756;&#47308;';
+    document.getElementById('recSub').textContent = 'STT &#48320;&#54872; &#51473;...';
+    animateWave(false);
+}
+
+function animateWave(active) {
+    var bars = document.querySelectorAll('.wave-bar');
+    if (active) {
+        bars.forEach(function(b, i) {
+            b.classList.toggle('active', i < 35);
+            if (active) b.style.height = (Math.random() * 80 + 20) + '%';
+        });
+    } else {
+        bars.forEach(function(b) { b.classList.remove('active'); b.style.height = '20%'; });
+    }
+}
+
+function uploadAudio(input) {
+    if (!input.files || !input.files[0]) return;
+    sendAudioBlob(input.files[0]);
+}
+
+function sendAudioBlob(blob) {
+    var fd = new FormData();
+    fd.append('audioFile', blob, 'recording.webm');
+    document.getElementById('sttProgressCard').style.display = 'flex';
+    animateSttBar(0);
+
+    var progress = 0;
+    var interval = setInterval(function() {
+        progress = Math.min(progress + 5, 85);
+        animateSttBar(progress);
+    }, 300);
+
+    fetch(_ctx + '/stt', {method: 'POST', body: fd, credentials: 'same-origin'})
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            clearInterval(interval);
+            animateSttBar(100);
+            setTimeout(function() {
+                document.getElementById('sttProgressCard').style.display = 'none';
+            }, 800);
+            if (d.text) {
+                _sttText = d.text;
+                renderSegments(d.text);
+                document.getElementById('recTitle').textContent = '&#45085;&#51020; &#50756;&#47308;';
+                document.getElementById('recSub').textContent = '&#48320;&#54872; &#50756;&#47308; &middot; &#50500;&#47000; &#49464;&#44536;&#47544;&#53944;&#47484; &#51312;&#49436;&#50640; &#49275;&#51077;&#54616;&#49464;&#50836;';
+            } else {
+                showToast(d.error || 'STT &#48320;&#54872; &#49892;&#54364;&#54588;&#49845;&#45768;&#45796;.');
+            }
+        }).catch(function() {
+            clearInterval(interval);
+            document.getElementById('sttProgressCard').style.display = 'none';
+            showToast('STT &#50836;&#52397; &#51473; &#50724;&#47448;&#44032; &#48156;&#49373;&#54588;&#49845;&#45768;&#45796;.');
+        });
+}
+
+function animateSttBar(pct) {
+    document.getElementById('sttFill').style.width = pct + '%';
+    document.getElementById('sttPct').textContent = pct + '%';
+    if (pct >= 100) document.getElementById('sttLabel').textContent = '&#48320;&#54872; &#50756;&#47308;';
+}
+
+function renderSegments(text) {
+    var sentences = text.match(/[^.!?]+[.!?]*/g) || [text];
+    var html = sentences.map(function(s, i) {
+        var spk = i % 3 === 0 ? 'investigator' : 'suspect';
+        var spkLabel = spk === 'investigator' ? '&#51109;&#49436;&#44288;' : '&#54588;&#51032;&#51088;';
+        var min = String(Math.floor(i * 12 / 60)).padStart(2,'0');
+        var sec = String((i * 12) % 60).padStart(2,'0');
+        return '<div class="segment-card" onclick="appendToEditor(this.dataset.text)" data-text="' + s.trim().replace(/"/g,'&quot;') + '">'
+            + '<div class="seg-time">' + min + ':' + sec + '</div>'
+            + '<div class="seg-spk ' + spk + '">' + spkLabel + '</div>'
+            + '<div class="seg-text">' + s.trim() + '</div>'
+            + '</div>';
+    }).join('');
+    document.getElementById('segmentList').innerHTML = html;
+    document.getElementById('segCount').textContent = sentences.length + '&#44060; &#49464;&#44536;&#47164;&#53944;';
+}
+
+function appendToEditor(text) {
+    var editor = document.getElementById('editor');
+    editor.focus();
+    document.execCommand('insertText', false, text + ' ');
+    updateCharCount();
+}
+
+function insertSttText() {
+    if (!_sttText) { showToast('STT &#48320;&#54872; &#44208;&#44284;&#44032; &#50630;&#49845;&#45768;&#45796;.'); return; }
+    document.getElementById('editor').focus();
+    document.execCommand('insertText', false, '\n' + _sttText);
+    updateCharCount();
+}
+
+function applyTemplate() {
+    var caseId = document.getElementById('selCase').value;
+    var stmtName = document.getElementById('inputStmtName').value || '(&#49457;&#47749;)';
+    var stmtType = document.getElementById('selStmtType').value || '1&#52264; &#51652;&#49696;';
+    var today = new Date().toLocaleDateString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit'});
+    var template = '1. &#51064;&#51201;&#49324;&#54637;\n'
+        + '&#49457;&#47749;: ' + stmtName + '\n'
+        + '&#49324;&#44148;&#48264;&#54840;: ' + (caseId || '(&#49440;&#53469; &#54596;&#50836;)') + '\n'
+        + '&#51652;&#49696; &#51068;&#49884;: ' + today + '\n\n'
+        + '2. &#51652;&#49696; &#45236;&#50857;\n';
+    document.getElementById('editor').focus();
+    document.execCommand('selectAll');
+    document.execCommand('insertText', false, template);
+    updateCharCount();
+}
+
+function updateCharCount() {
+    var text = document.getElementById('editor').innerText || '';
+    var len = text.length;
+    document.getElementById('charCountLabel').textContent = len.toLocaleString() + ' / 5,000&#51088;';
+    document.getElementById('charCountLabel').style.color = len > 5000 ? '#dc2626' : '#9ca3af';
+}
+
+function saveDraft() {
+    var editor = document.getElementById('editor');
+    var text = editor.innerText.trim();
+    if (!text) { showToast('&#51109;&#49436; &#45236;&#50857;&#51012; &#51077;&#47141;&#54644; &#51452;&#49464;&#50836;.'); return; }
+    localStorage.setItem('draft_transcript', text);
+    showToast('&#51076;&#49884; &#51200;&#51109;&#46104;&#50632;&#49845;&#45768;&#45796;.');
+}
+
+function confirmSave() {
+    var caseId = document.getElementById('selCase').value;
+    var text = document.getElementById('editor').innerText.trim();
+    if (!caseId) { showToast('&#49324;&#44148;&#51012; &#49440;&#53469;&#54644; &#51452;&#49464;&#50836;.'); return; }
+    if (!text) { showToast('&#51109;&#49436; &#45236;&#50857;&#51012; &#51077;&#47141;&#54644; &#51452;&#49464;&#50836;.'); return; }
+
+    var btn = document.getElementById('btnConfirm');
+    btn.disabled = true;
+    btn.textContent = '&#51200;&#51109; &#51473;...';
+
+    var fd = new FormData();
+    fd.append('action', 'transcriptSave');
+    fd.append('caseId', caseId);
+    fd.append('stmtType', document.getElementById('selStmtType').value);
+    fd.append('stmtName', document.getElementById('inputStmtName').value);
+    fd.append('originalText', text);
+
+    fetch(_ctx + '/caseApi', {method: 'POST', body: fd, credentials: 'same-origin'})
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            btn.disabled = false;
+            btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> &#51109;&#49436; &#54869;&#51221;';
+            if (d.success || d.transcriptId) {
+                showToast('&#51109;&#49436;&#44032; &#51200;&#51109;&#46104;&#50632;&#49845;&#45768;&#45796;.');
+                setTimeout(function() {
+                    location.href = _ctx + '/desktop/myCase.jsp?caseId=' + encodeURIComponent(caseId);
+                }, 1200);
+            } else {
+                showToast(d.message || '&#51200;&#51109; &#51473; &#50724;&#47448;&#44032; &#48156;&#49373;&#54588;&#49845;&#45768;&#45796;.');
+            }
+        }).catch(function() {
+            btn.disabled = false;
+            btn.textContent = '&#51109;&#49436; &#54869;&#51221;';
+            showToast('&#51200;&#51329; &#51473; &#50724;&#47448;&#44032; &#48156;&#49373;&#54588;&#49845;&#45768;&#45796;.');
+        });
+}
+
+function showToast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+var _draft = localStorage.getItem('draft_transcript');
+if (_draft && !_initTranscriptId) {
+    if (confirm('&#51076;&#49884; &#51200;&#51329;&#46108; &#51109;&#49436;&#44032; &#51080;&#49845;&#45768;&#45796;. &#48520;&#47084;&#50724;&#49884;&#44192;&#49845;&#45768;&#44992;?')) {
+        document.getElementById('editor').innerText = _draft;
+        updateCharCount();
+    }
+}
+</script>
+</body>
+</html>
