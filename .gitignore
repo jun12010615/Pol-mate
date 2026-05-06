@@ -57,4 +57,4 @@ ocr_engine/log_database/ # 로그 데이터베이스 관련
 venv/
 .venv/
 env/
-ocr_engine
+ocr_engine/

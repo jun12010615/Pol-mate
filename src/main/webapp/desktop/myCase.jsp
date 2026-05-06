@@ -189,6 +189,7 @@ html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: 
 <div class="pm-layout">
 
 <%@ include file="sidebar.jsp" %>
+<div class="pm-content">
 <%@ include file="appbar.jsp" %>
 
 <main class="pm-page">
@@ -201,7 +202,7 @@ html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: 
         <div class="filter-chips">
             <button class="chip active" data-status="all" onclick="setFilter(this)">&#51204;&#52404;</button>
             <button class="chip" data-status="&#51652;&#54665;&#51473;" onclick="setFilter(this)">&#51652;&#54665;&#51473;</button>
-            <button class="chip" data-status="&#47784;&#49692;&#53460;&#51648;" onclick="setFilter(this)">&#47784;&#49692;&#53468;&#51648;</button>
+            <button class="chip" data-status="&#47784;&#49692;&#53456;&#51648;" onclick="setFilter(this)">&#47784;&#49692;&#53456;&#51648;</button>
             <button class="chip" data-status="&#44160;&#53664;&#54596;&#50836;" onclick="setFilter(this)">&#44160;&#53664;&#54596;&#50836;</button>
             <button class="chip" data-status="&#50756;&#47308;" onclick="setFilter(this)">&#50756;&#47308;</button>
         </div>
@@ -217,7 +218,7 @@ html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: 
             <span class="th">&#49324;&#44148;&#47749;</span>
             <span class="th">&#54588;&#51032;&#51088;</span>
             <span class="th">&#49345;&#53468;</span>
-            <span class="th">&#51109;&#49436;</span>
+            <span class="th">&#51312;&#49436;</span>
             <span class="th">&#47784;&#49692;</span>
             <span class="th"></span>
         </div>
@@ -246,7 +247,7 @@ html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: 
     <div class="detail-body">
         <div class="detail-tabs">
             <button class="dtab active" onclick="switchTab('info')">&#44592;&#48376; &#51221;&#48372;</button>
-            <button class="dtab" onclick="switchTab('docs')">&#51109;&#49436; &#47785;&#47197;</button>
+            <button class="dtab" onclick="switchTab('docs')">&#51312;&#49436; &#47785;&#47197;</button>
         </div>
         <div class="tab-pane active" id="tabInfo">
             <div class="info-grid" id="dpInfoGrid"></div>
@@ -261,11 +262,11 @@ html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: 
             </div>
         </div>
         <div class="tab-pane" id="tabDocs">
-            <div id="dpDocList"><div class="empty-state">&#51109;&#49436;&#44032; &#50630;&#49845;&#45768;&#45796;</div></div>
+            <div id="dpDocList"><div class="empty-state">&#51312;&#49436;&#44032; &#50630;&#49845;&#45768;&#45796;</div></div>
             <div style="margin-top:16px">
                 <a id="btnNewDoc" href="#" class="btn-new" style="display:inline-flex;text-decoration:none;">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    &#51109;&#49436; &#51089;&#49457;
+                    &#51312;&#49436; &#51089;&#49457;
                 </a>
             </div>
         </div>
@@ -307,7 +308,7 @@ var _currentCaseId = null;
 
 function badgeClass(status) {
     if (status === '&#51652;&#54665;&#51473;') return 'b-jinhaeng';
-    if (status === '&#47784;&#49692;&#53460;&#51648;') return 'b-moosun';
+    if (status === '&#47784;&#49692;&#53456;&#51648;') return 'b-moosun';
     if (status === '&#44160;&#53664;&#54596;&#50836;') return 'b-geomto';
     return 'b-wanryo';
 }
@@ -393,7 +394,7 @@ function openDetail(caseId) {
                 ['&#45817;&#45813; &#49688;&#49324;&#44288;', (c.rank || '') + ' ' + (c.detective || '-')],
                 ['&#54861;&#49345; &#48512;&#49436;', c.dept_name || '-'],
                 ['&#46321;&#47197;&#51068;', c.date || '-'],
-                ['&#51109;&#49436; &#49688;', (c.docs || 0) + '&#44148;']
+                ['&#51312;&#49436; &#49688;', (c.docs || 0) + '&#44148;']
             ].map(function(pair) {
                 return '<div class="info-item"><div class="info-label">' + pair[0] + '</div><div class="info-value">' + pair[1] + '</div></div>';
             }).join('');
@@ -401,14 +402,14 @@ function openDetail(caseId) {
             var docs = d.documents || c.documents || [];
             var docEl = document.getElementById('dpDocList');
             if (docs.length === 0) {
-                docEl.innerHTML = '<div class="empty-state">&#51109;&#49436;&#44032; &#50630;&#49845;&#45768;&#45796;</div>';
+                docEl.innerHTML = '<div class="empty-state">&#51312;&#49436;&#44032; &#50630;&#49845;&#45768;&#45796;</div>';
             } else {
                 docEl.innerHTML = docs.map(function(doc) {
                     var contra = doc.has_contradiction ? 'has-contra' : '';
                     return '<a href="' + _ctx + '/desktop/writeTranscript.jsp?transcriptId=' + (doc.id||'') + '" class="doc-item ' + contra + '">'
                         + '<div class="doc-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>'
-                        + '<div style="flex:1"><div class="doc-name">' + (doc.subject || doc.title || '&#51109;&#49436; #' + doc.id) + '</div>'
-                        + '<div class="doc-meta">' + (doc.created_at || '') + (doc.has_contradiction ? ' &nbsp;&#9656; &#47784;&#49692; &#53460;&#51648;' : '') + '</div></div>'
+                        + '<div style="flex:1"><div class="doc-name">' + (doc.subject || doc.title || '&#51312;&#49436; #' + doc.id) + '</div>'
+                        + '<div class="doc-meta">' + (doc.created_at || '') + (doc.has_contradiction ? ' &nbsp;&#9656; &#47784;&#49692; &#53456;&#51648;' : '') + '</div></div>'
                         + '</a>';
                 }).join('');
             }

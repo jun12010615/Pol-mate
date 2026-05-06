@@ -5,7 +5,7 @@ String loginUser = (String) session.getAttribute("loginUser");
 String userName  = (String) session.getAttribute("userName");
 if (loginUser == null) { response.sendRedirect(request.getContextPath() + "/desktop/login.jsp"); return; }
 request.setAttribute("currentPage", "transcript");
-request.setAttribute("breadcrumb",  new String[]{"POL-MATE", "&#49688;&#49324; &#46020;&#44396;", "&#51652;&#49696; &#51109;&#49436; &#51089;&#49457;"});
+request.setAttribute("breadcrumb",  new String[]{"POL-MATE", "&#49688;&#49324; &#46020;&#44396;", "&#51652;&#49696; &#51312;&#49436; &#51089;&#49457;"});
 
 String initCaseId = request.getParameter("caseId") != null ? request.getParameter("caseId") : "";
 String initTranscriptId = request.getParameter("transcriptId") != null ? request.getParameter("transcriptId") : "";
@@ -31,7 +31,7 @@ finally { _mgr.freeConnection(_conn, _ps, _rs); }
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>POL-MATE | &#51652;&#49696; &#51109;&#49436; &#51089;&#49457;</title>
+<title>POL-MATE | &#51652;&#49696; &#51312;&#49436; &#51089;&#49457;</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<%= request.getContextPath() %>/css/polmate.css">
 <script>var _ctx = '<%= request.getContextPath() %>';</script>
@@ -200,19 +200,20 @@ html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: 
 <div class="pm-layout">
 
 <%@ include file="sidebar.jsp" %>
+<div class="pm-content">
 <%@ include file="appbar.jsp" %>
 
 <main class="pm-page">
     <div class="page-header">
         <div>
-            <div class="page-eyebrow">&#49688;&#49324; &#46020;&#44396; &middot; &#51652;&#49696; &#51109;&#49436; &#51089;&#49457;</div>
-            <div class="page-title" id="pageTitle">&#49352; &#51109;&#49436;</div>
+            <div class="page-eyebrow">&#49688;&#49324; &#46020;&#44396; &middot; &#51652;&#49696; &#51312;&#49436; &#51089;&#49457;</div>
+            <div class="page-title" id="pageTitle">&#49352; &#51312;&#49436;</div>
         </div>
         <div class="header-actions">
             <button class="btn-secondary" onclick="saveDraft()">&#51076;&#49884; &#51200;&#51109;</button>
             <button class="btn-primary" id="btnConfirm" onclick="confirmSave()">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                &#51109;&#49436; &#54869;&#51221;
+                &#51312;&#49436; &#54869;&#51221;
             </button>
         </div>
     </div>
@@ -299,7 +300,7 @@ html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: 
 
         <div>
             <div class="sec-label">
-                &#51109;&#49436; &#48376;&#47928; &#54200;&#51665;
+                &#51312;&#49436; &#48376;&#47928; &#54200;&#51665;
                 <span class="sec-label-action" id="charCountLabel">0 / 5,000&#51088;</span>
             </div>
             <div class="editor-card">
@@ -313,7 +314,7 @@ html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: 
                 </div>
                 <div class="editor-body" id="editor"
                      contenteditable="true"
-                     data-placeholder="&#51109;&#49436; &#45236;&#50857;&#51012; &#51077;&#47141;&#54616;&#49464;&#50836;. STT &#48320;&#54872; &#54980; [STT &#47928;&#48124; &#49275;&#51077;] &#48264;&#53948;&#51012; &#45348;&#47476;&#47732; &#51652;&#49696; &#45236;&#50857;&#51060; &#51088;&#46041; &#49275;&#51077;&#46121;&#45768;&#45796;."
+                     data-placeholder="&#51312;&#49436; &#45236;&#50857;&#51012; &#51077;&#47141;&#54616;&#49464;&#50836;. STT &#48320;&#54872; &#54980; [STT &#47928;&#48124; &#49275;&#51077;] &#48264;&#53948;&#51012; &#45348;&#47476;&#47732; &#51652;&#49696; &#45236;&#50857;&#51060; &#51088;&#46041; &#49275;&#51077;&#46121;&#45768;&#45796;."
                      oninput="updateCharCount()"></div>
             </div>
         </div>
@@ -343,7 +344,7 @@ if (_initTranscriptId) {
             if (d.text) {
                 document.getElementById('editor').innerText = d.text;
                 updateCharCount();
-                document.getElementById('pageTitle').textContent = '&#51109;&#49436; &#54869;&#51064;';
+                document.getElementById('pageTitle').textContent = '&#51312;&#49436; &#54869;&#51064;';
             }
         }).catch(function() {});
 }
@@ -453,7 +454,7 @@ function renderSegments(text) {
     var sentences = text.match(/[^.!?]+[.!?]*/g) || [text];
     var html = sentences.map(function(s, i) {
         var spk = i % 3 === 0 ? 'investigator' : 'suspect';
-        var spkLabel = spk === 'investigator' ? '&#51109;&#49436;&#44288;' : '&#54588;&#51032;&#51088;';
+        var spkLabel = spk === 'investigator' ? '&#49688;&#49324;&#44288;' : '&#54588;&#51032;&#51088;';
         var min = String(Math.floor(i * 12 / 60)).padStart(2,'0');
         var sec = String((i * 12) % 60).padStart(2,'0');
         return '<div class="segment-card" onclick="appendToEditor(this.dataset.text)" data-text="' + s.trim().replace(/"/g,'&quot;') + '">'
@@ -506,7 +507,7 @@ function updateCharCount() {
 function saveDraft() {
     var editor = document.getElementById('editor');
     var text = editor.innerText.trim();
-    if (!text) { showToast('&#51109;&#49436; &#45236;&#50857;&#51012; &#51077;&#47141;&#54644; &#51452;&#49464;&#50836;.'); return; }
+    if (!text) { showToast('&#51312;&#49436; &#45236;&#50857;&#51012; &#51077;&#47141;&#54644; &#51452;&#49464;&#50836;.'); return; }
     localStorage.setItem('draft_transcript', text);
     showToast('&#51076;&#49884; &#51200;&#51109;&#46104;&#50632;&#49845;&#45768;&#45796;.');
 }
@@ -515,7 +516,7 @@ function confirmSave() {
     var caseId = document.getElementById('selCase').value;
     var text = document.getElementById('editor').innerText.trim();
     if (!caseId) { showToast('&#49324;&#44148;&#51012; &#49440;&#53469;&#54644; &#51452;&#49464;&#50836;.'); return; }
-    if (!text) { showToast('&#51109;&#49436; &#45236;&#50857;&#51012; &#51077;&#47141;&#54644; &#51452;&#49464;&#50836;.'); return; }
+    if (!text) { showToast('&#51312;&#49436; &#45236;&#50857;&#51012; &#51077;&#47141;&#54644; &#51452;&#49464;&#50836;.'); return; }
 
     var btn = document.getElementById('btnConfirm');
     btn.disabled = true;
@@ -532,9 +533,9 @@ function confirmSave() {
         .then(function(r) { return r.json(); })
         .then(function(d) {
             btn.disabled = false;
-            btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> &#51109;&#49436; &#54869;&#51221;';
+            btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> &#51312;&#49436; &#54869;&#51221;';
             if (d.success || d.transcriptId) {
-                showToast('&#51109;&#49436;&#44032; &#51200;&#51109;&#46104;&#50632;&#49845;&#45768;&#45796;.');
+                showToast('&#51312;&#49436;&#44032; &#51200;&#51109;&#46104;&#50632;&#49845;&#45768;&#45796;.');
                 setTimeout(function() {
                     location.href = _ctx + '/desktop/myCase.jsp?caseId=' + encodeURIComponent(caseId);
                 }, 1200);
@@ -543,7 +544,7 @@ function confirmSave() {
             }
         }).catch(function() {
             btn.disabled = false;
-            btn.textContent = '&#51109;&#49436; &#54869;&#51221;';
+            btn.textContent = '&#51312;&#49436; &#54869;&#51221;';
             showToast('&#51200;&#51329; &#51473; &#50724;&#47448;&#44032; &#48156;&#49373;&#54588;&#49845;&#45768;&#45796;.');
         });
 }
@@ -557,7 +558,7 @@ function showToast(msg) {
 
 var _draft = localStorage.getItem('draft_transcript');
 if (_draft && !_initTranscriptId) {
-    if (confirm('&#51076;&#49884; &#51200;&#51329;&#46108; &#51109;&#49436;&#44032; &#51080;&#49845;&#45768;&#45796;. &#48520;&#47084;&#50724;&#49884;&#44192;&#49845;&#45768;&#44992;?')) {
+    if (confirm('&#51076;&#49884; &#51200;&#51329;&#46108; &#51312;&#49436;&#44032; &#51080;&#49845;&#45768;&#45796;. &#48520;&#47084;&#50724;&#49884;&#44192;&#49845;&#45768;&#44992;?')) {
         document.getElementById('editor').innerText = _draft;
         updateCharCount();
     }

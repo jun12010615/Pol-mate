@@ -171,6 +171,7 @@ html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: 
 <div class="pm-layout">
 
 <%@ include file="sidebar.jsp" %>
+<div class="pm-content">
 <%@ include file="appbar.jsp" %>
 
 <main class="pm-page">
@@ -178,7 +179,7 @@ html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: 
     <% if (alertCaseId != null) { %>
     <a href="<%= request.getContextPath() %>/desktop/myCase.jsp" class="pm-alert-banner">
         <span class="pm-alert-pulse"></span>
-        <span>&#49324;&#44148; <strong><%= alertCaseId %></strong>&#50640;&#49436; &#51652;&#49696; &#47784;&#49692;&#51060; &#53460;&#51648;&#46104;&#50632;&#49845;&#45768;&#45796;.</span>
+        <span>&#49324;&#44148; <strong><%= alertCaseId %></strong>&#50640;&#49436; &#51652;&#49696; &#47784;&#49692;&#51060; &#53456;&#51648;&#46104;&#50632;&#49845;&#45768;&#45796;.</span>
     </a>
     <% } %>
 
@@ -186,14 +187,14 @@ html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: 
         <div class="pm-greeting-sub">&#50504;&#45397;&#54616;&#49464;&#50836;,</div>
         <div class="pm-greeting-name"><strong><%= userName != null ? userName : loginUser %></strong> &#49688;&#49324;&#44288;</div>
         <% if (cntContradiction > 0) { %>
-        <div class="pm-greeting-hint">&#49888;&#44508; &#47784;&#49692; &#53460;&#51648; <strong style="color:#dc2626"><%= cntContradiction %>&#44148;</strong>&#51060; &#51080;&#49845;&#45768;&#45796;.</div>
+        <div class="pm-greeting-hint">&#49888;&#44508; &#47784;&#49692; &#53456;&#51648; <strong style="color:#dc2626"><%= cntContradiction %>&#44148;</strong>&#51060; &#51080;&#49845;&#45768;&#45796;.</div>
         <% } %>
     </div>
 
     <div class="pm-stat-grid">
         <div class="pm-stat-card"><div class="pm-stat-val"><%= cntActive %></div><div class="pm-stat-lbl">&#51652;&#54665; &#51473;&#51064; &#49324;&#44148;</div></div>
-        <div class="pm-stat-card"><div class="pm-stat-val danger"><%= cntContradiction %></div><div class="pm-stat-lbl">&#47784;&#49692; &#53460;&#51648;</div></div>
-        <div class="pm-stat-card"><div class="pm-stat-val"><%= cntTranscript %></div><div class="pm-stat-lbl">&#51089;&#49457;&#54620; &#51109;&#49436;</div></div>
+        <div class="pm-stat-card"><div class="pm-stat-val danger"><%= cntContradiction %></div><div class="pm-stat-lbl">&#47784;&#49692; &#53456;&#51648;</div></div>
+        <div class="pm-stat-card"><div class="pm-stat-val"><%= cntTranscript %></div><div class="pm-stat-lbl">&#51089;&#49457;&#54620; &#51312;&#49436;</div></div>
         <div class="pm-stat-card"><div class="pm-stat-val"><%= cntBoard %></div><div class="pm-stat-lbl">&#44172;&#49884;&#54032; &#44544;</div></div>
     </div>
 
@@ -207,8 +208,8 @@ html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: 
                     <line x1="12" y1="19" x2="12" y2="23"/>
                 </svg>
             </div>
-            <div class="pm-tool-title">&#51652;&#49696; &#51109;&#49436; &#51089;&#49457;</div>
-            <div class="pm-tool-desc">STT&#47196; &#51020;&#49457; &#51064;&#49885; &#54980; &#51088;&#46041; &#51109;&#49436;&#54868;</div>
+            <div class="pm-tool-title">&#51652;&#49696; &#51312;&#49436; &#51089;&#49457;</div>
+            <div class="pm-tool-desc">STT&#47196; &#51020;&#49457; &#51064;&#49885; &#54980; &#51088;&#46041; &#51312;&#49436;&#54868;</div>
             <div class="pm-tool-meta">&#50624;&#45212; &#51089;&#49457; <%= cntTranscript %>&#44148;</div>
         </a>
         <a href="<%= request.getContextPath() %>/desktop/voiceTranscript.jsp" class="pm-tool-card">
@@ -220,8 +221,8 @@ html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: 
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
             </div>
-            <div class="pm-tool-title">&#47784;&#49692; &#53460;&#51648;</div>
-            <div class="pm-tool-desc">AI&#47196; &#51109;&#49436; &#44036; &#51652;&#49696; &#48520;&#51068;&#52824; &#51088;&#46041; &#48156;&#44604;</div>
+            <div class="pm-tool-title">&#47784;&#49692; &#53456;&#51648;</div>
+            <div class="pm-tool-desc">AI&#47196; &#51312;&#49436; &#44036; &#51652;&#49696; &#48520;&#51068;&#52824; &#51088;&#46041; &#48156;&#44604;</div>
             <div class="pm-tool-meta">&#49888;&#44508; <%= cntContradiction %>&#44148;</div>
         </a>
         <a href="<%= request.getContextPath() %>/desktop/caseRelationMap.jsp" class="pm-tool-card">

@@ -319,7 +319,7 @@ html, body {
                 <label class="remember-label">
                     <input type="checkbox" checked> &#47196;&#44536;&#51064; &#50976;&#51648;
                 </label>
-                <a href="<%= request.getContextPath() %>/findAccount.jsp" class="forgot-link">&#48708;&#48128;&#48264;&#54840; &#52293;&#44592;</a>
+                <a href="<%= request.getContextPath() %>/findAccount.jsp" class="forgot-link">&#48708;&#48128;&#48264;&#54840; &#52286;&#44592;</a>
             </div>
 
             <button type="submit" class="btn-login">&#47196;&#44536;&#51064;</button>
