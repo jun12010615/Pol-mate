@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir \"C:\\\\JSP\\\\Pol-mate\\\\src\\\\main\\\\webapp\\\\WEB-INF\\\\\")"
+      "Bash(dir \"C:\\\\JSP\\\\Pol-mate\\\\src\\\\main\\\\webapp\\\\WEB-INF\\\\\")",
+      "Bash(python3 *)",
+      "Bash(grep -a \"대시보드\\\\|&#\\\\|\\\\\\\\\\\\\\\\uAC00\\\\|sidebar\" \"C:/JSP/.metadata/.plugins/org.eclipse.wst.server.core/tmp0/work/Catalina/localhost/Polmate/org/apache/jsp/desktop/aiChat_jsp.java\")",
+      "Bash(git ls-tree *)",
+      "Bash(git checkout *)"
     ]
   }
 }
