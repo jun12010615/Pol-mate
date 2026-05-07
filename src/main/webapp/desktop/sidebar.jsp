@@ -1,3 +1,4 @@
+<%@ page pageEncoding="UTF-8" %>
 <%
 if (session.getAttribute("loginUser") == null) {
     response.sendRedirect(request.getContextPath() + "/login.jsp");
@@ -159,53 +160,53 @@ String _sb_cp = request.getContextPath();
             <div class="pm-nav-group-title">Workspace</div>
             <a href="<%= _sb_cp %>/desktop/main.jsp" class="pm-nav-item <%= "dashboard".equals(_sb_page) ? "active" : "" %>">
                 <span class="pm-nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
-                <span class="pm-nav-label">&#45824;&#49884;&#48372;&#46300;</span>
+                <span class="pm-nav-label">대시보드</span>
             </a>
             <a href="<%= _sb_cp %>/desktop/myCase.jsp" class="pm-nav-item <%= "cases".equals(_sb_page) ? "active" : "" %>">
                 <span class="pm-nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span>
-                <span class="pm-nav-label">&#45236; &#49324;&#44148;</span>
+                <span class="pm-nav-label">내 사건</span>
                 <span class="pm-nav-badge blue" id="pmCaseBadge" style="display:none;"></span>
             </a>
             <a href="<%= _sb_cp %>/desktop/notifications.jsp" class="pm-nav-item <%= "notifications".equals(_sb_page) ? "active" : "" %>">
                 <span class="pm-nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
-                <span class="pm-nav-label">&#50508;&#47548;</span>
+                <span class="pm-nav-label">알림</span>
                 <span class="pm-nav-badge" id="pmNotifBadge" style="display:none;"></span>
             </a>
         </div>
 
         <div class="pm-nav-group">
-            <div class="pm-nav-group-title">&#49688;&#49324; &#46020;&#44396;</div>
+            <div class="pm-nav-group-title">수사 도구</div>
             <a href="<%= _sb_cp %>/desktop/writeTranscript.jsp" class="pm-nav-item <%= "transcript".equals(_sb_page) ? "active" : "" %>">
                 <span class="pm-nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg></span>
-                <span class="pm-nav-label">&#51652;&#49696; &#51312;&#49436; &#51089;&#49457;</span>
+                <span class="pm-nav-label">진술 조서 작성</span>
             </a>
             <a href="<%= _sb_cp %>/desktop/voiceTranscript.jsp" class="pm-nav-item <%= "contradiction".equals(_sb_page) ? "active" : "" %>">
                 <span class="pm-nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
-                <span class="pm-nav-label">&#47784;&#49692; &#53456;&#51648;</span>
+                <span class="pm-nav-label">모순 탐지</span>
             </a>
             <a href="<%= _sb_cp %>/desktop/caseRelationMap.jsp" class="pm-nav-item <%= "relations".equals(_sb_page) ? "active" : "" %>">
                 <span class="pm-nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="18" cy="19" r="2.5"/><line x1="8.4" y1="11" x2="15.6" y2="6.5"/><line x1="8.4" y1="13" x2="15.6" y2="17.5"/></svg></span>
-                <span class="pm-nav-label">&#49324;&#44148; &#44288;&#44228;&#47581;</span>
+                <span class="pm-nav-label">사건 관계망</span>
             </a>
             <a href="<%= _sb_cp %>/desktop/cctvAnalysis.jsp" class="pm-nav-item <%= "video".equals(_sb_page) ? "active" : "" %>">
                 <span class="pm-nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M23 7 16 12 23 17V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span>
-                <span class="pm-nav-label">&#50689;&#49345; &#48516;&#49437;</span>
+                <span class="pm-nav-label">영상 분석</span>
             </a>
             <a href="<%= _sb_cp %>/desktop/aiChat.jsp" class="pm-nav-item <%= "ai".equals(_sb_page) ? "active" : "" %>">
                 <span class="pm-nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
-                <span class="pm-nav-label">AI &#49688;&#49324; &#48372;&#51312;</span>
+                <span class="pm-nav-label">AI 수사 보조</span>
             </a>
         </div>
 
         <div class="pm-nav-group">
-            <div class="pm-nav-group-title">&#44592;&#53440;</div>
+            <div class="pm-nav-group-title">기타</div>
             <a href="<%= _sb_cp %>/desktop/board.jsp" class="pm-nav-item <%= "board".equals(_sb_page) ? "active" : "" %>">
                 <span class="pm-nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
-                <span class="pm-nav-label">&#52964;&#48036;&#45768;&#54000; &#44172;&#49884;&#54032;</span>
+                <span class="pm-nav-label">커뮤니티 게시판</span>
             </a>
             <a href="<%= _sb_cp %>/desktop/mypage.jsp" class="pm-nav-item <%= "mypage".equals(_sb_page) ? "active" : "" %>">
                 <span class="pm-nav-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-                <span class="pm-nav-label">&#47560;&#51060;&#54168;&#51060;&#51648;</span>
+                <span class="pm-nav-label">마이페이지</span>
             </a>
         </div>
 
@@ -228,7 +229,7 @@ String _sb_cp = request.getContextPath();
             <div class="pm-officer-name"><%= _sb_rank.isEmpty() ? "" : _sb_rank + " " %><%= _sb_name %></div>
             <div class="pm-officer-dept"><%= _sb_org %></div>
         </div>
-        <form action="<%= _sb_cp %>/mypage" method="post" style="margin:0;" onsubmit="return confirm('&#47196;&#44536;&#50500;&#50883; &#54616;&#49884;&#44192;&#49845;&#45768;&#44992;?');">
+        <form action="<%= _sb_cp %>/mypage" method="post" style="margin:0;" onsubmit="return confirm('로그아웃 하시겠습니까?');">
             <input type="hidden" name="action" value="logout">
             <button type="submit" class="pm-logout-btn" onclick="event.stopPropagation();">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
@@ -265,7 +266,7 @@ String _sb_cp = request.getContextPath();
                 var b = document.getElementById('pmCaseBadge');
                 if (!b) return;
                 var list = d.cases || [];
-                var n = list.filter(function(c) { return c.status !== '&#50756;&#47308;'; }).length;
+                var n = list.filter(function(c) { return c.status !== '완료'; }).length;
                 b.textContent = n;
                 b.style.display = n > 0 ? '' : 'none';
             }).catch(function() {});

@@ -222,7 +222,7 @@ html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: 
                 <!-- Step 3: 완료 -->
                 <div id="pwStep3" style="display:none;">
                     <div class="result-card" style="display:block; background:#f0fdf4; border-color:#bbf7d0; text-align:center;">
-                        <div style="font-size:32px;margin-bottom:10px;">&#10003;</div>
+                        <div style="font-size:32px;margin-bottom:10px;">✓</div>
                         <div class="result-label" style="color:#15803d;">비밀번호 변경 완료</div>
                         <div class="result-value" style="font-size:14px;letter-spacing:0;color:#1a2744;">새 비밀번호로 로그인하세요</div>
                     </div>

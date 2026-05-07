@@ -287,9 +287,10 @@ function submitPwChange() {
     if (!np || np.length < 8) { showToast('새 비밀번호를 8자 이상 입력해 주세요.'); return; }
     if (np !== npcf) { showToast('새 비밀번호가 일치하지 않습니다.'); return; }
     var fd = new FormData();
-    fd.append('action', 'changePw');
+    fd.append('action', 'changePassword');
     fd.append('curPw', cur);
     fd.append('newPw', np);
+    fd.append('newPwCf', npcf);
     fetch(_ctx + '/mypage', {method:'POST', body:fd, credentials:'same-origin'})
         .then(function(r){return r.json();})
         .then(function(d){

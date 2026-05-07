@@ -20,7 +20,7 @@ try {
     }
 } catch (Exception ignored) {}
 String safeBaseUrl = polMateServBaseUrl.replace("\\","\\\\").replace("'","\\'");
-String safeCaseIdAttr = paramCaseId.replace("&","&amp;").replace("\"","&quot;").replace("'","&#39;").replace("<","&lt;");
+String safeCaseIdAttr = paramCaseId.replace("&","&amp;").replace("\"","&quot;").replace("'","'").replace("<","&lt;");
 
 DBConnectionMgr mgr = DBConnectionMgr.getInstance();
 java.sql.Connection conn = null;
@@ -591,11 +591,12 @@ function saveBoard(isUpdate) {
             return {srcName:sp?sp.name:'', dstName:dp?dp.name:'', relType:e.relType, status:e.status};
         })
     });
-    var fd = new FormData();
-    fd.append('action', isUpdate ? 'updateBoard' : 'saveBoard');
-    fd.append('caseId', currentCaseId);
-    fd.append('boardJson', boardJson);
-    fetch(_ctx + '/boardApi', {method:'POST', body:fd, credentials:'same-origin'})
+    fetch(_ctx + '/boardApi?action=save', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({caseId: currentCaseId, boardJson: boardJson, isUpdate: isUpdate}),
+        credentials: 'same-origin'
+    })
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success) {

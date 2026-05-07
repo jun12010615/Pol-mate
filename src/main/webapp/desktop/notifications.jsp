@@ -129,9 +129,9 @@ function loadNotifs() {
     fetch(_ctx + '/notifApi?action=list', {credentials:'same-origin'})
         .then(function(r){return r.json();})
         .then(function(d) {
-            _allNotifs = d.notifications || [];
+            _allNotifs = Array.isArray(d) ? d : (d.notifications || []);
             renderNotifs();
-            var unread = _allNotifs.filter(function(n){return !n.is_read;}).length;
+            var unread = _allNotifs.filter(function(n){return n.isUnread;}).length;
             var el = document.getElementById('unreadCount');
             if (el) el.textContent = unread > 0 ? '(' + unread + '개 읽지 않음)' : '';
         })
@@ -141,41 +141,31 @@ function loadNotifs() {
 function renderNotifs() {
     var filtered = _allNotifs.filter(function(n) {
         if (_currentTab === 'all') return true;
-        if (_currentTab === 'alert') return n.type === 'contradiction' || n.is_critical;
+        if (_currentTab === 'alert') return n.isCritical;
         if (_currentTab === 'case')  return n.type === 'case';
-        if (_currentTab === 'sys')   return n.type === 'system';
+        if (_currentTab === 'sys')   return n.type === 'sys';
         return true;
     });
 
     var el = document.getElementById('notifList');
     if (filtered.length === 0) { showEmpty('해당하는 알림이 없습니다.'); return; }
 
-    var groups = {};
+    var html = '<div class="notif-group">';
     filtered.forEach(function(n) {
-        var d = (n.created_at||'').substring(0,10) || '기타';
-        if (!groups[d]) groups[d] = [];
-        groups[d].push(n);
+        var unreadCls = n.isUnread ? 'unread' : '';
+        var critCls   = n.isCritical ? 'critical' : '';
+        html += '<div class="notif-item ' + unreadCls + ' ' + critCls + '" onclick="markRead(' + n.notifId + ', this)">'
+              + getIcon(n.type)
+              + '<div class="notif-body">'
+              + (n.tag ? '<span class="notif-tag">' + n.tag + '</span><br>' : '')
+              + '<div class="notif-title">' + (n.title || '') + '</div>'
+              + (n.description ? '<div class="notif-desc">' + n.description + '</div>' : '')
+              + '<div class="notif-time">' + (n.timeLabel || '') + '</div>'
+              + '</div>'
+              + (n.isUnread ? '<div class="unread-dot"></div>' : '')
+              + '</div>';
     });
-
-    var html = '';
-    Object.keys(groups).forEach(function(date) {
-        html += '<div class="notif-group"><div class="group-label">' + date + '</div>';
-        groups[date].forEach(function(n) {
-            var unreadCls = n.is_read ? '' : 'unread';
-            var critCls   = n.is_critical ? 'critical' : '';
-            html += '<div class="notif-item ' + unreadCls + ' ' + critCls + '" onclick="markRead(' + n.id + ', this)">'
-                  + getIcon(n.type)
-                  + '<div class="notif-body">'
-                  + (n.case_id ? '<span class="notif-tag">' + n.case_id + '</span><br>' : '')
-                  + '<div class="notif-title">' + (n.title || n.message || '') + '</div>'
-                  + (n.message && n.title ? '<div class="notif-desc">' + n.message + '</div>' : '')
-                  + '<div class="notif-time">' + (n.created_at || '') + '</div>'
-                  + '</div>'
-                  + (n.is_read ? '' : '<div class="unread-dot"></div>')
-                  + '</div>';
-        });
-        html += '</div>';
-    });
+    html += '</div>';
     el.innerHTML = html;
 }
 
@@ -195,6 +185,8 @@ function markRead(id, el) {
         el.classList.remove('unread');
         var dot = el.querySelector('.unread-dot');
         if (dot) dot.remove();
+        var found = _allNotifs.find(function(n){ return n.notifId === id; });
+        if (found) found.isUnread = false;
         var fd = new FormData(); fd.append('action','markRead'); fd.append('notifId', id);
         fetch(_ctx + '/notifApi', {method:'POST', body:fd, credentials:'same-origin'}).catch(function(){});
     }
@@ -204,7 +196,7 @@ function markAllRead() {
     var fd = new FormData(); fd.append('action','markAllRead');
     fetch(_ctx + '/notifApi', {method:'POST', body:fd, credentials:'same-origin'})
         .then(function(){
-            _allNotifs.forEach(function(n){n.is_read=true;});
+            _allNotifs.forEach(function(n){n.isUnread=false;});
             renderNotifs();
             showToast('모든 알림을 읽음으로 처리했습니다.');
             var el = document.getElementById('unreadCount'); if(el) el.textContent='';

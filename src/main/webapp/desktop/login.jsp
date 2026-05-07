@@ -11,7 +11,7 @@ String _loginError = (String) request.getAttribute("loginError");
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>POL-MATE | &#47196;&#44536;&#51064;</title>
+<title>POL-MATE | 로그인</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -269,20 +269,20 @@ html, body {
             <div class="tagline">Criminal Justice Information System</div>
             <div class="gov-badge">
                 <span class="gov-dot"></span>
-                &#45824;&#54620;&#48124;&#44397; &#44221;&#52272;&#52272; &#44277;&#49885; &#49884;&#49828;&#53596;
+                대한민국 경찰찰 공식 시스템
             </div>
         </div>
         <div class="brand-bottom">
-            &#48376; &#49884;&#49828;&#53596;&#51008; &#51064;&#44032;&#46108; &#49688;&#49324;&#44288;&#47564; &#51217;&#44540; &#44032;&#45733;&#54633;&#45768;&#45796;.<br>
-            &#47924;&#45800; &#51217;&#44540; &#48143; &#49688;&#49324; &#51221;&#48372; &#50976;&#52636; &#49884; &#54805;&#49324;&#52376;&#48288;&#51012; &#48155;&#51012; &#49688; &#51080;&#49845;&#45768;&#45796;.
+            본 시스템은 인가된 수사관만 접근 가능합니다.<br>
+            무단 접근 및 수사 정보 유출 시 형사처베을 받을 수 있습니다.
         </div>
         <div class="brand-gold-line"></div>
     </div>
 
     <div class="form-side">
-        <div class="form-eyebrow">&#49688;&#49324;&#44288; &#47196;&#44536;&#51064;</div>
-        <div class="form-title">&#45796;&#49884; &#50724;&#49888; &#44163;&#51012; &#54872;&#50689;&#54633;&#45768;&#45796;</div>
-        <div class="form-sub">&#44228;&#51221; &#51221;&#48372;&#47484; &#51077;&#47141;&#54644; &#51452;&#49901;&#49884;&#50724;.</div>
+        <div class="form-eyebrow">수사관 로그인</div>
+        <div class="form-title">다시 오신 것을 환영합니다</div>
+        <div class="form-sub">계정 정보를 입력해 주십시오.</div>
 
         <% if (_loginError != null) { %>
         <div class="server-error"><%= _loginError %></div>
@@ -292,47 +292,47 @@ html, body {
             <input type="hidden" name="redirectTo" value="desktop">
 
             <div class="field">
-                <label class="field-label" for="userId">&#49688;&#49324;&#44288; ID</label>
+                <label class="field-label" for="userId">수사관 ID</label>
                 <div class="field-wrap">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                     </svg>
                     <input type="text" id="userId" name="userId" class="field-input"
-                           placeholder="&#50696;: hong.gd" autocomplete="username">
+                           placeholder="예: hong.gd" autocomplete="username">
                 </div>
-                <div class="field-error" id="idErr">&#50500;&#51060;&#45936;&#51060;&#47484; &#51077;&#47141;&#54644; &#51452;&#49464;&#50836;.</div>
+                <div class="field-error" id="idErr">아이데이를 입력해 주세요.</div>
             </div>
 
             <div class="field">
-                <label class="field-label" for="userPw">&#48708;&#48128;&#48264;&#54840;</label>
+                <label class="field-label" for="userPw">비밀번호</label>
                 <div class="field-wrap">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
                         <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                     </svg>
                     <input type="password" id="userPw" name="userPw" class="field-input"
-                           placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="current-password">
+                           placeholder="••••••••" autocomplete="current-password">
                 </div>
-                <div class="field-error" id="pwErr">&#48708;&#48128;&#48264;&#54840;&#47484; &#51077;&#47141;&#54644; &#51452;&#49464;&#50836;.</div>
+                <div class="field-error" id="pwErr">비밀번호를 입력해 주세요.</div>
             </div>
 
             <div class="form-row">
                 <label class="remember-label">
-                    <input type="checkbox" checked> &#47196;&#44536;&#51064; &#50976;&#51648;
+                    <input type="checkbox" checked> 로그인 유지
                 </label>
-                <a href="<%= request.getContextPath() %>/findAccount.jsp" class="forgot-link">&#48708;&#48128;&#48264;&#54840; &#52286;&#44592;</a>
+                <a href="<%= request.getContextPath() %>/findAccount.jsp" class="forgot-link">비밀번호 찾기</a>
             </div>
 
-            <button type="submit" class="btn-login">&#47196;&#44536;&#51064;</button>
+            <button type="submit" class="btn-login">로그인</button>
         </form>
 
-        <div class="divider"><span></span>&#46608;&#45716;<span></span></div>
+        <div class="divider"><span></span>또는<span></span></div>
 
         <button class="btn-register" onclick="location.href='<%= request.getContextPath() %>/register.jsp'">
-            &#49888;&#44508; &#49688;&#49324;&#44288; &#46321;&#47197;
+            신규 수사관 등록
         </button>
 
         <div class="form-footer">
-            &copy; 2025 &#45824;&#54620;&#48124;&#44397; &#44221;&#52272;&#52272; &middot; POL-MATE v1.4
+            &copy; 2025 대한민국 경찰찰 &middot; POL-MATE v1.4
         </div>
     </div>
 

@@ -255,7 +255,7 @@ select.field-input { appearance:none; }
                         <button class="btn-check" id="badgeVerifyBtn" onclick="verifyBadge()">인증</button>
                     </div>
                     <p class="field-hint" id="badgeHint">공무원증에 기재된 4자리 번호</p>
-                    <p class="field-ok"  id="badgeOk"  style="display:none">&#10003; 인증되었습니다.</p>
+                    <p class="field-ok"  id="badgeOk"  style="display:none">✓ 인증되었습니다.</p>
                     <p class="field-err" id="badgeErr" style="display:none"></p>
                 </div>
             </div>

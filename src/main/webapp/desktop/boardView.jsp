@@ -174,17 +174,17 @@ var _postData = null;
 var _isLiked = false;
 
 function loadPost() {
-    fetch(_ctx + '/loadBoard?action=detail&postId=' + _postId, { credentials: 'same-origin' })
+    fetch(_ctx + '/board?action=detail&id=' + _postId, { credentials: 'same-origin' })
         .then(function(r) { return r.json(); })
         .then(function(d) {
-            if (d.error || !d.post) {
+            if (d.error || !d.id) {
                 document.getElementById('postArea').innerHTML =
                     '<div class="loading-state"><p style="color:#dc2626;">' + (d.error || '게시글을 찾을 수 없습니다.') + '</p></div>';
                 return;
             }
-            _postData = d.post;
-            _isLiked = d.post.isLiked || false;
-            renderPost(d.post);
+            _postData = d;
+            _isLiked = d.liked || false;
+            renderPost(d);
             renderComments(d.comments || []);
             document.getElementById('commentArea').style.display = '';
         })
@@ -195,24 +195,24 @@ function loadPost() {
 }
 
 function renderPost(p) {
-    var initial = (p.authorName || '?').charAt(0);
-    var catCls = 'cat-' + (p.category || '자유');
-    var tags = (p.tags || '').split(',').filter(function(t) { return t.trim(); });
-    var tagsHtml = tags.map(function(t) { return '<span class="tag">' + esc(t.trim()) + '</span>'; }).join('');
+    var initial = (p.author || '?').charAt(0);
+    var catCls = 'cat-' + (p.cat || '자유');
+    var tags = Array.isArray(p.tags) ? p.tags : (p.tags || '').split(',').filter(function(t) { return t.trim(); });
+    var tagsHtml = tags.map(function(t) { return '<span class="tag">' + esc(String(t).trim()) + '</span>'; }).join('');
     var html =
         '<div class="post-card">' +
-            '<span class="post-category ' + catCls + '">' + esc(p.category || '자유') + '</span>' +
+            '<span class="post-category ' + catCls + '">' + esc(p.cat || '자유') + '</span>' +
             '<div class="post-title">' + esc(p.title || '') + '</div>' +
             '<div class="post-meta">' +
                 '<div class="meta-avatar">' + esc(initial) + '</div>' +
                 '<div class="meta-info">' +
-                    '<div class="meta-name">' + esc(p.authorRank || '') + ' ' + esc(p.authorName || '') + '</div>' +
-                    '<div class="meta-sub">' + esc(p.authorOrg || '') + ' · ' + esc((p.createdAt || '').substring(0, 16)) + '</div>' +
+                    '<div class="meta-name">' + esc(p.authorRank || '') + ' ' + esc(p.author || '') + '</div>' +
+                    '<div class="meta-sub">' + esc(p.authorOrg || '') + ' · ' + esc(p.date || '') + '</div>' +
                 '</div>' +
                 '<div class="meta-stats">' +
-                    '<span class="stat-item"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' + (p.viewCount || 0) + '</span>' +
-                    '<span class="stat-item"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + (p.likeCount || 0) + '</span>' +
-                    '<span class="stat-item"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + (p.commentCount || 0) + '</span>' +
+                    '<span class="stat-item"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' + (p.views || 0) + '</span>' +
+                    '<span class="stat-item"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' + (p.likes || 0) + '</span>' +
+                    '<span class="stat-item"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' + (p.comments ? p.comments.length : 0) + '</span>' +
                 '</div>' +
             '</div>' +
             '<div class="post-content">' + esc(p.content || '') + '</div>' +
@@ -220,7 +220,7 @@ function renderPost(p) {
             '<div class="post-actions">' +
                 '<button class="btn-like' + (_isLiked ? ' liked' : '') + '" id="likeBtn" onclick="toggleLike()">' +
                     '<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' +
-                    '<span id="likeCount">' + (p.likeCount || 0) + '</span>개 좋아요' +
+                    '<span id="likeCount">' + (p.likes || 0) + '</span>개 좋아요' +
                 '</button>' +
                 '<button class="btn-share" onclick="sharePost()">' +
                     '<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' +
@@ -241,15 +241,15 @@ function renderComments(comments) {
         return;
     }
     list.innerHTML = comments.map(function(c) {
-        var initial = (c.authorName || '?').charAt(0);
+        var initial = (c.author || '?').charAt(0);
         return '<div class="comment-item" id="comment-' + c.id + '">' +
             '<div class="comment-avatar">' + esc(initial) + '</div>' +
             '<div class="comment-body">' +
                 '<div class="comment-header">' +
-                    '<span class="comment-name">' + esc(c.authorRank || '') + ' ' + esc(c.authorName || '') + '</span>' +
-                    '<span class="comment-time">' + esc((c.createdAt || '').substring(0, 16)) + '</span>' +
+                    '<span class="comment-name">' + esc(c.rank || '') + ' ' + esc(c.author || '') + '</span>' +
+                    '<span class="comment-time">' + esc(c.time || '') + '</span>' +
                 '</div>' +
-                '<div class="comment-text">' + esc(c.content || '') + '</div>' +
+                '<div class="comment-text">' + esc(c.text || '') + '</div>' +
             '</div>' +
             (c.isMine ? '<button class="comment-del" onclick="deleteComment(' + c.id + ')">삭제</button>' : '') +
         '</div>';
@@ -257,18 +257,18 @@ function renderComments(comments) {
 }
 
 function toggleLike() {
-    var action = _isLiked ? 'unlike' : 'like';
     var fd = new FormData();
-    fd.append('action', action);
-    fd.append('postId', _postId);
+    fd.append('action', 'like');
+    fd.append('targetType', 'post');
+    fd.append('targetId', _postId);
     fetch(_ctx + '/board', { method: 'POST', body: fd, credentials: 'same-origin' })
         .then(function(r) { return r.json(); })
         .then(function(d) {
             if (d.success) {
-                _isLiked = !_isLiked;
+                _isLiked = d.liked;
                 var btn = document.getElementById('likeBtn');
                 btn.classList.toggle('liked', _isLiked);
-                document.getElementById('likeCount').textContent = d.likeCount;
+                document.getElementById('likeCount').textContent = d.likes;
             }
         }).catch(function() {});
 }
@@ -278,7 +278,7 @@ function submitComment() {
     var text = input.value.trim();
     if (!text) return;
     var fd = new FormData();
-    fd.append('action', 'addComment');
+    fd.append('action', 'comment');
     fd.append('postId', _postId);
     fd.append('content', text);
     fetch(_ctx + '/board', { method: 'POST', body: fd, credentials: 'same-origin' })

@@ -1,4 +1,5 @@
- <%
+<%@ page pageEncoding="UTF-8" %>
+<%
 String[] _ab_crumbs = (String[]) request.getAttribute("breadcrumb");
 if (_ab_crumbs == null) _ab_crumbs = new String[]{"POL-MATE"};
 String _ab_cp = request.getContextPath();
@@ -88,7 +89,7 @@ String _ab_cp = request.getContextPath();
 
     <nav class="pm-breadcrumb">
         <% for (int _i = 0; _i < _ab_crumbs.length; _i++) { %>
-            <% if (_i > 0) { %><span class="pm-bc-sep">&#8250;</span><% } %>
+            <% if (_i > 0) { %><span class="pm-bc-sep">›</span><% } %>
             <span class="pm-bc-item <%= (_i == _ab_crumbs.length - 1) ? "current" : "" %>"><%= _ab_crumbs[_i] %></span>
         <% } %>
     </nav>
@@ -97,7 +98,7 @@ String _ab_cp = request.getContextPath();
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        <input type="text" placeholder="&#49324;&#44148;&#48264;&#54840;, &#54588;&#51032;&#51088; &#44160;&#49353;..." oninput="pmGlobalSearch(this.value)">
+        <input type="text" placeholder="사건번호, 피의자 검색..." oninput="pmGlobalSearch(this.value)">
     </div>
 
     <div class="pm-appbar-actions">

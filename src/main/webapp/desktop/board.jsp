@@ -218,7 +218,7 @@ function loadPosts(reset) {
     if (reset) { _page = 1; _posts = []; }
     var sort = document.getElementById('sortSelect').value;
     var cat  = _currentCat === 'all' ? '' : _currentCat;
-    fetch(_ctx + '/loadBoard?action=list&page=' + _page + '&size=' + _pageSize + '&cat=' + encodeURIComponent(cat) + '&sort=' + sort, {credentials:'same-origin'})
+    fetch(_ctx + '/board?action=list&category=' + encodeURIComponent(cat) + '&sort=' + sort, {credentials:'same-origin'})
         .then(function(r){return r.json();})
         .then(function(d) {
             var items = d.posts || d || [];
@@ -239,25 +239,25 @@ function renderPosts() {
     if (list.length === 0) { el.innerHTML = '<div class="empty-state">게시글이 없습니다.</div>'; document.getElementById('btnLoadMore').style.display='none'; return; }
 
     el.innerHTML = list.map(function(p) {
-        var catCls = p.category === '수사팁' ? 'cat-tip' : p.category === '장비정보' ? 'cat-gear' : 'cat-free';
+        var catCls = p.cat === '수사팁' ? 'cat-tip' : p.cat === '장비정보' ? 'cat-gear' : 'cat-free';
         var tags = (p.tags || []).map(function(t){ return '<span class="tag-item">#' + t + '</span>'; }).join('');
         return '<div class="post-card" onclick="openPost(' + p.id + ')">'
             + '<div class="post-head">'
-            + '<span class="cat-badge ' + catCls + '">' + (p.category||'자유') + '</span>'
-            + (p.is_pinned ? '<svg class="pinned-icon" width="13" height="13" viewBox="0 0 24 24" fill="#f0c040" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>' : '')
+            + '<span class="cat-badge ' + catCls + '">' + (p.cat||'자유') + '</span>'
+            + (p.hot ? '<svg class="pinned-icon" width="13" height="13" viewBox="0 0 24 24" fill="#f0c040" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>' : '')
             + '<span class="post-title">' + (p.title||'') + '</span>'
             + '</div>'
-            + '<div class="post-preview">' + (p.content_preview || (p.content||'').substring(0,120)) + '</div>'
+            + '<div class="post-preview">' + (p.preview||'') + '</div>'
             + (tags ? '<div class="post-tags">' + tags + '</div>' : '')
             + '<div class="post-foot">'
             + '<div class="post-foot-left">'
-            + '<span>' + (p.user_rank||'') + ' ' + (p.user_name||'') + '</span>'
-            + '<span>·</span><span>' + (p.created_at||'').substring(0,10) + '</span>'
+            + '<span>' + (p.authorRank||'') + ' ' + (p.author||'') + '</span>'
+            + '<span>·</span><span>' + (p.date||'') + '</span>'
             + '</div>'
             + '<div style="margin-left:auto;display:flex;gap:12px;">'
             + '<span class="stat-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> ' + (p.views||0) + '</span>'
-            + '<span class="stat-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> ' + (p.comment_count||0) + '</span>'
-            + '<span class="stat-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> ' + (p.like_count||0) + '</span>'
+            + '<span class="stat-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> ' + (p.commentCount||0) + '</span>'
+            + '<span class="stat-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> ' + (p.likes||0) + '</span>'
             + '</div></div></div>';
     }).join('');
     document.getElementById('btnLoadMore').style.display = (_hasMore && !kw) ? 'block' : 'none';
@@ -289,7 +289,7 @@ function submitPost() {
     if (!title)   { showToast('제목을 입력해 주세요.'); return; }
     if (!content) { showToast('내용을 입력해 주세요.'); return; }
     var fd = new FormData();
-    fd.append('action', 'create');
+    fd.append('action', 'write');
     fd.append('title', title);
     fd.append('content', content);
     fd.append('category', cat);

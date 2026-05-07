@@ -1,9 +1,31 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="Servlet.DBConnectionMgr, java.sql.*" %>
 <%
 String loginUser = (String) session.getAttribute("loginUser");
 if (loginUser == null) { response.sendRedirect(request.getContextPath() + "/desktop/login.jsp"); return; }
 request.setAttribute("currentPage", "contradiction");
 request.setAttribute("breadcrumb", new String[]{"POL-MATE", "수사 도구", "모순 탐지"});
+
+java.util.List<String[]> caseList = new java.util.ArrayList<>();
+DBConnectionMgr _mgr = DBConnectionMgr.getInstance();
+Connection _conn = null; PreparedStatement _ps = null; ResultSet _rs = null;
+try {
+    _conn = _mgr.getConnection();
+    _ps = _conn.prepareStatement(
+        "SELECT c.case_id, c.case_name, c.suspect, c.status " +
+        "FROM cases c " +
+        "WHERE c.dept_id = (SELECT me.dept_id FROM users me WHERE me.user_id = ?) " +
+        "ORDER BY c.updated_at DESC");
+    _ps.setString(1, loginUser);
+    _rs = _ps.executeQuery();
+    while (_rs.next()) caseList.add(new String[]{
+        _rs.getString("case_id"),
+        _rs.getString("case_name"),
+        _rs.getString("suspect") != null ? _rs.getString("suspect") : "",
+        _rs.getString("status") != null ? _rs.getString("status") : ""
+    });
+} catch (Exception _e) { _e.printStackTrace(); }
+finally { _mgr.freeConnection(_conn, _ps, _rs); }
 %>
 <!DOCTYPE html>
 <html lang="ko">
@@ -17,137 +39,212 @@ request.setAttribute("breadcrumb", new String[]{"POL-MATE", "수사 도구", "�
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: #f4f6fb; color: #1a1a2e; -webkit-font-smoothing: antialiased; }
-.pm-page { padding: 28px 32px 48px; }
+.pm-page { padding: 28px 32px 48px; max-width: 1400px; }
 
-.page-header { margin-bottom: 24px; }
+.page-header { margin-bottom: 20px; }
 .page-eyebrow { font-size: 11px; color: #9ca3af; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 3px; }
 .page-title { font-size: 22px; font-weight: 500; }
 
 /* 단계 표시 */
-.step-bar { display: flex; align-items: center; gap: 0; background: #fff; border: 1px solid #e2e5ee; border-radius: 12px; padding: 14px 20px; margin-bottom: 24px; }
-.step-node { display: flex; align-items: center; gap: 8px; flex: 1; }
-.step-node:last-child { flex: 0; }
-.step-circle { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #e2e5ee; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #9ca3af; background: #f4f6fb; flex-shrink: 0; transition: all 0.25s; }
+.step-bar {
+    display: flex; align-items: center;
+    background: #fff; border: 1px solid #e2e5ee; border-radius: 12px;
+    padding: 14px 24px; margin-bottom: 24px;
+}
+.step-node { display: flex; align-items: center; gap: 9px; }
+.step-circle {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 2px solid #e2e5ee; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: #9ca3af; background: #f4f6fb;
+    flex-shrink: 0; transition: all 0.25s;
+}
 .step-circle.active { background: #0d1a33; border-color: #0d1a33; color: #fff; }
-.step-circle.done { background: #4a7cdc; border-color: #4a7cdc; color: #fff; }
-.step-name { font-size: 12px; color: #9ca3af; }
+.step-circle.done   { background: #4a7cdc; border-color: #4a7cdc; color: #fff; }
+.step-name { font-size: 12px; color: #9ca3af; white-space: nowrap; }
 .step-name.active { color: #0d1a33; font-weight: 500; }
-.step-line { flex: 1; height: 1px; background: #e2e5ee; margin: 0 8px; }
+.step-line { flex: 1; height: 1px; background: #e2e5ee; margin: 0 12px; }
 
-/* 2-col layout */
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
-.col { display: flex; flex-direction: column; gap: 16px; }
+/* 2컬럼 레이아웃 */
+.two-col { display: grid; grid-template-columns: 420px 1fr; gap: 20px; align-items: start; }
+@media (max-width: 1100px) { .two-col { grid-template-columns: 1fr; } }
 
 /* 카드 */
-.card { background: #fff; border: 1px solid #e2e5ee; border-radius: 12px; padding: 20px; }
-.card-label { font-size: 10px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px; display: flex; align-items: center; gap: 7px; }
+.card {
+    background: #fff; border: 1px solid #e2e5ee; border-radius: 14px;
+    padding: 20px; margin-bottom: 16px;
+}
+.card:last-child { margin-bottom: 0; }
+.card-label {
+    font-size: 10px; font-weight: 600; color: #9ca3af;
+    text-transform: uppercase; letter-spacing: 0.8px;
+    margin-bottom: 14px; display: flex; align-items: center; gap: 7px;
+}
 .card-label svg { width: 13px; height: 13px; stroke: #9ca3af; fill: none; stroke-width: 1.8; stroke-linecap: round; }
 
-/* 입력 필드 */
-.field-row { display: flex; gap: 10px; margin-bottom: 12px; }
-.field-half { flex: 1; }
-.field-label { font-size: 11px; font-weight: 500; color: #6b7280; display: block; margin-bottom: 5px; }
-.field-input {
-    width: 100%; padding: 9px 12px; background: #f4f6fb;
-    border: 1.5px solid #e2e5ee; border-radius: 9px;
-    font-size: 13px; font-family: 'Noto Sans KR', sans-serif;
-    color: #1a1a2e; outline: none; transition: border-color 0.15s;
+/* 사건 선택 */
+.case-select {
+    width: 100%; padding: 10px 12px;
+    background: #f4f6fb; border: 1.5px solid #e2e5ee; border-radius: 10px;
+    font-size: 13px; font-family: 'Noto Sans KR', sans-serif; color: #1a1a2e;
+    outline: none; transition: border-color 0.15s, background 0.15s;
+    appearance: none; cursor: pointer;
 }
-.field-input:focus { border-color: #4a7cdc; background: #fff; }
-.field-input::placeholder { color: #9ca3af; font-size: 12px; }
-select.field-input { appearance: none; }
+.case-select:focus { border-color: #0d1a33; background: #fff; }
 
-/* 업로드 존 */
-.upload-zone {
-    border: 2px dashed #e2e5ee; border-radius: 10px;
-    padding: 24px 16px; text-align: center; cursor: pointer;
-    transition: all 0.2s; position: relative;
+/* 사건 미리보기 칩 */
+.case-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.case-chip {
+    font-size: 11px; padding: 3px 10px; border-radius: 20px;
+    background: #f4f6fb; border: 1px solid #e2e5ee; color: #6b7280;
 }
-.upload-zone:hover { border-color: #4a7cdc; background: #f0f5ff; }
-.upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-.upload-icon { width: 40px; height: 40px; background: #eff6ff; border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; }
-.upload-icon svg { width: 18px; height: 18px; stroke: #4a7cdc; fill: none; stroke-width: 1.8; stroke-linecap: round; }
-.upload-title { font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 3px; }
-.upload-desc { font-size: 11px; color: #9ca3af; }
+.case-chip.status-진행중 { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+.case-chip.status-완료   { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
 
-.file-selected { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 9px; padding: 10px 14px; display: none; align-items: center; gap: 10px; margin-top: 8px; }
-.file-name { font-size: 13px; font-weight: 500; color: #1a1a2e; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.file-size { font-size: 10px; color: #9ca3af; }
-.file-remove { width: 22px; height: 22px; border-radius: 50%; background: #fef2f2; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.file-remove svg { width: 10px; height: 10px; stroke: #dc2626; fill: none; stroke-width: 2.5; stroke-linecap: round; }
-
-.btn-stt { width: 100%; background: #1e40af; color: #fff; border: none; border-radius: 9px; padding: 11px; font-size: 13px; font-weight: 500; font-family: 'Noto Sans KR', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: background 0.13s; margin-top: 8px; }
-.btn-stt:hover { background: #1d3a9e; }
-.btn-stt svg { width: 14px; height: 14px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; }
-
-.divider-or { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
-.divider-or span { font-size: 11px; color: #9ca3af; white-space: nowrap; }
-.divider-or::before, .divider-or::after { content: ''; flex: 1; height: 1px; background: #e2e5ee; }
-
-.text-area {
-    width: 100%; min-height: 120px; padding: 11px 13px;
-    background: #f4f6fb; border: 1.5px solid #e2e5ee; border-radius: 9px;
-    font-size: 13px; font-family: 'Noto Sans KR', sans-serif;
-    color: #1a1a2e; outline: none; resize: vertical; line-height: 1.7;
-    transition: border-color 0.15s;
+/* 조서 목록 */
+.doc-list { display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto; padding-right: 2px; }
+.doc-item {
+    display: flex; align-items: center; gap: 12px;
+    background: #f4f6fb; border: 1.5px solid #e2e5ee; border-radius: 10px;
+    padding: 11px 13px; cursor: pointer; transition: all 0.13s;
+    user-select: none;
 }
-.text-area:focus { border-color: #4a7cdc; background: #fff; }
-.text-area::placeholder { color: #9ca3af; font-size: 12px; }
-.char-count { font-size: 10px; color: #9ca3af; text-align: right; margin-top: 4px; }
+.doc-item:hover { border-color: #4a7cdc; }
+.doc-item.selected { background: #eff6ff; border-color: #4a7cdc; }
+.doc-check {
+    width: 18px; height: 18px; border-radius: 5px;
+    border: 2px solid #d1d5db; background: #fff; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.13s;
+}
+.doc-item.selected .doc-check { background: #4a7cdc; border-color: #4a7cdc; }
+.doc-check svg { width: 10px; height: 10px; stroke: #fff; fill: none; stroke-width: 2.5; display: none; }
+.doc-item.selected .doc-check svg { display: block; }
+.doc-info { flex: 1; min-width: 0; }
+.doc-name { font-size: 13px; font-weight: 500; color: #1a1a2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doc-meta { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+.doc-badge {
+    font-size: 10px; padding: 2px 8px; border-radius: 20px; flex-shrink: 0;
+    font-weight: 500;
+}
+.doc-badge.contra { background: #fef2f2; color: #dc2626; }
+.doc-badge.ok     { background: #f0fdf4; color: #16a34a; }
 
+.doc-loading { padding: 24px; text-align: center; font-size: 12px; color: #9ca3af; }
+.doc-empty   { padding: 20px; text-align: center; font-size: 12px; color: #9ca3af; line-height: 1.7; }
+
+/* 선택 카운터 */
+.select-counter {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 13px; border-radius: 9px;
+    background: #f4f6fb; border: 1px solid #e2e5ee;
+    font-size: 12px; color: #6b7280; margin-bottom: 12px;
+    transition: all 0.15s;
+}
+.select-counter.ready { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+.select-counter-count { font-weight: 600; }
+
+/* 분석 버튼 */
 .btn-analyze {
     width: 100%; background: #0d1a33; color: #fff; border: none;
-    border-radius: 10px; padding: 14px; font-size: 14px; font-weight: 500;
-    font-family: 'Noto Sans KR', sans-serif; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.15s;
+    border-radius: 10px; padding: 13px;
+    font-size: 13px; font-weight: 500; font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background 0.13s, opacity 0.13s;
 }
-.btn-analyze:hover { opacity: 0.88; }
+.btn-analyze:hover:not(:disabled) { background: #1a2744; }
 .btn-analyze:disabled { opacity: 0.4; cursor: not-allowed; }
-.btn-analyze svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; }
+.btn-analyze svg { width: 15px; height: 15px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; }
 
-/* 오른쪽 결과 패널 */
-.result-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 360px; text-align: center; }
-.result-placeholder svg { width: 48px; height: 48px; stroke: #d1d5db; fill: none; stroke-width: 1.5; stroke-linecap: round; margin-bottom: 12px; }
-.result-placeholder p { font-size: 13px; color: #9ca3af; }
+/* 결과 영역 */
+.result-placeholder {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 400px; text-align: center; gap: 12px;
+}
+.result-placeholder svg { width: 52px; height: 52px; stroke: #d1d5db; fill: none; stroke-width: 1.3; stroke-linecap: round; }
+.result-placeholder p { font-size: 13px; color: #9ca3af; line-height: 1.7; }
 
 /* 로딩 */
-.loading-card { text-align: center; padding: 40px 20px; }
-.spinner { width: 36px; height: 36px; border: 3px solid #e2e5ee; border-top-color: #0d1a33; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
-.loading-steps { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; text-align: left; }
-.ls { display: flex; align-items: center; gap: 9px; font-size: 12px; color: #9ca3af; padding: 4px 0; }
+.loading-card { text-align: center; padding: 48px 24px; }
+.spinner { width: 36px; height: 36px; border: 3px solid #e2e5ee; border-top-color: #0d1a33; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+.loading-steps { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; text-align: left; max-width: 260px; margin-left: auto; margin-right: auto; }
+.ls { display: flex; align-items: center; gap: 9px; font-size: 12px; color: #9ca3af; padding: 3px 0; }
 .ls svg { width: 13px; height: 13px; flex-shrink: 0; }
 .ls.active { color: #0d1a33; font-weight: 500; }
-.ls.done { color: #16a34a; }
+.ls.done   { color: #16a34a; }
 
-/* 결과 */
-.contra-banner { border-radius: 10px; padding: 13px 15px; display: flex; align-items: flex-start; gap: 11px; margin-bottom: 12px; }
-.contra-banner.found { background: #fef2f2; border: 1px solid #fecaca; }
+/* 결과 배너 */
+.contra-banner { border-radius: 10px; padding: 13px 15px; display: flex; align-items: flex-start; gap: 11px; margin-bottom: 14px; }
+.contra-banner.found    { background: #fef2f2; border: 1px solid #fecaca; }
 .contra-banner.notfound { background: #f0fdf4; border: 1px solid #bbf7d0; }
 .contra-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
-.contra-dot.red { background: #dc2626; animation: pulse 1.5s infinite; }
+.contra-dot.red   { background: #dc2626; animation: dotPulse 1.5s infinite; }
 .contra-dot.green { background: #16a34a; }
 .contra-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
-.contra-title.red { color: #b91c1c; }
+.contra-title.red   { color: #b91c1c; }
 .contra-title.green { color: #166534; }
-.contra-desc { font-size: 11px; color: #6b7280; line-height: 1.6; }
+.contra-desc  { font-size: 11px; color: #6b7280; line-height: 1.6; }
 
-.contra-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; }
-.contra-item { background: #fff; border: 1px solid #fecaca; border-left: 3px solid #dc2626; border-radius: 9px; padding: 11px 13px; }
-.contra-item-title { font-size: 12px; font-weight: 500; color: #b91c1c; margin-bottom: 4px; }
-.contra-item-desc { font-size: 11px; color: #6b7280; line-height: 1.7; }
+/* 결과 상세 */
+.section-label {
+    font-size: 10px; font-weight: 600; color: #9ca3af;
+    text-transform: uppercase; letter-spacing: 0.7px;
+    margin-bottom: 8px; margin-top: 16px;
+}
+.section-label:first-child { margin-top: 0; }
+.result-box {
+    background: #f4f6fb; border-radius: 9px; border: 1px solid #e2e5ee;
+    padding: 13px; font-size: 12px; color: #374151; line-height: 1.9;
+    white-space: pre-wrap; position: relative;
+    max-height: 220px; overflow-y: auto; word-break: break-word;
+}
+.copy-btn {
+    position: absolute; top: 8px; right: 8px;
+    background: #fff; border: 1px solid #e2e5ee; border-radius: 7px;
+    padding: 4px 9px; font-size: 11px; color: #6b7280;
+    cursor: pointer; font-family: 'Noto Sans KR', sans-serif;
+}
+.copy-btn:hover { border-color: #0d1a33; color: #0d1a33; }
 
-.transcript-box { background: #f4f6fb; border-radius: 9px; border: 1px solid #e2e5ee; padding: 13px; font-size: 12px; color: #374151; line-height: 1.9; max-height: 160px; overflow-y: auto; white-space: pre-wrap; position: relative; margin-bottom: 12px; }
-.copy-btn { position: absolute; top: 8px; right: 8px; background: #fff; border: 1px solid #e2e5ee; border-radius: 7px; padding: 4px 9px; font-size: 11px; color: #6b7280; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; }
-
-.ai-result-box { background: #f4f6fb; border-radius: 9px; border: 1px solid #e2e5ee; padding: 13px; font-size: 12px; color: #374151; line-height: 1.9; white-space: pre-wrap; max-height: 220px; overflow-y: auto; margin-bottom: 12px; }
-
-.btn-save { width: 100%; background: #16a34a; color: #fff; border: none; border-radius: 10px; padding: 13px; font-size: 13px; font-weight: 500; font-family: 'Noto Sans KR', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: background 0.13s; margin-bottom: 8px; }
+/* 저장 버튼 */
+.btn-save {
+    width: 100%; background: #16a34a; color: #fff; border: none;
+    border-radius: 10px; padding: 13px;
+    font-size: 13px; font-weight: 500; font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px;
+    transition: background 0.13s; margin-bottom: 8px;
+}
 .btn-save:hover { background: #15803d; }
+.btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-save svg { width: 14px; height: 14px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; }
-.btn-reset { width: 100%; background: #f4f6fb; color: #6b7280; border: 1px solid #e2e5ee; border-radius: 10px; padding: 12px; font-size: 13px; font-family: 'Noto Sans KR', sans-serif; cursor: pointer; }
+.btn-reset {
+    width: 100%; background: #f4f6fb; color: #6b7280;
+    border: 1px solid #e2e5ee; border-radius: 10px;
+    padding: 12px; font-size: 13px; font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer; transition: background 0.13s;
+}
+.btn-reset:hover { background: #e5e7eb; }
 
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: #1a2744; color: #fff; padding: 10px 22px; border-radius: 10px;
+    font-size: 13px; font-family: 'Noto Sans KR', sans-serif;
+    opacity: 0; transition: all 0.25s; z-index: 500; white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@keyframes spin     { to { transform: rotate(360deg); } }
+@keyframes dotPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+@keyframes blink    { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* 스트리밍 커서 */
+.result-box.streaming::after {
+    content: '▋'; animation: blink 0.9s step-start infinite;
+    color: #4a7cdc; font-size: 13px;
+}
+
+/* 분석 중 배너 */
+.contra-banner.analyzing { background: #f0f7ff; border: 1px solid #bfdbfe; }
+.contra-dot.pulse { background: #4a7cdc; animation: dotPulse 1.2s infinite; }
 </style>
 </head>
 <body>
@@ -158,6 +255,7 @@ select.field-input { appearance: none; }
 <%@ include file="appbar.jsp" %>
 
 <main class="pm-page">
+
     <div class="page-header">
         <div class="page-eyebrow">수사 도구</div>
         <div class="page-title">모순 탐지</div>
@@ -167,17 +265,17 @@ select.field-input { appearance: none; }
     <div class="step-bar">
         <div class="step-node">
             <div class="step-circle active" id="sc1">1</div>
-            <span class="step-name active" id="sn1">입력</span>
+            <span class="step-name active" id="sn1">사건 선택</span>
         </div>
         <div class="step-line"></div>
         <div class="step-node">
             <div class="step-circle" id="sc2">2</div>
-            <span class="step-name" id="sn2">변환</span>
+            <span class="step-name" id="sn2">조서 선택</span>
         </div>
         <div class="step-line"></div>
         <div class="step-node">
             <div class="step-circle" id="sc3">3</div>
-            <span class="step-name" id="sn3">분석</span>
+            <span class="step-name" id="sn3">AI 분석</span>
         </div>
         <div class="step-line"></div>
         <div class="step-node">
@@ -187,136 +285,117 @@ select.field-input { appearance: none; }
     </div>
 
     <div class="two-col">
-        <!-- 왼쪽: 입력 -->
-        <div class="col" id="inputCol">
-            <!-- 사건 정보 -->
+
+        <!-- ── 왼쪽: 입력 패널 ── -->
+        <div id="inputCol">
+
+            <!-- 사건 선택 -->
             <div class="card">
                 <div class="card-label">
                     <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
-                    사건 정보
+                    Step 1 · 사건 선택
                 </div>
-                <div class="field-row">
-                    <div class="field-half">
-                        <label class="field-label">사건번호</label>
-                        <input type="text" class="field-input" id="caseNum" placeholder="예: 2024-0312">
-                    </div>
-                    <div class="field-half">
-                        <label class="field-label">진술 유형</label>
-                        <select class="field-input" id="stmtType">
-                            <option value="피의자">피의자 진술</option>
-                            <option value="목격자">목격자 진술</option>
-                            <option value="참고인">참고인 진술</option>
-                        </select>
-                    </div>
+                <% if (caseList.isEmpty()) { %>
+                <div style="font-size:12px;color:#9ca3af;padding:8px 0;">등록된 사건이 없습니다. 먼저 사건을 등록해 주세요.</div>
+                <% } else { %>
+                <select class="case-select" id="caseSelect" onchange="onCaseChange()">
+                    <option value="">-- 사건을 선택하세요 --</option>
+                    <% for (String[] c : caseList) { %>
+                    <option value="<%= c[0] %>" data-name="<%= c[1].replace("\"","&quot;") %>" data-suspect="<%= c[2].replace("\"","&quot;") %>" data-status="<%= c[3].replace("\"","&quot;") %>">
+                        <%= c[0] %> · <%= c[1] %>
+                    </option>
+                    <% } %>
+                </select>
+                <div class="case-chips" id="caseChips" style="display:none;">
+                    <span class="case-chip" id="chipSuspect"></span>
+                    <span class="case-chip" id="chipStatus"></span>
                 </div>
-                <label class="field-label">진술자 성명</label>
-                <input type="text" class="field-input" id="stmtName" placeholder="진술자 이름">
+                <% } %>
             </div>
 
-            <!-- 음성 업로드 -->
-            <div class="card">
+            <!-- 조서 선택 -->
+            <div class="card" id="docCard" style="display:none;">
                 <div class="card-label">
-                    <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
-                    음성 파일
-                    <span style="font-size:9px;background:#eff6ff;color:#1e40af;border-radius:4px;padding:2px 6px;margin-left:auto;font-weight:400;">CLOVA Speech</span>
+                    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    Step 2 · 조서 선택
+                    <span style="font-size:10px;color:#6b7280;font-weight:400;text-transform:none;letter-spacing:0;margin-left:auto;">2개 이상 선택</span>
                 </div>
-                <div class="upload-zone" id="uploadZone"
-                     ondragover="event.preventDefault();this.classList.add('hover')"
-                     ondragleave="this.classList.remove('hover')"
-                     ondrop="handleDrop(event)">
-                    <input type="file" id="audioFile" accept=".mp3,.wav,.m4a,.ogg,.webm" onchange="handleFile(this)">
-                    <div class="upload-icon">
-                        <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-                    </div>
-                    <div class="upload-title">음성 파일 업로드</div>
-                    <div class="upload-desc">MP3, WAV, M4A, OGG, WEBM · 최대 100MB</div>
-                </div>
-                <div class="file-selected" id="fileSelected">
-                    <div style="flex:1;min-width:0;">
-                        <div class="file-name" id="fileName">-</div>
-                        <div class="file-size" id="fileSize"></div>
-                    </div>
-                    <button class="file-remove" onclick="removeFile()">
-                        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                </div>
-                <div id="sttBtnWrap" style="display:none;">
-                    <button class="btn-stt" onclick="convertStt()" id="sttBtn">
-                        <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-                        CLOVA Speech로 변환
-                    </button>
-                    <div id="sttLoading" style="display:none;text-align:center;font-size:12px;color:#1e40af;padding:8px;">
-                        <span id="sttMsg">변환 중...</span>
-                    </div>
-                </div>
-            </div>
 
-            <!-- 텍스트 직접 입력 -->
-            <div class="card">
-                <div class="card-label">
-                    <svg viewBox="0 0 24 24"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
-                    진술 텍스트 직접 입력
-                    <span style="font-size:9px;background:#f0fdf4;color:#166534;border-radius:4px;padding:2px 6px;margin-left:auto;font-weight:400;">현재 사용 가능</span>
+                <div class="select-counter" id="selectCounter">
+                    <span>선택된 조서</span>
+                    <span class="select-counter-count" id="counterText">0개 선택됨</span>
                 </div>
-                <textarea class="text-area" id="stmtText" placeholder="진술 내용을 직접 입력하거나 붙여넣기 하세요..." oninput="updateCharCount()"></textarea>
-                <div class="char-count" id="charCount">0자</div>
-                <button class="btn-analyze" onclick="startAnalysis()" style="margin-top:12px;">
+
+                <div class="doc-list" id="docList">
+                    <div class="doc-loading">사건을 선택하면 조서 목록이 표시됩니다.</div>
+                </div>
+
+                <button class="btn-analyze" id="btnAnalyze" disabled onclick="startAnalysis()" style="margin-top:14px;">
                     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    AI 분석 시작
+                    AI 모순 탐지 시작
                 </button>
             </div>
-        </div>
 
-        <!-- 오른쪽: 결과 -->
-        <div class="col" id="resultCol">
-            <!-- 대기 상태 -->
+        </div><!-- /inputCol -->
+
+        <!-- ── 오른쪽: 결과 패널 ── -->
+        <div id="resultCol">
+
+            <!-- 대기 -->
             <div class="card result-placeholder" id="placeholderCard">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <p>진술 텍스트를 입력하고<br>AI 분석을 시작하세요.</p>
+                <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <p>사건을 선택하고 조서를 2개 이상 선택한 뒤<br>AI 모순 탐지를 시작하세요.</p>
             </div>
 
             <!-- 로딩 -->
             <div class="card loading-card" id="loadingCard" style="display:none;">
                 <div class="spinner"></div>
                 <div style="font-size:14px;font-weight:500;color:#0d1a33;margin-bottom:4px;">AI 분석 중...</div>
-                <div style="font-size:12px;color:#9ca3af;" id="loadingSub">잠시만 기다려 주세요</div>
+                <div style="font-size:12px;color:#9ca3af;" id="loadingSub">조서 텍스트를 불러오는 중</div>
                 <div class="loading-steps">
-                    <div class="ls" id="ls1"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>텍스트 전처리 중</div>
-                    <div class="ls" id="ls2"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Ollama LLM 분석 요청</div>
-                    <div class="ls" id="ls3"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>모순 항목 추출</div>
-                    <div class="ls" id="ls4"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>결과 정리</div>
+                    <div class="ls" id="ls1">
+                        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        조서 텍스트 로딩
+                    </div>
+                    <div class="ls" id="ls2">
+                        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Ollama LLM 분석 요청
+                    </div>
+                    <div class="ls" id="ls3">
+                        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        모순 항목 추출
+                    </div>
+                    <div class="ls" id="ls4">
+                        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        결과 정리
+                    </div>
                 </div>
             </div>
 
             <!-- 결과 -->
-            <div id="resultContent" style="display:none;">
-                <div class="card" style="margin-bottom:0;">
-                    <div class="card-label" style="margin-bottom:10px;">
-                        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
-                        모순 탐지 요약
+            <div class="card" id="resultContent" style="display:none;">
+                <!-- 모순 탐지 배너 -->
+                <div class="contra-banner" id="contraBanner">
+                    <div class="contra-dot" id="contraDot"></div>
+                    <div>
+                        <div class="contra-title" id="contraTitle"></div>
+                        <div class="contra-desc"  id="contraDesc"></div>
                     </div>
-                    <div class="contra-banner" id="contraBanner">
-                        <div class="contra-dot" id="contraDot"></div>
-                        <div><div class="contra-title" id="contraTitle"></div><div class="contra-desc" id="contraDesc"></div></div>
-                    </div>
-                    <div class="contra-list" id="contraList"></div>
+                </div>
 
-                    <div class="card-label" style="margin-bottom:8px;margin-top:16px;">
-                        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                        진술 텍스트
-                    </div>
-                    <div style="position:relative;">
-                        <div class="transcript-box" id="transcriptBox"></div>
-                        <button class="copy-btn" onclick="copyText()">복사</button>
-                    </div>
+                <!-- 분석에 사용된 조서 -->
+                <div class="section-label">분석 조서</div>
+                <div id="analyzedDocs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
 
-                    <div class="card-label" style="margin-bottom:8px;">
-                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-                        AI 분석 결과
-                        <span style="font-size:9px;background:#eff6ff;color:#1e40af;border-radius:4px;padding:2px 6px;margin-left:auto;font-weight:400;">gemma3:1b</span>
-                    </div>
-                    <div class="ai-result-box" id="aiResultBox"></div>
+                <!-- AI 분석 결과 -->
+                <div class="section-label">AI 분석 결과 <span style="font-size:9px;background:#eff6ff;color:#1e40af;border-radius:4px;padding:2px 6px;margin-left:4px;font-weight:400;">gemma3:1b</span></div>
+                <div style="position:relative;">
+                    <div class="result-box" id="aiResultBox"></div>
+                    <button class="copy-btn" onclick="copyResult()">복사</button>
+                </div>
 
+                <!-- 버튼 -->
+                <div style="margin-top:18px;display:flex;flex-direction:column;gap:8px;">
                     <button class="btn-save" id="btnSave" onclick="saveResult()">
                         <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                         결과 저장하기
@@ -324,209 +403,357 @@ select.field-input { appearance: none; }
                     <button class="btn-reset" onclick="resetAll()">새로 분석하기</button>
                 </div>
             </div>
-        </div>
+
+        </div><!-- /resultCol -->
+
     </div>
+
 </main>
 </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
-function handleFile(input) {
-    if (!input.files || !input.files[0]) return;
-    showFile(input.files[0]);
-}
-function handleDrop(e) {
-    e.preventDefault();
-    document.getElementById('uploadZone').classList.remove('hover');
-    if (e.dataTransfer.files[0]) showFile(e.dataTransfer.files[0]);
-}
-function showFile(f) {
-    document.getElementById('fileName').textContent = f.name;
-    var mb = f.size > 1048576 ? (f.size/1048576).toFixed(1)+' MB' : (f.size/1024).toFixed(1)+' KB';
-    document.getElementById('fileSize').textContent = mb;
-    document.getElementById('fileSelected').style.display = 'flex';
-    document.getElementById('sttBtnWrap').style.display = '';
-}
-function removeFile() {
-    document.getElementById('audioFile').value = '';
-    document.getElementById('fileSelected').style.display = 'none';
-    document.getElementById('sttBtnWrap').style.display = 'none';
-    document.getElementById('sttLoading').style.display = 'none';
+var _selectedDocs = [];   // [{id, name, type, text}]
+var _currentCaseId = '';
+var _aiResult = '';
+var _hasContradiction = false;
+
+// ── 사건 선택 ────────────────────────────────────────
+function onCaseChange() {
+    var sel = document.getElementById('caseSelect');
+    var opt = sel.options[sel.selectedIndex];
+    _currentCaseId = sel.value;
+    _selectedDocs = [];
+    updateCounter();
+
+    if (!_currentCaseId) {
+        document.getElementById('docCard').style.display = 'none';
+        document.getElementById('caseChips').style.display = 'none';
+        resetResultPanel();
+        setStep(1);
+        return;
+    }
+
+    var suspect = opt.getAttribute('data-suspect') || '';
+    var status  = opt.getAttribute('data-status')  || '';
+    document.getElementById('chipSuspect').textContent = suspect ? '피의자 ' + suspect : '';
+    document.getElementById('chipStatus').textContent  = status  || '';
+    document.getElementById('chipStatus').className    = 'case-chip status-' + status;
+    document.getElementById('caseChips').style.display = suspect || status ? 'flex' : 'none';
+
+    document.getElementById('docCard').style.display = '';
+    setStep(2);
+    loadDocs(_currentCaseId);
 }
 
-function convertStt() {
-    var fileInput = document.getElementById('audioFile');
-    if (!fileInput.files || !fileInput.files[0]) { alert('음성 파일을 선택해 주세요.'); return; }
-    var btn = document.getElementById('sttBtn');
-    var loading = document.getElementById('sttLoading');
-    btn.style.display = 'none';
-    loading.style.display = '';
-    document.getElementById('sttMsg').textContent = '음성 파일을 CLOVA Speech에 전송 중...';
-    var fd = new FormData();
-    fd.append('audioFile', fileInput.files[0]);
-    fd.append('language', 'Kor');
-    fetch(_ctx + '/stt', { method: 'POST', body: fd })
+// ── 조서 목록 로딩 ───────────────────────────────────
+function loadDocs(caseId) {
+    var list = document.getElementById('docList');
+    list.innerHTML = '<div class="doc-loading"><div style="width:20px;height:20px;border:2px solid #e2e5ee;border-top-color:#0d1a33;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 8px;"></div>조서 목록 불러오는 중...</div>';
+
+    fetch(_ctx + '/caseApi?action=caseDetail&caseId=' + encodeURIComponent(caseId), {credentials:'same-origin'})
         .then(function(r) { return r.json(); })
-        .then(function(data) {
-            loading.style.display = 'none';
-            btn.style.display = '';
-            if (data.success) {
-                document.getElementById('stmtText').value = data.text;
-                updateCharCount();
-                loading.style.display = '';
-                loading.style.color = '#16a34a';
-                document.getElementById('sttMsg').textContent = '변환 완료! 아래 텍스트를 확인하세요.';
-                setTimeout(function() { loading.style.display = 'none'; }, 3000);
-            } else {
-                alert(data.error || 'STT 변환에 실패했습니다.');
+        .then(function(d) {
+            var docs = d.docs || [];
+            if (!docs.length) {
+                list.innerHTML = '<div class="doc-empty">이 사건에 등록된 조서가 없습니다.<br><a href="' + _ctx + '/desktop/writeTranscript.jsp?caseId=' + encodeURIComponent(caseId) + '" style="color:#4a7cdc;text-decoration:none;">조서 작성하러 가기 →</a></div>';
+                return;
             }
+            list.innerHTML = docs.map(function(doc) {
+                var badgeHtml = doc.contradiction
+                    ? '<span class="doc-badge contra">모순</span>'
+                    : '<span class="doc-badge ok">정상</span>';
+                return '<div class="doc-item" id="docRow-' + doc.id + '" onclick="toggleDoc(\'' + doc.id + '\',\'' + esc(doc.name) + '\',\'' + esc(doc.type || '') + '\')">'
+                    + '<div class="doc-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>'
+                    + '<div class="doc-info">'
+                    + '<div class="doc-name">' + esc(doc.name) + '</div>'
+                    + '<div class="doc-meta">' + esc(doc.type || '미분류') + ' · ' + esc(doc.date || '') + '</div>'
+                    + '</div>'
+                    + badgeHtml
+                    + '</div>';
+            }).join('');
         })
-        .catch(function(err) {
-            loading.style.display = 'none'; btn.style.display = '';
-            alert('네트워크 오류: ' + err.message);
+        .catch(function() {
+            list.innerHTML = '<div class="doc-empty">조서 목록을 불러올 수 없습니다.</div>';
         });
 }
 
-function updateCharCount() {
-    var v = document.getElementById('stmtText').value;
-    document.getElementById('charCount').textContent = v.length + '자';
-}
-
-function setStep(n) {
-    for (var i = 1; i <= 4; i++) {
-        var c = document.getElementById('sc' + i);
-        var s = document.getElementById('sn' + i);
-        if (i < n) { c.className = 'step-circle done'; s.className = 'step-name'; }
-        else if (i === n) { c.className = 'step-circle active'; s.className = 'step-name active'; }
-        else { c.className = 'step-circle'; s.className = 'step-name'; }
+// ── 조서 체크박스 토글 ───────────────────────────────
+function toggleDoc(id, name, type) {
+    var el = document.getElementById('docRow-' + id);
+    var idx = _selectedDocs.findIndex(function(d) { return d.id === id; });
+    if (idx >= 0) {
+        _selectedDocs.splice(idx, 1);
+        el.classList.remove('selected');
+    } else {
+        _selectedDocs.push({id: id, name: name, type: type, text: ''});
+        el.classList.add('selected');
     }
+    updateCounter();
 }
 
+function updateCounter() {
+    var n = _selectedDocs.length;
+    var counter = document.getElementById('selectCounter');
+    var text = document.getElementById('counterText');
+    var btn = document.getElementById('btnAnalyze');
+    text.textContent = n + '개 선택됨';
+    counter.className = n >= 2 ? 'select-counter ready' : 'select-counter';
+    btn.disabled = n < 2;
+}
+
+// ── 분석 시작 ────────────────────────────────────────
 function startAnalysis() {
-    var text = document.getElementById('stmtText').value.trim();
-    if (!text) { alert('진술 텍스트를 입력해 주세요.'); return; }
+    if (_selectedDocs.length < 2) { showToast('조서를 2개 이상 선택해 주세요.'); return; }
+
     document.getElementById('placeholderCard').style.display = 'none';
     document.getElementById('loadingCard').style.display = '';
     document.getElementById('resultContent').style.display = 'none';
-    setStep(2);
-    animateSteps(function() { setStep(3); callOllama(text); });
+    document.getElementById('btnAnalyze').disabled = true;
+    setStep(3);
+    resetLoadingSteps();
+
+    setLS(1, 'active');
+    document.getElementById('loadingSub').textContent = '조서 텍스트 불러오는 중...';
+
+    var promises = _selectedDocs.map(function(doc) {
+        return fetch(_ctx + '/caseApi?action=transcriptText&transcriptId=' + encodeURIComponent(doc.id), {credentials:'same-origin'})
+            .then(function(r) { return r.json(); })
+            .then(function(d) { doc.text = d.text || '(내용 없음)'; return doc; });
+    });
+
+    Promise.all(promises)
+        .then(function(docs) {
+            setLS(1, 'done');
+            setLS(2, 'active');
+            document.getElementById('loadingSub').textContent = 'Ollama AI에 연결 중...';
+            setTimeout(function() { callOllama(docs); }, 300);
+        })
+        .catch(function() {
+            showToast('조서 텍스트를 불러올 수 없습니다.');
+            resetToInput();
+        });
 }
 
-function animateSteps(cb) {
-    var ids = ['ls1','ls2','ls3','ls4'];
-    var msgs = ['텍스트 전처리 중...','Ollama LLM 요청 중...','모순 항목 추출 중...','결과 정리 중...'];
-    var i = 0;
-    function next() {
-        if (i > 0) { document.getElementById(ids[i-1]).classList.remove('active'); document.getElementById(ids[i-1]).classList.add('done'); }
-        if (i >= ids.length) { cb(); return; }
-        document.getElementById(ids[i]).classList.add('active');
-        document.getElementById('loadingSub').textContent = msgs[i];
-        i++;
-        setTimeout(next, 900);
-    }
-    next();
+function setLS(n, state) {
+    var el = document.getElementById('ls' + n);
+    if (!el) return;
+    el.classList.remove('active', 'done');
+    if (state === 'active') el.classList.add('active');
+    if (state === 'done')   el.classList.add('done');
 }
 
-function callOllama(text) {
-    var caseNum  = document.getElementById('caseNum').value  || '미입력';
-    var stmtType = document.getElementById('stmtType').value || '진술자';
-    var stmtName = document.getElementById('stmtName').value || '미입력';
-    var prompt =
-        "다음은 형사사건 수사 진술입니다. 아래 내용을 분석하여 결과를 반드시 한국어로 답해주세요.\n\n" +
-        "[사건번호: " + caseNum + "]\n[진술 유형: " + stmtType + "]\n[진술자: " + stmtName + "]\n\n" +
-        "[진술 내용]\n" + text + "\n\n" +
-        "다음 항목을 분석해주세요:\n1. 진술 요약 (3줄 이내)\n2. 모순 또는 불일치 항목 (있다면 구체적으로)\n3. 추가 확인이 필요한 사항\n4. 종합 평가";
+function resetLoadingSteps() {
+    [1,2,3,4].forEach(function(i) { setLS(i, ''); });
+}
+
+// ── Ollama 스트리밍 호출 ──────────────────────────────
+function callOllama(docs) {
+    var caseOpt  = document.getElementById('caseSelect');
+    var caseName = caseOpt.options[caseOpt.selectedIndex] ? caseOpt.options[caseOpt.selectedIndex].text : _currentCaseId;
+    var prompt   = buildPrompt(docs, caseName);
 
     fetch('http://localhost:11434/api/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'gemma3:1b', prompt: prompt, stream: false })
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({model: 'gemma3:1b', prompt: prompt, stream: true})
     })
-    .then(function(r) { return r.json(); })
-    .then(function(data) { showResult(text, data.response || '응답 없음'); })
+    .then(function(r) {
+        if (!r.ok || !r.body) throw new Error('stream unavailable');
+        setLS(2, 'done');
+        initStreamResult(docs);
+        return readStream(r.body.getReader());
+    })
+    .then(function() {
+        finalizeResult();
+    })
     .catch(function() {
-        var demo = "【진술 요약】\n진술자는 해당 날짜 오후 2시에 집에 있었다고 주장하며, 외출 사실을 전면 부인하고 있습니다.\n\n" +
-            "【모순 항목】\n- 진술 초반 '집에 있었다'고 했으나, 이후 '잠깐 편의점을 다녀왔다'는 언급이 포함되어 있어 알리바이에 불일치가 발견됩니다.\n\n" +
-            "【추가 확인 필요】\n- 편의점 CCTV 확인\n- 동거인 또는 인접 주민 목격 여부 확인\n\n" +
-            "【종합 평가】\n진술에 경미한 모순이 포함되어 있으며 추가 조사가 권고됩니다.\n\n⚠ (Ollama 미연결 — 데모 결과입니다)";
-        showResult(text, demo);
+        setLS(2, 'done');
+        initStreamResult(docs);
+        var demo =
+            "【각 조서 핵심 주장 요약】\n" +
+            docs.map(function(d, i) { return "조서"+(i+1)+"("+d.name+"): 진술자의 핵심 주장이 포함되어 있습니다."; }).join("\n") +
+            "\n\n【모순 항목】\n조서 간 시간대 및 위치 정보에 불일치 가능성이 있습니다.\nOllama 미연결 상태이므로 실제 분석을 위해 Ollama를 실행해 주세요.\n\n【추가 확인 필요】\n- 진술자 동선 재확인\n- 목격자 진술 비교\n\n【종합 평가】\n⚠ (Ollama 미연결 — 데모 결과입니다)";
+        simulateStream(demo, function() { finalizeResult(); });
     });
 }
 
-function showResult(originalText, aiResponse) {
-    setStep(4);
+function buildPrompt(docs, caseName) {
+    var p =
+        "당신은 형사사건 수사관을 보조하는 AI입니다. 반드시 한국어로 답변하세요.\n\n" +
+        "다음은 동일 사건(" + caseName + ")에 대한 " + docs.length + "개의 조서입니다. " +
+        "각 조서를 면밀히 비교하여 모순 및 불일치 항목을 분석해 주세요.\n\n";
+    docs.forEach(function(doc, i) {
+        p += "【조서" + (i+1) + ": " + doc.name + "】\n" + doc.text + "\n\n";
+    });
+    p +=
+        "다음 항목을 분석해 주세요:\n" +
+        "1. 각 조서 핵심 주장 요약 (조서별 1~2줄)\n" +
+        "2. 조서 간 모순 또는 불일치 항목 (있다면 구체적으로 어느 조서와 어느 조서가 다른지 명시)\n" +
+        "3. 추가 확인이 필요한 사항\n" +
+        "4. 종합 평가";
+    return p;
+}
+
+// 결과 패널 초기 세팅 (스트리밍 시작 전)
+function initStreamResult(docs) {
     document.getElementById('loadingCard').style.display = 'none';
     document.getElementById('resultContent').style.display = '';
-    document.getElementById('transcriptBox').textContent = originalText;
-    document.getElementById('aiResultBox').textContent = aiResponse;
-    var keywords = ['모순','불일치','위반','거짓','허위','불명확'];
-    var found = keywords.some(function(k) { return aiResponse.includes(k); });
+    setStep(4);
+
+    document.getElementById('analyzedDocs').innerHTML = docs.map(function(d) {
+        return '<span style="font-size:11px;padding:3px 10px;border-radius:20px;background:#f4f6fb;border:1px solid #e2e5ee;color:#6b7280;">' + esc(d.name) + '</span>';
+    }).join('');
+
     var banner = document.getElementById('contraBanner');
     var dot    = document.getElementById('contraDot');
     var title  = document.getElementById('contraTitle');
     var desc   = document.getElementById('contraDesc');
-    if (found) {
-        banner.className = 'contra-banner found';
-        dot.className    = 'contra-dot red';
-        title.className  = 'contra-title red';
-        title.textContent = '모순 항목이 탐지되었습니다';
-        desc.textContent  = 'AI가 진술에서 불일치 또는 모순된 내용을 발견했습니다.';
-        document.getElementById('contraList').innerHTML =
-            '<div class="contra-item"><div class="contra-item-title">알리바이 불일치</div><div class="contra-item-desc">진술 내 시간대 및 위치 정보가 상호 모순됩니다. AI 분석 결과를 참고하여 추가 확인이 필요합니다.</div></div>';
-    } else {
-        banner.className = 'contra-banner notfound';
-        dot.className    = 'contra-dot green';
-        title.className  = 'contra-title green';
-        title.textContent = '명확한 모순이 탐지되지 않았습니다';
-        desc.textContent  = '진술 내에서 즉각적인 모순은 발견되지 않았으나, 전체 분석 결과를 반드시 직접 검토하세요.';
-        document.getElementById('contraList').innerHTML = '';
-    }
+    banner.className  = 'contra-banner analyzing';
+    dot.className     = 'contra-dot pulse';
+    title.className   = 'contra-title';
+    title.textContent = 'AI 분석 중...';
+    desc.textContent  = '조서를 비교 분석하고 있습니다. 잠시 기다려 주세요.';
+
+    _aiResult = '';
+    var box = document.getElementById('aiResultBox');
+    box.textContent = '';
+    box.classList.add('streaming');
+    document.getElementById('btnSave').disabled = true;
 }
 
+// ReadableStream 청크 처리
+function readStream(reader) {
+    var decoder = new TextDecoder('utf-8');
+    var buffer  = '';
+    var box     = document.getElementById('aiResultBox');
+
+    function pump() {
+        return reader.read().then(function(chunk) {
+            if (chunk.done) return;
+            buffer += decoder.decode(chunk.value, {stream: true});
+            var lines = buffer.split('\n');
+            buffer = lines.pop();
+            lines.forEach(function(line) {
+                line = line.trim();
+                if (!line) return;
+                try {
+                    var data = JSON.parse(line);
+                    if (data.response) {
+                        _aiResult += data.response;
+                        box.textContent = _aiResult;
+                        box.scrollTop = box.scrollHeight;
+                    }
+                    if (data.done) return;
+                } catch(e) {}
+            });
+            return pump();
+        });
+    }
+    return pump();
+}
+
+// Ollama 미연결 시 타이핑 효과
+function simulateStream(text, cb) {
+    var box  = document.getElementById('aiResultBox');
+    var i    = 0;
+    var step = 4;
+    function tick() {
+        if (i >= text.length) { cb(); return; }
+        _aiResult += text.substring(i, i + step);
+        box.textContent = _aiResult;
+        box.scrollTop = box.scrollHeight;
+        i += step;
+        setTimeout(tick, 25);
+    }
+    tick();
+}
+
+// 스트리밍 완료 후 결과 확정
+function finalizeResult() {
+    var box = document.getElementById('aiResultBox');
+    box.classList.remove('streaming');
+
+    var keywords = ['모순','불일치','위반','거짓','허위','불명확','상충','엇갈','앞뒤가'];
+    _hasContradiction = keywords.some(function(k) { return _aiResult.includes(k); });
+
+    var banner = document.getElementById('contraBanner');
+    var dot    = document.getElementById('contraDot');
+    var title  = document.getElementById('contraTitle');
+    var desc   = document.getElementById('contraDesc');
+    if (_hasContradiction) {
+        banner.className  = 'contra-banner found';
+        dot.className     = 'contra-dot red';
+        title.className   = 'contra-title red';
+        title.textContent = '모순 항목이 탐지되었습니다';
+        desc.textContent  = 'AI가 선택된 조서에서 불일치 또는 모순된 내용을 발견했습니다.';
+    } else {
+        banner.className  = 'contra-banner notfound';
+        dot.className     = 'contra-dot green';
+        title.className   = 'contra-title green';
+        title.textContent = '명확한 모순이 탐지되지 않았습니다';
+        desc.textContent  = '선택된 조서 내에서 즉각적인 모순은 발견되지 않았으나, 반드시 직접 검토하세요.';
+    }
+
+    document.getElementById('btnAnalyze').disabled = false;
+    document.getElementById('btnSave').disabled = false;
+}
+
+// ── 결과 저장 ────────────────────────────────────────
 function saveResult() {
     var btn = document.getElementById('btnSave');
     btn.disabled = true;
-    btn.textContent = '저장 중...';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px;animation:spin 0.7s linear infinite"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg> 저장 중...';
+
+    var stmtNames = _selectedDocs.map(function(d){ return d.name; }).join(' vs ');
+    var stmtText  = _selectedDocs.map(function(d,i){ return '[조서'+(i+1)+': '+d.name+']\n'+d.text; }).join('\n\n');
+
     var params = new URLSearchParams();
     params.append('action', 'save');
-    params.append('caseId',   document.getElementById('caseNum').value.trim());
-    params.append('stmtName', document.getElementById('stmtName').value.trim());
-    params.append('stmtType', document.getElementById('stmtType').value);
-    params.append('stmtText', document.getElementById('transcriptBox').textContent);
-    params.append('aiResult', document.getElementById('aiResultBox').textContent);
-    var hasCon = document.getElementById('contraBanner').classList.contains('found');
-    params.append('hasContradiction', hasCon ? 'true' : 'false');
+    params.append('caseId',          _currentCaseId);
+    params.append('stmtName',        stmtNames);
+    params.append('stmtType',        '조서 비교 분석');
+    params.append('stmtText',        stmtText);
+    params.append('aiResult',        _aiResult);
+    params.append('hasContradiction', _hasContradiction ? 'true' : 'false');
+
     fetch(_ctx + '/contradictionApi', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+        headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'},
         body: params.toString()
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
         if (data.success) {
-            location.href = _ctx + '/desktop/main.jsp';
+            showToast('결과가 저장되었습니다.');
+            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> 저장 완료';
         } else {
-            alert(data.error || '저장에 실패했습니다.');
+            showToast(data.error || '저장에 실패했습니다.');
             btn.disabled = false;
-            btn.textContent = '결과 저장하기';
+            btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg> 결과 저장하기';
         }
     })
-    .catch(function(err) {
-        alert(err.message || '서버 연결 오류가 발생했습니다.');
+    .catch(function() {
+        showToast('서버 연결 오류가 발생했습니다.');
         btn.disabled = false;
-        btn.textContent = '결과 저장하기';
+        btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg> 결과 저장하기';
     });
 }
 
-function copyText() {
-    var t = document.getElementById('transcriptBox').textContent;
-    navigator.clipboard.writeText(t).then(function() { alert('클립보드에 복사되었습니다.'); });
+// ── 유틸 ─────────────────────────────────────────────
+function setStep(n) {
+    for (var i = 1; i <= 4; i++) {
+        var c = document.getElementById('sc' + i);
+        var s = document.getElementById('sn' + i);
+        if (i < n)      { c.className = 'step-circle done';   s.className = 'step-name'; }
+        else if (i === n) { c.className = 'step-circle active'; s.className = 'step-name active'; }
+        else            { c.className = 'step-circle';        s.className = 'step-name'; }
+    }
 }
 
-function resetAll() {
-    document.getElementById('stmtText').value = '';
-    updateCharCount();
-    removeFile();
+function resetResultPanel() {
     document.getElementById('placeholderCard').style.display = '';
     document.getElementById('loadingCard').style.display = 'none';
     document.getElementById('resultContent').style.display = 'none';
@@ -534,7 +761,42 @@ function resetAll() {
         var el = document.getElementById(id);
         el.classList.remove('active','done');
     });
+}
+
+function resetToInput() {
+    document.getElementById('loadingCard').style.display = 'none';
+    document.getElementById('placeholderCard').style.display = '';
+    document.getElementById('btnAnalyze').disabled = _selectedDocs.length < 2;
+    setStep(_currentCaseId ? 2 : 1);
+}
+
+function resetAll() {
+    _selectedDocs = [];
+    _currentCaseId = '';
+    _aiResult = '';
+    _hasContradiction = false;
+    document.getElementById('caseSelect').value = '';
+    document.getElementById('docCard').style.display = 'none';
+    document.getElementById('caseChips').style.display = 'none';
+    resetResultPanel();
     setStep(1);
+}
+
+function copyResult() {
+    var t = document.getElementById('aiResultBox').textContent;
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(t).then(function() { showToast('분석 결과가 복사되었습니다.'); });
+    }
+}
+
+function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, 2500);
 }
 </script>
 </body>

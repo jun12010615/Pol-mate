@@ -4,7 +4,7 @@ String loginUser = (String) session.getAttribute("loginUser");
 String userName  = (String) session.getAttribute("userName");
 if (loginUser == null) { response.sendRedirect(request.getContextPath() + "/desktop/login.jsp"); return; }
 request.setAttribute("currentPage", "cases");
-request.setAttribute("breadcrumb",  new String[]{"POL-MATE", "&#45236; &#49324;&#44148;"});
+request.setAttribute("breadcrumb",  new String[]{"POL-MATE", "내 사건"});
 String initCaseId = request.getParameter("caseId") != null ? request.getParameter("caseId") : "";
 %>
 <!DOCTYPE html>
@@ -12,7 +12,7 @@ String initCaseId = request.getParameter("caseId") != null ? request.getParamete
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>POL-MATE | &#45236; &#49324;&#44148;</title>
+<title>POL-MATE | 내 사건</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<%= request.getContextPath() %>/css/polmate.css">
 <script>var _ctx = '<%= request.getContextPath() %>'; var _initCaseId = '<%= initCaseId %>';</script>
@@ -197,33 +197,33 @@ html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: 
     <div class="toolbar">
         <div class="search-box">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" id="searchInput" placeholder="&#49324;&#44148;&#48264;&#54840;, &#54588;&#51032;&#51088;, &#51333;&#47448; &#44160;&#49353;..." oninput="filterCases()">
+            <input type="text" id="searchInput" placeholder="사건번호, 피의자, 종류 검색..." oninput="filterCases()">
         </div>
         <div class="filter-chips">
-            <button class="chip active" data-status="all" onclick="setFilter(this)">&#51204;&#52404;</button>
-            <button class="chip" data-status="&#51652;&#54665;&#51473;" onclick="setFilter(this)">&#51652;&#54665;&#51473;</button>
-            <button class="chip" data-status="&#47784;&#49692;&#53456;&#51648;" onclick="setFilter(this)">&#47784;&#49692;&#53456;&#51648;</button>
-            <button class="chip" data-status="&#44160;&#53664;&#54596;&#50836;" onclick="setFilter(this)">&#44160;&#53664;&#54596;&#50836;</button>
-            <button class="chip" data-status="&#50756;&#47308;" onclick="setFilter(this)">&#50756;&#47308;</button>
+            <button class="chip active" data-status="all" onclick="setFilter(this)">전체</button>
+            <button class="chip" data-status="진행중" onclick="setFilter(this)">진행중</button>
+            <button class="chip" data-status="모순탐지" onclick="setFilter(this)">모순탐지</button>
+            <button class="chip" data-status="검토필요" onclick="setFilter(this)">검토필요</button>
+            <button class="chip" data-status="완료" onclick="setFilter(this)">완료</button>
         </div>
         <button class="btn-new" onclick="openNewModal()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            &#49352; &#49324;&#44148;
+            새 사건
         </button>
     </div>
 
     <div class="case-table">
         <div class="case-table-head">
-            <span class="th">&#49324;&#44148;&#48264;&#54840;</span>
-            <span class="th">&#49324;&#44148;&#47749;</span>
-            <span class="th">&#54588;&#51032;&#51088;</span>
-            <span class="th">&#49345;&#53468;</span>
-            <span class="th">&#51312;&#49436;</span>
-            <span class="th">&#47784;&#49692;</span>
+            <span class="th">사건번호</span>
+            <span class="th">사건명</span>
+            <span class="th">피의자</span>
+            <span class="th">상태</span>
+            <span class="th">조서</span>
+            <span class="th">모순</span>
             <span class="th"></span>
         </div>
         <div id="caseList">
-            <div class="empty-state">&#47196;&#46377; &#51473;...</div>
+            <div class="empty-state">로딩 중...</div>
         </div>
     </div>
 
@@ -246,55 +246,55 @@ html, body { height: 100%; font-family: 'Noto Sans KR', sans-serif; background: 
     </div>
     <div class="detail-body">
         <div class="detail-tabs">
-            <button class="dtab active" onclick="switchTab('info')">&#44592;&#48376; &#51221;&#48372;</button>
-            <button class="dtab" onclick="switchTab('docs')">&#51312;&#49436; &#47785;&#47197;</button>
+            <button class="dtab active" onclick="switchTab('info')">기본 정보</button>
+            <button class="dtab" onclick="switchTab('docs')">조서 목록</button>
         </div>
         <div class="tab-pane active" id="tabInfo">
             <div class="info-grid" id="dpInfoGrid"></div>
-            <div class="sec-label" style="margin-top:16px">&#49345;&#53468; &#48320;&#44221;</div>
+            <div class="sec-label" style="margin-top:16px">상태 변경</div>
             <div class="status-form">
                 <select class="status-select" id="dpStatusSel">
-                    <option>&#51652;&#54665;&#51473;</option>
-                    <option>&#44160;&#53664;&#54596;&#50836;</option>
-                    <option>&#50756;&#47308;</option>
+                    <option>진행중</option>
+                    <option>검토필요</option>
+                    <option>완료</option>
                 </select>
-                <button class="btn-save" onclick="saveStatus()">&#51200;&#51109;</button>
+                <button class="btn-save" onclick="saveStatus()">저장</button>
             </div>
         </div>
         <div class="tab-pane" id="tabDocs">
-            <div id="dpDocList"><div class="empty-state">&#51312;&#49436;&#44032; &#50630;&#49845;&#45768;&#45796;</div></div>
+            <div id="dpDocList"><div class="empty-state">조서가 없습니다</div></div>
             <div style="margin-top:16px">
                 <a id="btnNewDoc" href="#" class="btn-new" style="display:inline-flex;text-decoration:none;">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    &#51312;&#49436; &#51089;&#49457;
+                    조서 작성
                 </a>
             </div>
         </div>
     </div>
     <div class="detail-footer">
-        <button class="btn-danger" onclick="deleteCase()">&#49324;&#44148; &#49325;&#51228;</button>
+        <button class="btn-danger" onclick="deleteCase()">사건 삭제</button>
     </div>
 </div>
 
 
 <div class="modal-backdrop" id="newModal">
     <div class="modal" onclick="event.stopPropagation()">
-        <div class="modal-title">&#49352; &#49324;&#44148; &#46321;&#47197;</div>
+        <div class="modal-title">새 사건 등록</div>
         <div class="form-field">
-            <label class="form-label">&#49324;&#44148;&#47749; <span style="color:#dc2626">*</span></label>
-            <input type="text" class="form-input" id="newCaseName" placeholder="&#49324;&#44148;&#47749; &#51077;&#47141;">
+            <label class="form-label">사건명 <span style="color:#dc2626">*</span></label>
+            <input type="text" class="form-input" id="newCaseName" placeholder="사건명 입력">
         </div>
         <div class="form-field">
-            <label class="form-label">&#54588;&#51032;&#51088;</label>
-            <input type="text" class="form-input" id="newSuspect" placeholder="&#54588;&#51032;&#51088; &#49457;&#47749;">
+            <label class="form-label">피의자</label>
+            <input type="text" class="form-input" id="newSuspect" placeholder="피의자 성명">
         </div>
         <div class="form-field">
-            <label class="form-label">&#51333;&#47448;</label>
-            <input type="text" class="form-input" id="newCharge" placeholder="&#51333;&#47448;&#47749; (&#50696;: &#51208;&#46020;&#51452;&#44144;&#51644;)">
+            <label class="form-label">종류</label>
+            <input type="text" class="form-input" id="newCharge" placeholder="종류명 (예: 절도주거즼)">
         </div>
         <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeNewModal()">&#52712;&#49548;</button>
-            <button class="btn-confirm" onclick="createCase()">&#46321;&#47197;</button>
+            <button class="btn-cancel" onclick="closeNewModal()">취소</button>
+            <button class="btn-confirm" onclick="createCase()">등록</button>
         </div>
     </div>
 </div>
@@ -307,9 +307,9 @@ var _currentFilter = 'all';
 var _currentCaseId = null;
 
 function badgeClass(status) {
-    if (status === '&#51652;&#54665;&#51473;') return 'b-jinhaeng';
-    if (status === '&#47784;&#49692;&#53456;&#51648;') return 'b-moosun';
-    if (status === '&#44160;&#53664;&#54596;&#50836;') return 'b-geomto';
+    if (status === '진행중') return 'b-jinhaeng';
+    if (status === '모순탐지') return 'b-moosun';
+    if (status === '검토필요') return 'b-geomto';
     return 'b-wanryo';
 }
 
@@ -326,7 +326,7 @@ function loadCases() {
             }
             renderCases();
         })
-        .catch(function() { showToast('&#49324;&#44148; &#47785;&#47197;&#47484; &#48266;&#47140;&#50625; &#49688; &#50630;&#49845;&#45768;&#45796;.'); });
+        .catch(function() { showToast('사건 목록를 벊려엁 수 없습니다.'); });
 }
 
 function renderCases() {
@@ -341,7 +341,7 @@ function renderCases() {
 
     var el = document.getElementById('caseList');
     if (list.length === 0) {
-        el.innerHTML = '<div class="empty-state">&#51312;&#44148;&#54616;&#45716; &#49324;&#44148;&#51060; &#50630;&#49845;&#45768;&#45796;</div>';
+        el.innerHTML = '<div class="empty-state">조건하는 사건이 없습니다</div>';
         return;
     }
 
@@ -354,9 +354,9 @@ function renderCases() {
             + '<span class="case-name">' + (c.name||'') + '</span>'
             + '<span class="case-suspect">' + (c.suspect||'') + '</span>'
             + '<span><span class="badge ' + bc + '">' + (c.status||'') + '</span></span>'
-            + '<span class="doc-count">' + (c.docs||0) + '&#44148;</span>'
-            + '<span class="contra-count">' + (c.contradictions > 0 ? c.contradictions + '&#44148;' : '-') + '</span>'
-            + '<button class="action-btn" title="&#49325;&#51228;" onclick="event.stopPropagation();confirmDelete(\'' + c.id + '\')">'
+            + '<span class="doc-count">' + (c.docs||0) + '건</span>'
+            + '<span class="contra-count">' + (c.contradictions > 0 ? c.contradictions + '건' : '-') + '</span>'
+            + '<button class="action-btn" title="삭제" onclick="event.stopPropagation();confirmDelete(\'' + c.id + '\')">'
             + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
             + '</button>'
             + '</div>';
@@ -385,37 +385,37 @@ function openDetail(caseId) {
             var c = d.case || d;
             document.getElementById('dpId').textContent = c.id || caseId;
             document.getElementById('dpName').textContent = c.name || '';
-            document.getElementById('dpStatusSel').value = c.status || '&#51652;&#54665;&#51473;';
+            document.getElementById('dpStatusSel').value = c.status || '진행중';
 
             var grid = document.getElementById('dpInfoGrid');
             grid.innerHTML = [
-                ['&#54588;&#51032;&#51088;', c.suspect || '-'],
-                ['&#51333;&#47448;', c.charge || '-'],
-                ['&#45817;&#45813; &#49688;&#49324;&#44288;', (c.rank || '') + ' ' + (c.detective || '-')],
-                ['&#54861;&#49345; &#48512;&#49436;', c.dept_name || '-'],
-                ['&#46321;&#47197;&#51068;', c.date || '-'],
-                ['&#51312;&#49436; &#49688;', (c.docs || 0) + '&#44148;']
+                ['피의자', c.suspect || '-'],
+                ['종류', c.charge || '-'],
+                ['당답 수사관', (c.rank || '') + ' ' + (c.detective || '-')],
+                ['홍상 부서', c.deptName || '-'],
+                ['등록일', c.date || '-'],
+                ['조서 수', (c.docCount || 0) + '건']
             ].map(function(pair) {
                 return '<div class="info-item"><div class="info-label">' + pair[0] + '</div><div class="info-value">' + pair[1] + '</div></div>';
             }).join('');
 
-            var docs = d.documents || c.documents || [];
+            var docs = c.docs || [];
             var docEl = document.getElementById('dpDocList');
             if (docs.length === 0) {
-                docEl.innerHTML = '<div class="empty-state">&#51312;&#49436;&#44032; &#50630;&#49845;&#45768;&#45796;</div>';
+                docEl.innerHTML = '<div class="empty-state">조서가 없습니다</div>';
             } else {
                 docEl.innerHTML = docs.map(function(doc) {
-                    var contra = doc.has_contradiction ? 'has-contra' : '';
+                    var contra = doc.contradiction ? 'has-contra' : '';
                     return '<a href="' + _ctx + '/desktop/writeTranscript.jsp?transcriptId=' + (doc.id||'') + '" class="doc-item ' + contra + '">'
                         + '<div class="doc-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>'
-                        + '<div style="flex:1"><div class="doc-name">' + (doc.subject || doc.title || '&#51312;&#49436; #' + doc.id) + '</div>'
-                        + '<div class="doc-meta">' + (doc.created_at || '') + (doc.has_contradiction ? ' &nbsp;&#9656; &#47784;&#49692; &#53456;&#51648;' : '') + '</div></div>'
+                        + '<div style="flex:1"><div class="doc-name">' + (doc.name || '조서 #' + doc.id) + '</div>'
+                        + '<div class="doc-meta">' + (doc.date || '') + (doc.contradiction ? ' &nbsp;▸ 모순 탐지' : '') + '</div></div>'
                         + '</a>';
                 }).join('');
             }
             document.getElementById('btnNewDoc').href = _ctx + '/desktop/writeTranscript.jsp?caseId=' + encodeURIComponent(caseId);
         })
-        .catch(function() { showToast('&#49324;&#44148; &#49345;&#49464;&#47484; &#48266;&#47140;&#50625; &#49688; &#50630;&#49845;&#45768;&#45796;.'); });
+        .catch(function() { showToast('사건 상세를 벊려엁 수 없습니다.'); });
 }
 
 function closeDetail() {
@@ -443,18 +443,18 @@ function saveStatus() {
     fetch(_ctx + '/caseApi', {method: 'POST', body: fd, credentials: 'same-origin'})
         .then(function(r) { return r.json(); })
         .then(function() {
-            showToast('&#49345;&#53468;&#44032; &#50629;&#45936;&#51060;&#53944;&#46104;&#50632;&#49845;&#45768;&#45796;.');
+            showToast('상태가 업데이트되었습니다.');
             loadCases();
         });
 }
 
 function confirmDelete(caseId) {
-    if (!confirm('&#49324;&#44148; ' + caseId + '&#47484; &#49325;&#51228;&#54616;&#49884;&#44192;&#49845;&#45768;&#44992;?')) return;
+    if (!confirm('사건 ' + caseId + '를 삭제하시겠습니꿀?')) return;
     doDelete(caseId);
 }
 function deleteCase() {
     if (!_currentCaseId) return;
-    if (!confirm('&#49324;&#44148; ' + _currentCaseId + '&#47484; &#49325;&#51228;&#54616;&#49884;&#44192;&#49845;&#45768;&#44992;?')) return;
+    if (!confirm('사건 ' + _currentCaseId + '를 삭제하시겠습니꿀?')) return;
     doDelete(_currentCaseId);
     closeDetail();
 }
@@ -464,7 +464,7 @@ function doDelete(caseId) {
     fd.append('caseId', caseId);
     fetch(_ctx + '/caseApi', {method: 'POST', body: fd, credentials: 'same-origin'})
         .then(function(r) { return r.json(); })
-        .then(function() { showToast('&#49325;&#51228;&#46104;&#50632;&#49845;&#45768;&#45796;.'); loadCases(); });
+        .then(function() { showToast('삭제되었습니다.'); loadCases(); });
 }
 
 function openNewModal() { document.getElementById('newModal').classList.add('open'); }
@@ -472,7 +472,7 @@ function closeNewModal() { document.getElementById('newModal').classList.remove(
 
 function createCase() {
     var name = document.getElementById('newCaseName').value.trim();
-    if (!name) { showToast('&#49324;&#44148;&#47749;&#51012; &#51077;&#47141;&#54644; &#51452;&#49464;&#50836;.'); return; }
+    if (!name) { showToast('사건명을 입력해 주세요.'); return; }
     var fd = new FormData();
     fd.append('action', 'caseCreate');
     fd.append('caseName', name);
@@ -485,11 +485,11 @@ function createCase() {
             document.getElementById('newCaseName').value = '';
             document.getElementById('newSuspect').value = '';
             document.getElementById('newCharge').value = '';
-            showToast('&#49324;&#44148;&#51060; &#46321;&#47197;&#46104;&#50632;&#49845;&#45768;&#45796;.');
+            showToast('사건이 등록되었습니다.');
             loadCases();
             if (d.caseId) openDetail(d.caseId);
         })
-        .catch(function() { showToast('&#46321;&#47197; &#51473; &#50724;&#47448;&#44032; &#48156;&#49373;&#54588;&#49845;&#45768;&#45796;.'); });
+        .catch(function() { showToast('등록 중 오류가 발생피습니다.'); });
 }
 
 function showToast(msg) {
