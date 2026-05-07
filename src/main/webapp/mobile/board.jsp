@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="Servlet.DBConnectionMgr" %>
 <%@ page import="java.sql.*" %>
 <%
@@ -595,7 +595,7 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--bg)
     <nav class="bottom-nav">
     <a href="main.jsp" class="nav-item"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><span class="nav-label">홈</span></a>
     <a href="myCase.jsp" class="nav-item"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><span class="nav-label">사건</span></a>
-    <a href="askAI" class="nav-item"><div class="nav-icon"><svg width="22" height="22" viewBox="0 0 86 86" fill="none"><path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="currentColor" stroke-width="5"/><circle cx="43" cy="40" r="11" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="43" cy="40" r="5" fill="currentColor"/><circle cx="43" cy="40" r="2.5" fill="white"/><circle cx="43" cy="22" r="2.8" fill="currentColor"/><circle cx="43" cy="58" r="2.8" fill="currentColor"/><circle cx="28" cy="40" r="2.8" fill="currentColor"/><circle cx="58" cy="40" r="2.8" fill="currentColor"/></svg></div><span class="nav-label">AI</span></a>
+    <a href="../askAI" class="nav-item"><div class="nav-icon"><svg width="22" height="22" viewBox="0 0 86 86" fill="none"><path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="currentColor" stroke-width="5"/><circle cx="43" cy="40" r="11" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="43" cy="40" r="5" fill="currentColor"/><circle cx="43" cy="40" r="2.5" fill="white"/><circle cx="43" cy="22" r="2.8" fill="currentColor"/><circle cx="43" cy="58" r="2.8" fill="currentColor"/><circle cx="28" cy="40" r="2.8" fill="currentColor"/><circle cx="58" cy="40" r="2.8" fill="currentColor"/></svg></div><span class="nav-label">AI</span></a>
     <a href="board.jsp" class="nav-item active"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><span class="nav-label">커뮤니티</span></a>
     <a href="mypage.jsp" class="nav-item"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="nav-label">마이페이지</span></a>
   </nav>
@@ -844,7 +844,7 @@ function openDetail(id) {
   document.getElementById('detailBody').innerHTML =
     '<div style="text-align:center;padding:60px 0;color:var(--tm);font-size:13px;">불러오는 중...</div>';
 
-  fetch('board?action=detail&id=' + id)
+  fetch('../board?action=detail&id=' + id)
     .then(function(r){ return r.json(); })
     .then(function(p) {
       if (p.error) { showToast(p.error); closeDetail(); return; }
@@ -959,7 +959,7 @@ function likePost(id) {
   params.append('action', 'like');
   params.append('targetType', 'post');
   params.append('targetId', id);
-  fetch('board', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:params.toString() })
+  fetch('../board', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:params.toString() })
     .then(function(r){ return r.json(); })
     .then(function(d){
       if (!d.success) { showToast(d.error||'추천 실패'); return; }
@@ -977,7 +977,7 @@ function likeComment(postId, cmtId) {
   params.append('action', 'like');
   params.append('targetType', 'comment');
   params.append('targetId', cmtId);
-  fetch('board', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:params.toString() })
+  fetch('../board', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:params.toString() })
     .then(function(r){ return r.json(); })
     .then(function(d){
       if (!d.success) { showToast(d.error||'좋아요 실패'); return; }
@@ -991,7 +991,7 @@ function likeComment(postId, cmtId) {
 글 수정 - 수정 모달 열기
 ═══════════════════════════════════════════════════════ */
 function openEdit(id) {
-	  fetch('board?action=detail&id=' + id)
+	  fetch('../board?action=detail&id=' + id)
 	    .then(function(r){ return r.json(); })
 	    .then(function(data){ _fillEditModal(id, data); })
 	    .catch(function(e){ console.error(e); showToast('불러오기 실패'); });
@@ -1066,7 +1066,7 @@ if (writeCat === 'gear') {
     });
   }
 
-fetch('board', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:params.toString() })
+fetch('../board', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:params.toString() })
  .then(function(r){ return r.json(); })
  .then(function(d){
    if (!d.success) { showToast(d.error || '수정 실패'); return; }
@@ -1088,7 +1088,7 @@ function deletePost(id) {
   var params = new URLSearchParams();
   params.append('action', 'delete');
   params.append('postId', id);
-  fetch('board', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:params.toString() })
+  fetch('../board', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:params.toString() })
     .then(function(r){ return r.json(); })
     .then(function(d){
       if (d.success) { showToast('✓ 게시글이 삭제됐습니다'); closeDetail(); }
@@ -1104,7 +1104,7 @@ function deleteComment(postId, cmtId) {
   var params = new URLSearchParams();
   params.append('action', 'deleteComment');
   params.append('commentId', cmtId);
-  fetch('board', {
+  fetch('../board', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: params.toString()
@@ -1136,7 +1136,7 @@ function submitComment() {
   params.append('postId',  openPostId);
   params.append('content', text);
 
-  fetch('board', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:params.toString() })
+  fetch('../board', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:params.toString() })
     .then(function(r){ return r.json(); })
     .then(function(d){
       if (!d.success) { showToast(d.error || '댓글 등록 실패'); return; }
@@ -1206,7 +1206,7 @@ function submitPost() {
     });
   }
 
-  fetch('board', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:params.toString() })
+  fetch('../board', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:params.toString() })
     .then(function(r){ return r.json(); })
     .then(function(d){
       if (!d.success) { showToast(d.error || '등록 실패'); return; }

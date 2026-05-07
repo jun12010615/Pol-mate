@@ -279,8 +279,8 @@ public class MypageServlet extends HttpServlet {
             // ── 로그아웃 ─────────────────────────────────────────
             case "logout": {
                 session.invalidate();
-                sendSuccess(resp, "로그아웃 되었습니다.");
-                break;
+                resp.sendRedirect(req.getContextPath() + "/desktop/login.jsp");
+                return;
             }
 
             default:

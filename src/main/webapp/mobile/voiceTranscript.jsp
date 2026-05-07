@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -495,7 +495,7 @@
       <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
       <span class="nav-label">조서</span>
     </a>
-    <a href="askAI" class="nav-item active">
+    <a href="../askAI" class="nav-item active">
       <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
       <span class="nav-label">AI</span>
     </a>
@@ -557,7 +557,7 @@ function convertStt() {
   formData.append('audioFile', fileInput.files[0]);
   formData.append('language', 'Kor');
 
-  fetch('stt', {
+  fetch('../stt', {
     method: 'POST',
     body: formData
   })
@@ -768,7 +768,7 @@ function saveResult() {
   params.append('aiResult', aiResult);
   params.append('stmtText', stmtText);
 
-  fetch('contradictionApi', {
+  fetch('../contradictionApi', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
     body: params.toString()

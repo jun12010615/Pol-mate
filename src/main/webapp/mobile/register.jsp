@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -450,7 +450,7 @@ function verifyBadge() {
   const btn = document.getElementById('badgeVerifyBtn');
   btn.disabled = true; btn.textContent = '확인 중...';
 
-  fetch('register?action=verifyBadge&badgeNum=' + encodeURIComponent(val))
+  fetch('../register?action=verifyBadge&badgeNum=' + encodeURIComponent(val))
     .then(r => r.json())
     .then(data => {
       btn.disabled = false; btn.textContent = '인증';
@@ -496,7 +496,7 @@ function checkId() {
   if (!v) { alert('아이디를 입력하세요.'); return; }
   if (!/^[a-z0-9]{4,16}$/.test(v)) { showErr('idErr', '영문 소문자+숫자 4~16자로 입력하세요.'); idChecked = false; return; }
 
-  fetch('register?action=checkId&userId=' + encodeURIComponent(v))
+  fetch('../register?action=checkId&userId=' + encodeURIComponent(v))
     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(data => {
       if (data.success) {
@@ -532,7 +532,7 @@ function loadDepts() {
   deptSel.innerHTML = '<option value="">불러오는 중...</option>';
   deptSel.disabled = true;
 
-  fetch('register?action=getDepts&org=' + encodeURIComponent(org))
+  fetch('../register?action=getDepts&org=' + encodeURIComponent(org))
     .then(r => r.json())
     .then(depts => {
       deptSel.innerHTML = '<option value="">선택하세요 (선택)</option>';
@@ -686,7 +686,7 @@ function submitRegister() {
   params.append('deptId',    document.getElementById('userDept').value);  // dept_id (숫자) 전송
   params.append('badgeNum',  document.getElementById('badgeNum').value.trim());
 
-  fetch('register', {
+  fetch('../register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
     body: params.toString()

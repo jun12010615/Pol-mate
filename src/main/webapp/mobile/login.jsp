@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -241,7 +241,7 @@
         <div class="section-tag-line"></div>
       </div>
 
-      <form action="login" method="post" id="loginForm" onsubmit="return validateForm()">
+      <form action="../login" method="post" id="loginForm" onsubmit="return validateForm()">
         <div class="field-group">
           <label class="field-label" for="userId">수사관 ID</label>
           <div class="field-wrap">

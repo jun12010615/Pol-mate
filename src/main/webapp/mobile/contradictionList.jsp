@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -319,7 +319,7 @@
       <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
       <span class="nav-label">사건</span>
     </a>
-    <a href="askAI" class="nav-item">
+    <a href="../askAI" class="nav-item">
       <div class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
       <span class="nav-label">AI</span>
     </a>
@@ -388,8 +388,8 @@ function loadPageData() {
     '<div class="loading-wrap"><div class="spinner"></div>사건 목록 불러오는 중...</div>';
 
   Promise.all([
-    fetch('caseApi?action=caseList&status=all').then(function(r) { return r.json(); }),
-    fetch('contradictionApi?action=list').then(function(r) { return r.json(); })
+    fetch('../caseApi?action=caseList&status=all').then(function(r) { return r.json(); }),
+    fetch('../contradictionApi?action=list').then(function(r) { return r.json(); })
   ])
     .then(function(pair) {
       var casesRaw = pair[0];
@@ -626,7 +626,7 @@ function openDetail(resultId) {
     '<div class="loading-wrap"><div class="spinner"></div>불러오는 중...</div>';
   document.getElementById('detailOverlay').classList.add('open');
 
-  fetch('contradictionApi?action=detail&resultId=' + resultId)
+  fetch('../contradictionApi?action=detail&resultId=' + resultId)
     .then(function(r) { return r.json(); })
     .then(function(d) {
       if (d.error) {
@@ -702,7 +702,7 @@ function deleteResult(resultId) {
   params.append('action', 'delete');
   params.append('resultId', resultId);
 
-  fetch('contradictionApi', {
+  fetch('../contradictionApi', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
     body: params.toString()

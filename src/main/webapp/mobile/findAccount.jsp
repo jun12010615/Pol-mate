@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -271,7 +271,7 @@ async function doFindId() {
   btn.disabled = true; btn.textContent = '조회 중...';
 
   try {
-    const data = await fetch('findAccount', {
+    const data = await fetch('../findAccount', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
       body: new URLSearchParams({ action: 'findId', name, email }).toString()
@@ -307,7 +307,7 @@ async function sendPwCode() {
   btn.disabled = true; btn.textContent = '발송 중...';
 
   try {
-    const data = await fetch('findAccount', {
+    const data = await fetch('../findAccount', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
       body: new URLSearchParams({ action: 'sendCode', userId, email }).toString()
@@ -353,7 +353,7 @@ async function verifyPwCode() {
   btn.disabled = true; btn.textContent = '확인 중...';
 
   try {
-    const data = await fetch('findAccount', {
+    const data = await fetch('../findAccount', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
       body: new URLSearchParams({ action: 'verifyCode', code }).toString()
@@ -389,7 +389,7 @@ async function doResetPw() {
   btn.disabled = true; btn.textContent = '변경 중...';
 
   try {
-    const data = await fetch('findAccount', {
+    const data = await fetch('../findAccount', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
       body: new URLSearchParams({ action: 'resetPw', newPw }).toString()

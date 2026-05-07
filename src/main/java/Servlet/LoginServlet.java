@@ -22,7 +22,7 @@ public class LoginServlet extends HttpServlet {
         if (userId == null || userId.trim().isEmpty()
          || userPw == null || userPw.trim().isEmpty()) {
             request.setAttribute("loginError", "아이디와 비밀번호를 입력해 주세요.");
-            request.getRequestDispatcher("login.jsp").forward(request, response);
+            request.getRequestDispatcher("/mobile/login.jsp").forward(request, response);
             return;
         }
 
@@ -62,23 +62,23 @@ public class LoginServlet extends HttpServlet {
                     if ("desktop".equals(redirectTo)) {
                         response.sendRedirect("desktop/main.jsp");
                     } else {
-                        response.sendRedirect("main.jsp");
+                        response.sendRedirect("mobile/main.jsp");
                     }
                 } else {
                     // 비밀번호 불일치
                     request.setAttribute("loginError", "아이디 또는 비밀번호가 올바르지 않습니다.");
-                    request.getRequestDispatcher("login.jsp").forward(request, response);
+                    request.getRequestDispatcher("/mobile/login.jsp").forward(request, response);
                 }
             } else {
                 // 아이디 없음
                 request.setAttribute("loginError", "아이디 또는 비밀번호가 올바르지 않습니다.");
-                request.getRequestDispatcher("login.jsp").forward(request, response);
+                request.getRequestDispatcher("/mobile/login.jsp").forward(request, response);
             }
 
         } catch (Exception e) {
             e.printStackTrace();
             request.setAttribute("loginError", "로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
-            request.getRequestDispatcher("login.jsp").forward(request, response);
+            request.getRequestDispatcher("/mobile/login.jsp").forward(request, response);
         } finally {
             mgr.freeConnection(conn, pstmt, rs);
         }
@@ -87,6 +87,6 @@ public class LoginServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        response.sendRedirect("login.jsp");
+        response.sendRedirect("mobile/login.jsp");
     }
 }

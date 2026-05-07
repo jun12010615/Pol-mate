@@ -125,7 +125,7 @@ public class AiChatServlet extends HttpServlet {
         if (session != null && session.getAttribute("userName") != null) {
             request.setAttribute("userName", session.getAttribute("userName"));
         }
-        request.getRequestDispatcher("aiChat.jsp").forward(request, response);
+        request.getRequestDispatcher("/mobile/aiChat.jsp").forward(request, response);
     }
     
  // ── 법령 검색 ────────────────────────────────────────────

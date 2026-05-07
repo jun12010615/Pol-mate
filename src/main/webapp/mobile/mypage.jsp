@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -720,7 +720,7 @@
     <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
     <span class="nav-label">사건</span>
   </a>
-  <a href="askAI" class="nav-item">
+  <a href="../askAI" class="nav-item">
       <div class="nav-icon">
         <svg width="22" height="22" viewBox="0 0 86 86" fill="none">
           <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="currentColor" stroke-width="5"/>
@@ -1201,7 +1201,7 @@ function closeOnBg(e, id) {
 var currentDeptId   = null;
 var currentDeptName = null;
 document.addEventListener('DOMContentLoaded', function() {
-  fetch('mypage?action=load')
+  fetch('../mypage?action=load')
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (!data.user) return;
@@ -1260,7 +1260,7 @@ function onOrgChange() {
     return;
   }
 
-  fetch('mypage?action=getDepts&org=' + encodeURIComponent(org))
+  fetch('../mypage?action=getDepts&org=' + encodeURIComponent(org))
     .then(function(r) { return r.json(); })
     .then(function(depts) {
       deptSel.innerHTML = '<option value="">부서 선택 (선택)</option>';
@@ -1294,7 +1294,7 @@ function openProfileDrawer() {
   deptSel.innerHTML = '<option value="">불러오는 중...</option>';
   deptSel.disabled = true;
 
-  fetch('mypage?action=getDepts&org=' + encodeURIComponent(org))
+  fetch('../mypage?action=getDepts&org=' + encodeURIComponent(org))
     .then(function(r) { return r.json(); })
     .then(function(depts) {
       deptSel.innerHTML = '<option value="">부서 선택 (선택)</option>';
@@ -1323,7 +1323,7 @@ function saveProfile() {
   params.append('userPhone', document.getElementById('editPhone').value.trim());
   params.append('deptId',    document.getElementById('editDept').value || '');
 
-  fetch('mypage', { method: 'POST', body: params })
+  fetch('../mypage', { method: 'POST', body: params })
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (data.success) {
@@ -1341,7 +1341,7 @@ function saveProfile() {
 // ── 부서 변경 후 통계·이력·카운트 전체 갱신 ──────────────────────
 function reloadAfterDeptChange() {
   // ① 상단 통계 띠 재로드 (작성 조서 수 & 진행 사건 수)
-  fetch('mypage?action=load&_=' + Date.now())
+  fetch('../mypage?action=load&_=' + Date.now())
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (!data.user) return;
@@ -1394,7 +1394,7 @@ function changePw() {
   params.append('newPw',  nw);
   params.append('newPwCf',nwcf);
 
-  fetch('mypage', { method: 'POST', body: params })
+  fetch('../mypage', { method: 'POST', body: params })
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (data.success) {
@@ -1442,7 +1442,7 @@ function submitWithdraw() {
   params.append('action', 'withdraw');
   params.append('password', pw);
 
-  fetch('mypage', { method: 'POST', body: params })
+  fetch('../mypage', { method: 'POST', body: params })
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (data.success) {
@@ -1467,7 +1467,7 @@ function confirmLogout() {
   if (confirm('로그아웃 하시겠습니까?')) {
     var params = new URLSearchParams();
     params.append('action', 'logout');
-    fetch('mypage', { method: 'POST', body: params })
+    fetch('../mypage', { method: 'POST', body: params })
       .then(function() { location.href = 'login.jsp'; })
       .catch(function() { location.href = 'login.jsp'; });
   }
@@ -1478,7 +1478,7 @@ function loadHistory() {
   var container = document.getElementById('historyList');
   container.innerHTML = '<p style="padding:20px; text-align:center; color:var(--text-muted); font-size:13px;">불러오는 중...</p>';
 
-  fetch('mypage?action=history')
+  fetch('../mypage?action=history')
     .then(function(r) { return r.json(); })
     .then(function(data) {
       var list = data.history;
@@ -1523,7 +1523,7 @@ function loadHistory() {
 
 // ── 모순탐지 목록 카운트 로드 ─────────────────────────────────────
 function loadContraCount() {
-  fetch('contradictionApi?action=list&_=' + Date.now())
+  fetch('../contradictionApi?action=list&_=' + Date.now())
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (!Array.isArray(data)) return;
@@ -1557,7 +1557,7 @@ var _currentPeriod = 'week';
 
 function loadStats(period) {
   _currentPeriod = period || 'week';
-  fetch('mypage?action=stats&period=' + _currentPeriod + '&_=' + Date.now())
+  fetch('../mypage?action=stats&period=' + _currentPeriod + '&_=' + Date.now())
     .then(function(r) { return r.json(); })
     .then(function(data) { renderStats(data); })
     .catch(function(e) { console.error('통계 로드 실패', e); });
@@ -1794,7 +1794,7 @@ function saveSettings() {
   params.append('notifRelation',      document.getElementById('toggleRelation').checked      ? '1' : '0');
   params.append('nightMode',          document.getElementById('toggleNightMode').checked     ? '1' : '0');
 
-  fetch('mypage', { method: 'POST', body: params })
+  fetch('../mypage', { method: 'POST', body: params })
     .catch(function(e) { console.error('설정 저장 실패', e); });
 }
 </script>

@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -387,7 +387,7 @@
               <div class="menu-desc">STT · 모순</div>
             </a>
 
-            <a href="askAI" class="menu-card">
+            <a href="../askAI" class="menu-card">
               <div class="menu-icon-wrap mi-amber">
                 <svg width="20" height="20" viewBox="0 0 86 86" fill="none">
                   <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="#92400e" opacity="0.15"/>
@@ -523,7 +523,7 @@
     <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
     <span class="nav-label">사건</span>
   </a>
-  <a href="askAI" class="nav-item">
+  <a href="../askAI" class="nav-item">
       <div class="nav-icon">
         <svg width="22" height="22" viewBox="0 0 86 86" fill="none">
           <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="currentColor" stroke-width="5"/>
@@ -551,7 +551,7 @@
 <script>
 // ── 종 뱃지: 미읽음 알림이 있을 때만 빨간 점 표시 ──────────────
 (function() {
-  fetch('notifApi?action=unreadCount&_=' + Date.now())
+  fetch('../notifApi?action=unreadCount&_=' + Date.now())
     .then(function(r) { return r.json(); })
     .then(function(data) {
       var dot = document.getElementById('bellDot');
@@ -565,7 +565,7 @@
 
 // ── 모순 탐지 카운트: contradiction_results 테이블 기준으로 동적 로드 ──
 (function() {
-  fetch('contradictionApi?action=list&_=' + Date.now())
+  fetch('../contradictionApi?action=list&_=' + Date.now())
     .then(function(r) { return r.json(); })
     .then(function(data) {
       var el = document.getElementById('mainStatContradiction');

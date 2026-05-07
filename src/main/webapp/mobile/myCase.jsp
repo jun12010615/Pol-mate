@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
     String loginUser = (String) session.getAttribute("loginUser");
     String userName  = (String) session.getAttribute("userName");
@@ -301,7 +301,7 @@
     <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
     <span class="nav-label">사건</span>
     </a>
-    <a href="askAI" class="nav-item">
+    <a href="../askAI" class="nav-item">
       <div class="nav-icon">
         <svg width="22" height="22" viewBox="0 0 86 86" fill="none">
           <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="currentColor" stroke-width="5"/>
@@ -477,7 +477,7 @@ document.getElementById('searchInput').addEventListener('input', function(){
 function loadCaseList() {
   var kw = document.getElementById('searchInput').value.trim();
   document.getElementById('caseList').innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;">불러오는 중...</div>';
-  fetch('caseApi?action=caseList&status=' + encodeURIComponent(currentFilter) + '&keyword=' + encodeURIComponent(kw))
+  fetch('../caseApi?action=caseList&status=' + encodeURIComponent(currentFilter) + '&keyword=' + encodeURIComponent(kw))
     .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
     .then(function(data){
       if(data.error){ document.getElementById('caseList').innerHTML='<div class="empty-state"><div class="empty-title" style="color:var(--danger)">'+data.error+'</div></div>'; return; }
@@ -523,7 +523,7 @@ function openCase(id) {
   document.getElementById('drawerActions').innerHTML='';
   document.getElementById('caseDrawer').classList.add('open');
   document.body.style.overflow='hidden';
-  fetch('caseApi?action=caseDetail&caseId='+encodeURIComponent(id))
+  fetch('../caseApi?action=caseDetail&caseId='+encodeURIComponent(id))
     .then(function(r){return r.json();})
     .then(function(c){
       if(c.error){showToast(c.error);closeDrawer('caseDrawer');return;}
@@ -599,7 +599,7 @@ function openTranscriptPopup(idx){
     // 요약은 DB 업데이트 완료 시점부터만 보이도록 숨김
     var sumWrapLoading=document.getElementById('popupSummary');
     if(sumWrapLoading) sumWrapLoading.style.display='none';
-    fetch('caseApi?action=transcriptText&transcriptId='+d.id).then(function(r){return r.json();}).then(function(res){
+    fetch('../caseApi?action=transcriptText&transcriptId='+d.id).then(function(r){return r.json();}).then(function(res){
       d.originalText=res.text||'';
       d.summaryText=res.summary||'';
       document.getElementById('popupBody').innerHTML=d.originalText?'<span>'+escHtml(d.originalText)+'</span>':'<div class="popup-empty">저장된 진술 내용이 없습니다.</div>';
@@ -744,7 +744,7 @@ function runContradiction(){
   document.getElementById('contraPopupTitle').textContent='모순 분석 중...';
   document.getElementById('contraPopupBody').innerHTML='<div class="contra-loading"><div class="contra-buffer-spinner"></div><div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px;">조서를 불러오는 중</div><div style="font-size:12px;">선택한 '+checkedDocs.length+'개 조서를 준비합니다.</div><div style="margin-top:8px;font-size:11px;color:var(--text-muted);">'+titles.join(', ')+'</div></div>';
   document.getElementById('contraPopup').classList.add('open');
-  var fp=checkedDocs.map(function(id){var d=currentDocs.find(function(x){return x.id===id;});if(d&&d.originalText!==undefined)return Promise.resolve(d);return fetch('caseApi?action=transcriptText&transcriptId='+id).then(function(r){return r.json();}).then(function(res){if(d)d.originalText=res.text||'';return d;});});
+  var fp=checkedDocs.map(function(id){var d=currentDocs.find(function(x){return x.id===id;});if(d&&d.originalText!==undefined)return Promise.resolve(d);return fetch('../caseApi?action=transcriptText&transcriptId='+id).then(function(r){return r.json();}).then(function(res){if(d)d.originalText=res.text||'';return d;});});
   Promise.all(fp).then(function(docs){
     var ordered=checkedDocs.map(function(id){return docs.find(function(x){return x&&x.id===id;});}).filter(Boolean);
     if(ordered.length<2) throw new Error('조서를 불러오지 못했습니다.');
@@ -894,7 +894,7 @@ function postContraSaveFromMyCase(fields, opts){
   params.append('hasContradiction',fields.hasContradiction?'true':'false');
   params.append('aiResult',fields.aiResult);
   params.append('stmtText','');
-  fetch('contradictionApi',{
+  fetch('../contradictionApi',{
     method:'POST',
     headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
     body:params.toString()
@@ -959,7 +959,7 @@ function openNewCaseDrawer(){
   document.getElementById('newCaseDrawer').classList.add('open');
   document.body.style.overflow='hidden';
   setTimeout(function(){document.getElementById('newCaseId').focus();},300);
-  fetch('caseApi?action=myDept').then(function(r){return r.json();}).then(function(d){
+  fetch('../caseApi?action=myDept').then(function(r){return r.json();}).then(function(d){
     if(d.error){document.getElementById('newCaseDeptLabel').textContent='조회 실패';return;}
     document.getElementById('newCaseDeptLabel').textContent=d.label;
     document.getElementById('newCaseDeptLabel').style.color=d.deptId?'var(--navy)':'var(--text-muted)';
@@ -971,7 +971,7 @@ function submitNewCase(){
   var ss=document.getElementById('newSuspect').value.trim();
   if(!ci){showToast('사건번호를 입력하세요.');return;} if(!cn){showToast('사건명을 입력하세요.');return;}
   var p=new URLSearchParams();p.append('action','caseCreate');p.append('caseId',ci);p.append('caseName',cn);p.append('suspect',ss);
-  fetch('caseApi',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:p.toString()}).then(function(r){return r.json();}).then(function(d){
+  fetch('../caseApi',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:p.toString()}).then(function(r){return r.json();}).then(function(d){
     if(d.success){closeDrawer('newCaseDrawer');showToast('✓ 사건이 등록됐습니다'+(d.deptLabel?' · '+d.deptLabel:''));loadCaseList();}
     else showToast(d.message||'등록 실패');
   }).catch(function(){showToast('등록 중 오류 발생');});
@@ -987,7 +987,7 @@ function selectStatus(btn){document.querySelectorAll('.status-btn').forEach(func
 function submitEditCase(){
   if(!editCaseId) return;
   var p=new URLSearchParams();p.append('action','caseStatus');p.append('caseId',editCaseId);p.append('status',selectedStatus);
-  fetch('caseApi',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:p.toString()}).then(function(r){return r.json();}).then(function(d){
+  fetch('../caseApi',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:p.toString()}).then(function(r){return r.json();}).then(function(d){
     if(d.success){closeDrawer('editDrawer');showToast('✓ 수정됐습니다');loadCaseList();}else showToast(d.message||'수정 실패');
   }).catch(function(){showToast('수정 중 오류 발생');});
 }
@@ -995,7 +995,7 @@ function submitEditCase(){
 function confirmDeleteCase(caseId){
   if(!confirm('사건 ['+caseId+']을 삭제할까요?\n관련 조서·관계망 데이터도 모두 삭제됩니다.')) return;
   var p=new URLSearchParams();p.append('action','caseDelete');p.append('caseId',caseId);
-  fetch('caseApi',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:p.toString()}).then(function(r){return r.json();}).then(function(d){
+  fetch('../caseApi',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:p.toString()}).then(function(r){return r.json();}).then(function(d){
     if(d.success){closeDrawer('caseDrawer');showToast('✓ 사건이 삭제됐습니다');loadCaseList();}else showToast(d.message||'삭제 실패');
   }).catch(function(){showToast('삭제 중 오류 발생');});
 }

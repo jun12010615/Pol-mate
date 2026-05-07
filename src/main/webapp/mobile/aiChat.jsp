@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.util.*, java.text.*" %>
 <!DOCTYPE html>
 <html lang="ko">
@@ -402,7 +402,7 @@
     <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
     <span class="nav-label">사건</span>
   </a>
-  <a href="askAI" class="nav-item active">
+  <a href="../askAI" class="nav-item active">
       <div class="nav-icon">
         <svg width="22" height="22" viewBox="0 0 86 86" fill="none">
           <path d="M43 7 L66 17 L66 41 C66 57 43 71 43 71 C43 71 20 57 20 41 L20 17 Z" fill="none" stroke="currentColor" stroke-width="5"/>
@@ -501,7 +501,7 @@ function handleSubmit() {
   params.append('userMsg', msg);
   params.append('category', category);
 
-  fetch('askAI', { method: 'POST', body: params })
+  fetch('../askAI', { method: 'POST', body: params })
     .then(function(res) {
       document.getElementById('typingRow').style.display = 'none';
 
@@ -578,7 +578,7 @@ function handleSubmit() {
 // ── 대화 초기화
 function clearChat() {
   if (confirm('대화 내역을 초기화하시겠습니까?')) {
-    location.href = 'askAI';
+    location.href = '../askAI';
   }
 }
 

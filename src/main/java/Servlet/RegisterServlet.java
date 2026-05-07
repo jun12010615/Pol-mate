@@ -154,7 +154,7 @@ public class RegisterServlet extends HttpServlet {
 
         } else {
             // ── register.jsp 포워드 ──────────────────────────────
-            request.getRequestDispatcher("register.jsp").forward(request, response);
+            request.getRequestDispatcher("/mobile/register.jsp").forward(request, response);
         }
     }
 
