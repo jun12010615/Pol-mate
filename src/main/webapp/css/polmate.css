@@ -1,0 +1,183 @@
+/* ==========================================================================
+   POL-MATE Design Tokens
+   Color, typography, radii, shadows, and semantic helpers.
+   Source: jun12010615/Pol-mate JSP files (login.jsp, main.jsp, myCase.jsp,
+   aiChat.jsp). Mobile-first; desktop additions noted in comments.
+   ========================================================================== */
+
+/* ---------- Webfonts ---------- */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+:root {
+  /* ---------- Brand / authority ---------- */
+  --pm-deep:        #0d1a33;   /* primary navy — headers, primary buttons */
+  --pm-navy:        #1a2744;   /* secondary navy — alt headers */
+  --pm-mid:         #243358;   /* tertiary navy — hover */
+
+  --pm-gold:        #f0c040;   /* signature accent — hairlines, dots, star */
+  --pm-gold-deep:   #e6b830;   /* hover gold */
+
+  --pm-blue:        #4a7cdc;   /* links, scan rings, info accents */
+  --pm-blue-soft:   #eff6ff;   /* info bg */
+  --pm-blue-text:   #1e40af;   /* info text */
+
+  /* ---------- Semantic ---------- */
+  --pm-danger:        #dc2626;
+  --pm-danger-bg:     #fef2f2;
+  --pm-danger-border: #fecaca;
+
+  --pm-warn-bg:    #fffbeb;
+  --pm-warn-text:  #92400e;
+
+  --pm-success:        #16a34a;
+  --pm-success-bg:     #f0fdf4;
+  --pm-success-border: #bbf7d0;
+
+  /* ---------- Surfaces / neutrals ---------- */
+  --pm-page-bg:      #f0f2f8;   /* login / dashboard page bg */
+  --pm-page-bg-alt:  #f4f6fb;   /* case / chat pages bg */
+  --pm-card:         #ffffff;
+  --pm-border:       #e2e5ee;
+  --pm-border-2:     #e5e7eb;   /* alt border (used in case page) */
+
+  /* ---------- Text ---------- */
+  --pm-fg-1: #1a1a2e;   /* primary */
+  --pm-fg-2: #6b7280;   /* secondary */
+  --pm-fg-3: #9ca3af;   /* muted (timestamps, placeholders) */
+
+  /* On dark navy chrome */
+  --pm-on-navy-1: #ffffff;
+  --pm-on-navy-2: rgba(255,255,255,0.65);
+  --pm-on-navy-3: rgba(255,255,255,0.45);
+  --pm-on-navy-line: rgba(255,255,255,0.12);
+
+  /* ---------- Typography ---------- */
+  --pm-font-body:    'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --pm-font-display: 'Space Grotesk', 'Noto Sans KR', sans-serif;
+
+  /* Sizes (tight, dense data UI) */
+  --pm-fs-display: 30px;   /* brand wordmark */
+  --pm-fs-h1:      24px;   /* stat numbers / large headings */
+  --pm-fs-h2:      18px;   /* page title */
+  --pm-fs-h3:      16px;   /* section title */
+  --pm-fs-h4:      15px;   /* card title */
+  --pm-fs-body:    13px;
+  --pm-fs-small:   12px;
+  --pm-fs-meta:    11px;
+  --pm-fs-tiny:    10px;
+
+  --pm-lh-tight:   1.3;
+  --pm-lh-body:    1.7;
+  --pm-lh-roomy:   1.8;
+
+  --pm-track-label: 0.8px;   /* uppercase labels */
+  --pm-track-brand: 5px;     /* POL-MATE wordmark */
+
+  /* ---------- Radii ---------- */
+  --pm-r-xs: 5px;
+  --pm-r-sm: 10px;
+  --pm-r-md: 12px;
+  --pm-r-lg: 14px;
+  --pm-r-xl: 16px;
+  --pm-r-2xl: 18px;   /* chat bubbles */
+  --pm-r-3xl: 22px;   /* drawer top corners */
+  --pm-r-pill: 999px;
+
+  /* ---------- Shadows ---------- */
+  --pm-shadow-card:    none;
+  --pm-shadow-frame:   0 0 40px rgba(0,0,0,0.10);
+  --pm-shadow-frame-2: 0 8px 48px rgba(0,0,0,0.14);
+  --pm-focus-ring:     0 0 0 3px rgba(13,26,51,0.07);
+  --pm-focus-ring-blue: 0 0 0 3px rgba(74,124,220,0.18);
+
+  /* ---------- Motion ---------- */
+  --pm-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --pm-dur-fast: 0.15s;
+  --pm-dur:      0.25s;
+  --pm-dur-slow: 0.4s;
+
+  /* ---------- Layout (desktop additions) ---------- */
+  --pm-sidebar-w: 240px;
+  --pm-appbar-h:  64px;
+  --pm-content-max: 1440px;
+  --pm-gutter:    24px;
+
+  /* Signature hairline gradient (gold underline below headers) */
+  --pm-hairline-gold: linear-gradient(
+    90deg,
+    transparent,
+    var(--pm-gold) 30%,
+    var(--pm-gold) 70%,
+    transparent
+  );
+}
+
+/* ==========================================================================
+   Base resets (opt-in via .pm-base)
+   ========================================================================== */
+.pm-base, .pm-base * { box-sizing: border-box; }
+.pm-base {
+  font-family: var(--pm-font-body);
+  font-size: var(--pm-fs-body);
+  line-height: var(--pm-lh-body);
+  color: var(--pm-fg-1);
+  background: var(--pm-page-bg);
+  -webkit-font-smoothing: antialiased;
+  word-break: keep-all;
+  text-wrap: pretty;
+}
+
+/* ==========================================================================
+   Semantic typography classes (h1..p, label, mono)
+   ========================================================================== */
+.pm-display {
+  font-family: var(--pm-font-display);
+  font-weight: 700;
+  font-size: var(--pm-fs-display);
+  letter-spacing: var(--pm-track-brand);
+  color: var(--pm-deep);
+}
+.pm-h1 {
+  font-family: var(--pm-font-display);
+  font-weight: 700;
+  font-size: var(--pm-fs-h1);
+  color: var(--pm-deep);
+  line-height: var(--pm-lh-tight);
+}
+.pm-h2 {
+  font-family: var(--pm-font-body);
+  font-weight: 500;
+  font-size: var(--pm-fs-h2);
+  color: var(--pm-fg-1);
+  line-height: var(--pm-lh-tight);
+}
+.pm-h3 {
+  font-family: var(--pm-font-body);
+  font-weight: 500;
+  font-size: var(--pm-fs-h3);
+  color: var(--pm-fg-1);
+}
+.pm-h4 {
+  font-family: var(--pm-font-body);
+  font-weight: 500;
+  font-size: var(--pm-fs-h4);
+  color: var(--pm-fg-1);
+}
+.pm-body { font-size: var(--pm-fs-body); line-height: var(--pm-lh-roomy); color: var(--pm-fg-1); }
+.pm-meta { font-size: var(--pm-fs-meta); color: var(--pm-fg-3); }
+.pm-label {
+  font-size: var(--pm-fs-tiny);
+  font-weight: 500;
+  color: var(--pm-fg-3);
+  text-transform: uppercase;
+  letter-spacing: var(--pm-track-label);
+}
+
+/* ==========================================================================
+   Reusable signature element — gold hairline
+   ========================================================================== */
+.pm-hairline-gold {
+  height: 1.5px;
+  background: var(--pm-hairline-gold);
+  opacity: 0.4;
+}
